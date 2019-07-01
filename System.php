@@ -1,0 +1,295 @@
+<?php
+
+use Firebase\JWT\JWT;
+use Model\ColumnTypes;
+use Model\MySQL;
+use Model\TableColumn;
+
+class System
+{
+    public static function isset_get(&$variable, $return = null)
+    {
+        if (isset($variable)) {
+            return $variable;
+        }
+
+        unset($variable);
+        return $return;
+    }
+
+    public static function encode_token(array $data)
+    {
+        $time = time();
+        $token = [
+            'iat' => $time,
+            'exp' => $time + (60 * 60),
+            'data' => $data
+        ];
+        return JWT::encode($token, JWT_KEY);
+    }
+
+    public static function decode_token($jwt)
+    {
+        $time = time();
+        $decoded = JWT::decode($jwt, JWT_KEY, ['HS256']);
+        if ($decoded->exp <= $time) {
+            JsonResponse::sendResponse(['message' => 'The  token has expired.'], HTTPStatusCodes::Unauthorized);
+        }
+        return json_decode(json_encode($decoded), true)['data'];
+    }
+
+    public static function init($config)
+    {
+        global $_PATCH;
+        self::define_constants($config);
+
+        self::load_php_functions();
+
+        self::load_composer();
+
+        self::convert_endpoint($controller, $action, $id);
+
+        self::call_action($controller, $action, $id);
+    }
+
+    private static function load_composer()
+    {
+        $path = getcwd() . "/Lib/vendor/autoload.php";
+        if (!file_exists($path)) {
+            JsonResponse::sendResponse(['message' => 'Composer is not installed.'], HTTPStatusCodes::InternalServerError);
+        }
+        require_once($path);
+    }
+
+    private static function load_php_functions()
+    {
+        ob_start();
+        header('Content-Type: application/json');
+        header('Access-Control-Allow-Origin: *');
+        header('Access-Control-Allow-Methods: POST, GET, OPTIONS, PATCH, DELETE');
+        header('Access-Control-Allow-Headers: Content-Type');
+        register_shutdown_function(function () {
+            if (error_get_last()) {
+                JsonResponse::sendResponse(['message' => 'A fatal error ocurred.'], HTTPStatusCodes::InternalServerError);
+            }
+        });
+        include_once("MySQL.php");
+        setcookie('XDEBUG_SESSION', 'PHPSTORM');
+        error_reporting(E_ALL);
+        ini_set('display_errors', 1);
+        spl_autoload_register(function ($class) {
+            $split = explode('\\', $class);
+            $dir = $split[0];
+            $file = ucfirst(System::isset_get($split[1]));
+            $path = "$dir/$file.php";
+            if (file_exists($path)) {
+                include $path;
+            }
+        });
+    }
+
+    private static function define_constants($config)
+    {
+        global $_PATCH;
+        define('REQUEST_METHOD', $_SERVER['REQUEST_METHOD']);
+        define('DEBUG_MODE', preg_match('/Mozilla/', $_SERVER['HTTP_USER_AGENT']) != 1);
+        define('JWT_KEY', file_get_contents('Config/.jwt_key'));
+        define('DIR', $config['DIR']);
+
+        $entry = (file_get_contents('php://input'));
+        if (!empty($entry)) {
+            if (self::isJson($entry)) {
+                $entry = http_build_query(json_decode($entry, true));
+            }
+            if (REQUEST_METHOD === 'POST') {
+                parse_str($entry, $_POST);
+            } else if (REQUEST_METHOD === 'PATCH') {
+                parse_str($entry, $_PATCH);
+            }
+        }
+    }
+
+    private static function convert_endpoint(&$controller, &$action, &$id)
+    {
+        $request = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
+        if (count($request) > 2) {
+            $end = end($request);
+            if (strpos($end, '?')) {
+                $end = stristr($end, '?', true);
+            }
+            $count = ctype_digit($end) ? 3 : 2;
+            $request = array_slice($request, -$count, $count, false);
+            if (count($request) == 3) {
+                $id = (int)$end;
+            }
+        }
+        $controller = strtolower($request[0]);
+        $action = System::isset_get($request[1]);
+        if (strpos($action, '?')) {
+            $action = stristr($action, '?', true);
+        }
+    }
+
+    private static function call_action($controller, $action, $id)
+    {
+        switch (REQUEST_METHOD) {
+            case 'OPTIONS':
+                JsonResponse::sendResponse([]);
+                break;
+            case 'PATCH':
+                global $_PATCH;
+
+                if (!empty($_PATCH)) {
+                    $_POST = $_PATCH;
+                }
+                if (empty($id)) {
+                    JsonResponse::sendResponse(['message' => 'Request Method PATCH needs an ID to work'], HTTPStatusCodes::BadRequest);
+                }
+                break;
+        }
+        global $_PATCH;
+        $response = null;
+        $namespace = "Controller\\$controller";
+        if (class_exists($namespace)) {
+            $class = new $namespace();
+            if (method_exists($class, $action)) {
+                $response = $class->$action($id);
+                if (!is_array($response)) {
+                    $message = $response;
+                    $data = null;
+                } else {
+                    $message = 'Completed.';
+                    $data = $response;
+                }
+                JsonResponse::sendResponse(compact('message', 'data'));
+            }
+        }
+        JsonResponse::sendResponse(['message' => "Endpoint not found."], HTTPStatusCodes::InternalServerError);
+    }
+
+    public static function check_value_empty($array, $required, $message)
+    {
+        $required = array_flip($required);
+        $intersect = array_intersect_key($array, $required);
+        $empty_values = '';
+        foreach ($intersect as $key => $value) {
+            $value = trim($value);
+            if (empty($value)) {
+                $empty_values .= $key . ',';
+            }
+        }
+        $empty_values = trim($empty_values, ',');
+        if (!empty($empty_values)) {
+            JsonResponse::sendResponse(['message' => $message . ' ' . "[$empty_values]"], HTTPStatusCodes::BadRequest);
+        }
+    }
+
+    private static function isJson($string)
+    {
+        json_decode($string);
+        return (json_last_error() == JSON_ERROR_NONE);
+    }
+
+    public static function log_error(array $error)
+    {
+        try {
+            $error = print_r($error, true);
+            $mysql = new MySQL();
+            $mysql->create_table("_errores", [
+                new TableColumn('id', ColumnTypes::BIGINT, 20, true, null, true, true),
+                new TableColumn('error', ColumnTypes::VARCHAR, 2000, true),
+                new TableColumn('fecha', ColumnTypes::TIMESTAMP, 0, true, 'current_timestamp')
+            ]);
+            $mysql->query("insert into _errores(json) values('$error')");
+        } catch (Exception $ex) {
+            die(print_r($ex, true));
+        }
+    }
+}
+
+class JsonResponse
+{
+    private $response, $error, $code, $json;
+    private static $alreadySent = false;
+
+    static function sendResponse(array $response, $code = null)
+    {
+        new JsonResponse($response, $code);
+    }
+
+    private function __construct(array $response, $code = null)
+    {
+        if (self::$alreadySent and $code !== HTTPStatusCodes::OK) {
+            exit;
+        }
+        if (!empty($code)) {
+            http_response_code($code);
+            $this->code = $code;
+        } else {
+            $this->code = http_response_code();
+        }
+
+        $this->response = $response;
+        $this->error = error_get_last();
+        $this->json_encode();
+        $this->send_response();
+    }
+
+    private function send_response()
+    {
+        ob_clean();
+        die($this->json);
+    }
+
+    private function json_encode()
+    {
+        $response = $this->encode_items($this->response);
+        $code = $this->code;
+        if (DEBUG_MODE) $error = $this->error;
+        $status = $code !== HTTPStatusCodes::OK ? 'error' : 'success';
+        if ($status === 'error') {
+            self::$alreaySent = true;
+        }
+        $json = json_encode(compact('status', 'code', 'response', 'error'));
+        if (!$json) {
+            $message = 'Fatal error. JSON response malformed.';
+            if (DEBUG_MODE) $error = json_last_error_msg();
+            JsonResponse::sendResponse(compact('message', 'error'), HTTPStatusCodes::InternalServerError);
+        } else {
+            $this->json = $json;
+        }
+        if (!empty($this->error)) {
+            $error = $this->error;
+            System::log_error(compact('status', 'code', 'response', 'error'));
+        }
+    }
+
+    private function encode_items($array)
+    {
+        foreach ($array as $key => $value) {
+            if (is_array($value)) {
+                $array[$key] = $this->encode_items($value);
+            } else {
+                if (!mb_detect_encoding($value, 'UTF-8', true)) {
+                    $array[$key] = utf8_encode($value);
+                } else {
+                    $array[$key] = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+                }
+            }
+        }
+
+        return $array;
+    }
+}
+
+class HTTPStatusCodes
+{
+    const __default = self::OK;
+
+    const OK = 200;
+    const BadRequest = 400;
+    const Unauthorized = 401;
+    const NotFound = 404;
+    const MethodNotAllowed = 405;
+    const InternalServerError = 500;
+}
