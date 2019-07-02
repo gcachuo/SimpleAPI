@@ -37,9 +37,10 @@ class System
         return json_decode(json_encode($decoded), true)['data'];
     }
 
-    public static function init($config)
+    public function init($config)
     {
         global $_PATCH;
+
         self::define_constants($config);
 
         self::load_php_functions();
@@ -51,11 +52,18 @@ class System
         self::call_action($controller, $action, $id);
     }
 
+    public function startup()
+    {
+        self::define_constants(['DIR' => __DIR__]);
+        self::load_php_functions();
+        self::create_directories();
+    }
+
     private static function load_composer()
     {
         $path = getcwd() . "/Lib/vendor/autoload.php";
         if (!file_exists($path)) {
-            JsonResponse::sendResponse(['message' => 'Composer is not installed.'], HTTPStatusCodes::InternalServerError);
+            JsonResponse::sendResponse(['message' => 'Composer is not installed.'], HTTPStatusCodes::BadRequest);
         }
         require_once($path);
     }
@@ -87,9 +95,48 @@ class System
         });
     }
 
+    private static function create_directories()
+    {
+        function createDir($dir)
+        {
+            if (!is_dir(DIR . "/../$dir/")) {
+                mkdir(DIR . "/../$dir/", 0777, true);
+                chmod(DIR . "/../$dir/", 0777);
+            }
+        }
+
+        function createFile($file)
+        {
+            if (!file_exists(DIR . "/../$file")) {
+                copy(DIR . "/files/$file", DIR . "/../.htaccess");
+                chmod(DIR . "/../.htaccess", 0777);
+            }
+        }
+
+        function createConfig()
+        {
+            file_put_contents(DIR . '/../Config/.jwt_key', '');
+            file_put_contents(DIR . '/../Config/.gitignore', '.jwt_key');
+            chmod(DIR . '/../Config/.jwt_key', 0777);
+            chmod(DIR . '/../Config/.gitignore', 0777);
+        }
+
+        createDir('Config');
+        createDir('Controller');
+        createDir('Model');
+        createDir('Data');
+
+        createConfig();
+        createFile('.htaccess');
+        createFile('index.php');
+        
+        JsonResponse::sendResponse(['message' => true]);
+    }
+
     private static function define_constants($config)
     {
         global $_PATCH;
+
         define('REQUEST_METHOD', $_SERVER['REQUEST_METHOD']);
         define('DEBUG_MODE', preg_match('/Mozilla/', $_SERVER['HTTP_USER_AGENT']) != 1);
         define('JWT_KEY', file_get_contents('Config/.jwt_key'));
@@ -163,7 +210,7 @@ class System
                 JsonResponse::sendResponse(compact('message', 'data'));
             }
         }
-        JsonResponse::sendResponse(['message' => "Endpoint not found."], HTTPStatusCodes::InternalServerError);
+        JsonResponse::sendResponse(['message' => "Endpoint not found."], HTTPStatusCodes::NotFound);
     }
 
     public static function check_value_empty($array, $required, $message)
@@ -247,7 +294,7 @@ class JsonResponse
         if (DEBUG_MODE) $error = $this->error;
         $status = $code !== HTTPStatusCodes::OK ? 'error' : 'success';
         if ($status === 'error') {
-            self::$alreaySent = true;
+            self::$alreadySent = true;
         }
         $json = json_encode(compact('status', 'code', 'response', 'error'));
         if (!$json) {
