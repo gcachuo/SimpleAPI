@@ -12,7 +12,6 @@ class System
         if (isset($variable)) {
             return $variable;
         }
-
         unset($variable);
         return $return;
     }
