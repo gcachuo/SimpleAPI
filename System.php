@@ -108,8 +108,8 @@ class System
         function createFile($file)
         {
             if (!file_exists(DIR . "/../$file")) {
-                copy(DIR . "/files/$file", DIR . "/../.htaccess");
-                chmod(DIR . "/../.htaccess", 0777);
+                copy(DIR . "/files/$file", DIR . "/../$file");
+                chmod(DIR . "/../$file", 0777);
             }
         }
 
@@ -129,7 +129,7 @@ class System
         createConfig();
         createFile('.htaccess');
         createFile('index.php');
-        
+
         JsonResponse::sendResponse(['message' => true]);
     }
 

@@ -1,5 +1,6 @@
 <?php
 include_once "Lib/System.php";
 
-System::init(['DIR' => __DIR__]);
+$system = new System();
+$system->init(['DIR' => __DIR__]);
 
