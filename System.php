@@ -338,4 +338,5 @@ class HTTPStatusCodes
     const NotFound = 404;
     const MethodNotAllowed = 405;
     const InternalServerError = 500;
+    const ServiceUnavailable = 503;
 }
