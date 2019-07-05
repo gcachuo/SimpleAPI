@@ -257,4 +257,5 @@ abstract class ColumnTypes
     const TIMESTAMP = 'timestamp';
     const DATE = 'date';
     const BIT = 'bit';
+    const DECIMAL = 'decimal';
 }
