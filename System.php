@@ -239,14 +239,14 @@ class System
     public static function log_error(array $error)
     {
         try {
-            $error = print_r($error, true);
             $mysql = new MySQL();
+            $error = $mysql->escape_string(print_r($error, true));
             $mysql->create_table("_errores", [
                 new TableColumn('id', ColumnTypes::BIGINT, 20, true, null, true, true),
                 new TableColumn('error', ColumnTypes::VARCHAR, 2000, true),
                 new TableColumn('fecha', ColumnTypes::TIMESTAMP, 0, true, 'current_timestamp')
             ]);
-            $mysql->query("insert into _errores(json) values('$error')");
+            $mysql->query("insert into _errores(error) values('$error')");
         } catch (Exception $ex) {
             die(print_r($ex, true));
         }

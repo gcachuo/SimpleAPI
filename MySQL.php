@@ -210,6 +210,11 @@ sql;
     {
         return $this->mysqli->insert_id;
     }
+
+    public function escape_string($string)
+    {
+        return $this->mysqli->real_escape_string($string);
+    }
 }
 
 class TableColumn
