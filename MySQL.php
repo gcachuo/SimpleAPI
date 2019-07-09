@@ -33,7 +33,7 @@ class MySQL
                 $this->mysqli = new mysqli($host, $username, $passwd, $dbname);
                 $this->dbname = $dbname;
             } else {
-                JsonResponse::sendResponse(['message' => "File 'database.json' not found."], 500);
+                JsonResponse::sendResponse(['message' => "File 'database.json' not found."], 404);
             }
         } catch (mysqli_sql_exception $exception) {
             JsonResponse::sendResponse(['message' => $exception->getMessage()], $exception->getCode());

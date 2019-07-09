@@ -32,7 +32,7 @@ class System
         $time = time();
         $decoded = JWT::decode($jwt, JWT_KEY, ['HS256']);
         if ($decoded->exp <= $time) {
-            JsonResponse::sendResponse(['message' => 'The  token has expired.'], HTTPStatusCodes::Unauthorized);
+            JsonResponse::sendResponse(['message' => 'The token has expired.'], HTTPStatusCodes::Unauthorized);
         }
         return json_decode(json_encode($decoded), true)['data'];
     }
@@ -255,8 +255,8 @@ class System
 
 class JsonResponse
 {
-    private $response, $error, $code, $json;
-    private static $alreadySent = false;
+    private $response, $error, $code;
+    private static $alreadySent = false, $json;
 
     static function sendResponse(array $response, $code = null)
     {
@@ -266,6 +266,7 @@ class JsonResponse
     private function __construct(array $response, $code = null)
     {
         if (self::$alreadySent and $code !== HTTPStatusCodes::OK) {
+            $this->send_response();
             exit;
         }
         if (!empty($code)) {
@@ -284,7 +285,7 @@ class JsonResponse
     private function send_response()
     {
         ob_clean();
-        die($this->json);
+        die(self::$json);
     }
 
     private function json_encode()
@@ -302,7 +303,7 @@ class JsonResponse
             if (DEBUG_MODE) $error = json_last_error_msg();
             JsonResponse::sendResponse(compact('message', 'error'), HTTPStatusCodes::InternalServerError);
         } else {
-            $this->json = $json;
+            self::$json = $json;
         }
         if (!empty($this->error)) {
             $error = $this->error;
