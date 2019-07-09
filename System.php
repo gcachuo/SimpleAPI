@@ -215,14 +215,19 @@ class System
         JsonResponse::sendResponse(['message' => "Endpoint not found."], HTTPStatusCodes::NotFound);
     }
 
+    /**
+     * @param array $array
+     * @param array $required
+     * @param string $message
+     */
     public static function check_value_empty($array, $required, $message)
     {
         $required = array_flip($required);
-        $intersect = array_intersect_key($array, $required);
+        $intersect = array_intersect_key($array ?: $required, $required);
         $empty_values = '';
         foreach ($intersect as $key => $value) {
             $value = trim($value);
-            if (empty($value)) {
+            if (empty($value) and $value !== "0") {
                 $empty_values .= $key . ',';
             }
         }
