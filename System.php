@@ -139,7 +139,7 @@ class System
 
         define('REQUEST_METHOD', $_SERVER['REQUEST_METHOD']);
         define('DEBUG_MODE', preg_match('/Mozilla/', $_SERVER['HTTP_USER_AGENT']) != 1);
-        define('JWT_KEY', file_get_contents('Config/.jwt_key'));
+        define('JWT_KEY', file_exists('Config/.jwt_key') ? file_get_contents('Config/.jwt_key') : null);
         define('DIR', $config['DIR']);
 
         $entry = (file_get_contents('php://input'));
