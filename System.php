@@ -126,6 +126,7 @@ class System
         createDir('Config');
         createDir('Controller');
         createDir('Model');
+        createDir('Helper');
         createDir('Data');
 
         createConfig();
