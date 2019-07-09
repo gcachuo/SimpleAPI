@@ -117,7 +117,9 @@ class System
         {
             file_put_contents(DIR . '/../Config/.jwt_key', '');
             file_put_contents(DIR . '/../Config/.gitignore', '.jwt_key');
+            file_put_contents(DIR . '/../Config/.gitignore', 'database.json');
             chmod(DIR . '/../Config/.jwt_key', 0777);
+            chmod(DIR . '/../Config/database.json', 0777);
             chmod(DIR . '/../Config/.gitignore', 0777);
         }
 
