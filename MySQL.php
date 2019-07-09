@@ -51,7 +51,7 @@ class MySQL
         try {
             if (!empty($sql)) {
                 if ($multi) {
-                    $this->mysqli->multi_query($sql);
+                    return $this->mysqli->multi_query($sql);
                 } else {
                     return $this->mysqli->query($sql);
                 }
@@ -201,7 +201,12 @@ class MySQL
             $sql = <<<sql
 CREATE TABLE IF NOT EXISTS `$table`($sql_columns);
 sql;
-            $this->query($sql . $extra_sql, true);
+            try {
+                $this->mysqli->query("DESCRIBE `$table`");
+            } catch (mysqli_sql_exception $exception) {
+                $sql .= $extra_sql;
+            }
+            $result = $this->query($sql, true);
             return true;
         }
     }
