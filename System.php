@@ -101,7 +101,7 @@ class System
         {
             if (!is_dir(DIR . "/../$dir/")) {
                 mkdir(DIR . "/../$dir/", 0777, true);
-                chmod(DIR . "/../$dir/", 0777);
+                @chmod(DIR . "/../$dir/", 0777);
             }
         }
 
@@ -109,18 +109,18 @@ class System
         {
             if (!file_exists(DIR . "/../$file")) {
                 copy(DIR . "/files/$file", DIR . "/../$file");
-                chmod(DIR . "/../$file", 0777);
+                @chmod(DIR . "/../$file", 0777);
             }
         }
 
         function createConfig()
         {
             file_put_contents(DIR . '/../Config/.jwt_key', '');
-            file_put_contents(DIR . '/../Config/.gitignore', '.jwt_key');
-            file_put_contents(DIR . '/../Config/.gitignore', 'database.json');
-            chmod(DIR . '/../Config/.jwt_key', 0777);
-            chmod(DIR . '/../Config/database.json', 0777);
-            chmod(DIR . '/../Config/.gitignore', 0777);
+            file_put_contents(DIR . '/../Config/database.json', json_encode(["host" => "", "username" => "", "passwd" => "", "dbname" => ""]));
+            file_put_contents(DIR . '/../Config/.gitignore', join("\n", ['.jwt_key', 'database.json']));
+            @chmod(DIR . '/../Config/.jwt_key', 0777);
+            @chmod(DIR . '/../Config/database.json', 0777);
+            @chmod(DIR . '/../Config/.gitignore', 0777);
         }
 
         createDir('Config');
@@ -140,8 +140,8 @@ class System
     {
         global $_PATCH;
 
-        define('REQUEST_METHOD', $_SERVER['REQUEST_METHOD']);
-        define('DEBUG_MODE', preg_match('/Mozilla/', $_SERVER['HTTP_USER_AGENT']) != 1);
+        define('REQUEST_METHOD', System::isset_get($_SERVER['REQUEST_METHOD']));
+        define('DEBUG_MODE', preg_match('/Mozilla/', System::isset_get($_SERVER['HTTP_USER_AGENT'])) != 1);
         define('JWT_KEY', file_exists('Config/.jwt_key') ? file_get_contents('Config/.jwt_key') : null);
         define('DIR', $config['DIR']);
 
