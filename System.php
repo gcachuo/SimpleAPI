@@ -84,6 +84,7 @@ class System
         setcookie('XDEBUG_SESSION', 'PHPSTORM');
         error_reporting(E_ALL);
         ini_set('display_errors', 1);
+        ini_set('always_populate_raw_post_data', -1);
         spl_autoload_register(function ($class) {
             $split = explode('\\', $class);
             $dir = $split[0];
