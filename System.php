@@ -29,12 +29,16 @@ class System
 
     public static function decode_token($jwt)
     {
-        $time = time();
-        $decoded = JWT::decode($jwt, JWT_KEY, ['HS256']);
-        if ($decoded->exp <= $time) {
-            JsonResponse::sendResponse(['message' => 'The token has expired.'], HTTPStatusCodes::Unauthorized);
+        try {
+            $time = time();
+            $decoded = JWT::decode($jwt, JWT_KEY, ['HS256']);
+            if ($decoded->exp <= $time) {
+                JsonResponse::sendResponse(['message' => 'The token has expired.'], HTTPStatusCodes::BadRequest);
+            }
+            return json_decode(json_encode($decoded), true)['data'];
+        } catch (Firebase\JWT\ExpiredException $ex) {
+            JsonResponse::sendResponse(['message' => "Problem with the user token. " . "[" . $ex->getMessage() . "]"], HTTPStatusCodes::BadRequest);
         }
-        return json_decode(json_encode($decoded), true)['data'];
     }
 
     public function init($config)
