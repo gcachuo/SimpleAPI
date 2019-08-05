@@ -79,7 +79,7 @@ class System
     {
         $path = getcwd() . "/Lib/vendor/autoload.php";
         if (!file_exists($path)) {
-            JsonResponse::sendResponse(['message' => 'Composer is not installed.'], HTTPStatusCodes::BadRequest);
+            JsonResponse::sendResponse(['message' => 'Composer is not installed.'], HTTPStatusCodes::InternalServerError);
         }
         require_once($path);
     }
@@ -150,7 +150,7 @@ class System
         createFile('.htaccess');
         createFile('index.php');
 
-        JsonResponse::sendResponse(['message' => true]);
+        JsonResponse::sendResponse([], HTTPStatusCodes::OK);
     }
 
     private static function define_constants($config)
@@ -227,7 +227,7 @@ class System
                     $message = 'Completed.';
                     $data = $response;
                 }
-                JsonResponse::sendResponse(compact('message', 'data'));
+                JsonResponse::sendResponse(compact('message', 'data'), HTTPStatusCodes::OK);
             }
         }
         JsonResponse::sendResponse(['message' => "Endpoint not found."], HTTPStatusCodes::NotFound);
@@ -287,7 +287,7 @@ class JsonResponse
     private $response, $error, $code;
     private static $alreadySent = false, $json;
 
-    static function sendResponse(array $response, $code = null)
+    static function sendResponse(array $response, $code = 400)
     {
         new JsonResponse($response, $code);
     }

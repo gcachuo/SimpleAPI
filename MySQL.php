@@ -2,6 +2,7 @@
 
 namespace Model;
 
+use HTTPStatusCodes;
 use JsonResponse;
 use mysqli;
 use mysqli_result;
@@ -33,10 +34,10 @@ class MySQL
                 $this->mysqli = new mysqli($host, $username, $passwd, $dbname);
                 $this->dbname = $dbname;
             } else {
-                JsonResponse::sendResponse(['message' => "File $filename not found."], 404);
+                JsonResponse::sendResponse(['message' => "File $filename not found."], HTTPStatusCodes::InternalServerError);
             }
         } catch (mysqli_sql_exception $exception) {
-            JsonResponse::sendResponse(['message' => $exception->getMessage()], $exception->getCode());
+            JsonResponse::sendResponse(['message' => $exception->getMessage(), 'code' => $exception->getCode()], HTTPStatusCodes::InternalServerError);
         }
     }
 
@@ -57,7 +58,7 @@ class MySQL
                 }
             }
         } catch (mysqli_sql_exception $exception) {
-            JsonResponse::sendResponse(['message' => $exception->getMessage()], $exception->getCode());
+            JsonResponse::sendResponse(['message' => $exception->getMessage(), 'code' => $exception->getCode()], HTTPStatusCodes::InternalServerError);
         }
     }
 
