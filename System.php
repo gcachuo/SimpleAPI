@@ -30,6 +30,14 @@ class System
     public static function decode_token($jwt)
     {
         try {
+
+            if (empty(JWT_KEY)) {
+                if (!file_exists('Config/.jwt_key')) {
+                    JsonResponse::sendResponse(['message' => 'Missing file .jwt_key'], HTTPStatusCodes::InternalServerError);
+                }
+                JsonResponse::sendResponse(['message' => 'JWT key is empty'], HTTPStatusCodes::InternalServerError);
+            }
+
             $time = time();
             $decoded = JWT::decode($jwt, JWT_KEY, ['HS256']);
             if ($decoded->exp <= $time) {
@@ -37,7 +45,11 @@ class System
             }
             return json_decode(json_encode($decoded), true)['data'];
         } catch (Firebase\JWT\ExpiredException $ex) {
-            JsonResponse::sendResponse(['message' => "Problem with the user token. " . "[" . $ex->getMessage() . "]"], HTTPStatusCodes::BadRequest);
+            JsonResponse::sendResponse(['message' => $ex->getMessage()], HTTPStatusCodes::BadRequest);
+        } catch (Firebase\JWT\SignatureInvalidException $ex) {
+            JsonResponse::sendResponse(['message' => $ex->getMessage()], HTTPStatusCodes::BadRequest);
+        } catch (UnexpectedValueException $ex) {
+            JsonResponse::sendResponse(['message' => 'Invalid token.'], HTTPStatusCodes::BadRequest);
         }
     }
 
