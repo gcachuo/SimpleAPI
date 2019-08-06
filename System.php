@@ -150,6 +150,8 @@ class System
         createFile('.htaccess');
         createFile('index.php');
 
+        shell_exec('cd .. && composer install');
+
         JsonResponse::sendResponse([], HTTPStatusCodes::OK);
     }
 
