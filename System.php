@@ -315,6 +315,13 @@ class JsonResponse
 
     private function send_response()
     {
+        if ($this->code >= HTTPStatusCodes::InternalServerError) {
+            $code = $this->code;
+            $status = 'error';
+            $response = $this->encode_items($this->response);
+            $error = error_get_last();
+            System::log_error(compact('status', 'code', 'response', 'error'));
+        }
         ob_clean();
         die(self::$json);
     }
@@ -335,10 +342,6 @@ class JsonResponse
             JsonResponse::sendResponse(compact('message', 'error'), HTTPStatusCodes::InternalServerError);
         } else {
             self::$json = $json;
-        }
-        if (!empty($this->error)) {
-            $error = $this->error;
-            System::log_error(compact('status', 'code', 'response', 'error'));
         }
     }
 
@@ -371,4 +374,5 @@ class HTTPStatusCodes
     const MethodNotAllowed = 405;
     const InternalServerError = 500;
     const ServiceUnavailable = 503;
+    const Forbidden = 403;
 }
