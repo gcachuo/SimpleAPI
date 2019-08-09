@@ -10,7 +10,8 @@ class System
     public static function isset_get(&$variable, $return = null)
     {
         if (isset($variable)) {
-            return $variable;
+            $variable = is_string($variable) ? trim($variable) : $variable;
+            return empty($variable) && !is_numeric($variable) ? null : $variable;
         }
         unset($variable);
         return $return;
@@ -246,7 +247,7 @@ class System
         $intersect = array_intersect_key($array ?: $required, $required);
         $empty_values = '';
         foreach ($intersect as $key => $value) {
-            $value = trim($value);
+            $value = is_string($value) ? trim($value) : $value;
             if (empty($value) and $value !== "0") {
                 $empty_values .= $key . ',';
             }
