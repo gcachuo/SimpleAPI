@@ -19,28 +19,35 @@ class System
 
     public static function encode_token(array $data)
     {
+        $jwt_key = self::get_jwt_key();
+
         $time = time();
         $token = [
             'iat' => $time,
             'exp' => $time + (60 * 60),
             'data' => $data
         ];
-        return JWT::encode($token, JWT_KEY);
+        return JWT::encode($token, $jwt_key);
+    }
+
+    private static function get_jwt_key()
+    {
+        if (empty(JWT_KEY)) {
+            if (!file_exists('Config/.jwt_key')) {
+                JsonResponse::sendResponse(['message' => 'Missing file .jwt_key'], HTTPStatusCodes::InternalServerError);
+            }
+            JsonResponse::sendResponse(['message' => 'JWT key is empty'], HTTPStatusCodes::InternalServerError);
+        }
+        return JWT_KEY;
     }
 
     public static function decode_token($jwt)
     {
         try {
-
-            if (empty(JWT_KEY)) {
-                if (!file_exists('Config/.jwt_key')) {
-                    JsonResponse::sendResponse(['message' => 'Missing file .jwt_key'], HTTPStatusCodes::InternalServerError);
-                }
-                JsonResponse::sendResponse(['message' => 'JWT key is empty'], HTTPStatusCodes::InternalServerError);
-            }
+            $jwt_key = self::get_jwt_key();
 
             $time = time();
-            $decoded = JWT::decode($jwt, JWT_KEY, ['HS256']);
+            $decoded = JWT::decode($jwt, $jwt_key, ['HS256']);
             if ($decoded->exp <= $time) {
                 JsonResponse::sendResponse(['message' => 'The token has expired.'], HTTPStatusCodes::BadRequest);
             }
@@ -71,7 +78,7 @@ class System
 
     public function startup()
     {
-        self::define_constants(['DIR' => __DIR__]);
+        self::define_constants(['DIR' => __DIR__ . '/../']);
         self::load_php_functions();
         self::create_directories();
     }
@@ -99,7 +106,7 @@ class System
         });
         include_once("MySQL.php");
         setcookie('XDEBUG_SESSION', 'PHPSTORM');
-        error_reporting(E_ALL);
+        error_reporting(E_ALL ^ E_DEPRECATED);
         ini_set('display_errors', 1);
         ini_set('always_populate_raw_post_data', -1);
         spl_autoload_register(function ($class) {
@@ -268,18 +275,37 @@ class System
         return $isJson;
     }
 
-    public static function log_error(array $error)
+    public static function log_error(array $response)
     {
         try {
             $mysql = new MySQL();
-            $error = $mysql->escape_string(print_r($error, true));
             $mysql->create_table("_errores", [
                 new TableColumn('id', ColumnTypes::BIGINT, 20, true, null, true, true),
-                new TableColumn('error', ColumnTypes::VARCHAR, 2000, true),
-                new TableColumn('fecha', ColumnTypes::TIMESTAMP, 0, true, 'current_timestamp')
+                new TableColumn('fecha', ColumnTypes::TIMESTAMP, 0, true, 'current_timestamp'),
+                new TableColumn('mensaje', ColumnTypes::VARCHAR, 2000, true),
+                new TableColumn('archivo', ColumnTypes::VARCHAR, 255),
+                new TableColumn('linea', ColumnTypes::INT, 11),
+                new TableColumn('codigo', ColumnTypes::INT, 11),
+                new TableColumn('_post', ColumnTypes::VARCHAR, 2000),
+                new TableColumn('_get', ColumnTypes::VARCHAR, 2000),
+                new TableColumn('_server', ColumnTypes::VARCHAR, 2000),
+                new TableColumn('_session', ColumnTypes::VARCHAR, 2000),
             ]);
-            $mysql->query("insert into _errores(error) values('$error')");
+            $mysql->prepare("insert into _errores values(?,?,?,?,?,?,?,?,?,?)", [
+                'isssiissss',
+                null,//id
+                null,//fecha
+                $response['error']['message'],//mensaje
+                $response['error']['file'],//archivo
+                $response['error']['line'],//linea
+                $response['error']['type'],//codigo
+                $mysql->escape_string(print_r($_POST, true)),//_post
+                $mysql->escape_string(print_r($_GET, true)),//_get
+                $mysql->escape_string(print_r($_SERVER, true)),//_server
+                $mysql->escape_string(print_r(System::isset_get($_SESSION), true)),//_session
+            ]);
         } catch (Exception $ex) {
+            ob_clean();
             die(print_r($ex, true));
         }
     }
