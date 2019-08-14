@@ -295,10 +295,10 @@ class System
                 'isssiissss',
                 null,//id
                 null,//fecha
-                $response['error']['message'],//mensaje
+                System::isset_get($response['error']['message'], $response['response']['message']),//mensaje
                 $response['error']['file'],//archivo
                 $response['error']['line'],//linea
-                $response['error']['type'],//codigo
+                System::isset_get($response['error']['type'], $response['code']),//codigo
                 $mysql->escape_string(print_r($_POST, true)),//_post
                 $mysql->escape_string(print_r($_GET, true)),//_get
                 $mysql->escape_string(print_r($_SERVER, true)),//_server
