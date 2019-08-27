@@ -1,4 +1,5 @@
 RewriteEngine on
+RewriteCond %{REQUEST_URI} !doc
 RewriteRule ^(.*)$ index.php [QSA]
 
 <IfModule mod_php5.c>
