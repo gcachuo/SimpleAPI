@@ -78,7 +78,7 @@ class System
 
     public function startup()
     {
-        self::define_constants(['DIR' => __DIR__ . '/../']);
+        self::define_constants(['DIR' => __DIR__ . '/']);
         self::load_php_functions();
         self::create_directories();
     }
