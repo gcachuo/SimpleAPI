@@ -17,7 +17,7 @@ class MySQL
      */
     private $mysqli, $dbname;
 
-    public function __construct()
+    public function __construct($dbname = null)
     {
         mysqli_report(MYSQLI_REPORT_ALL ^ MYSQLI_REPORT_INDEX);
         try {
@@ -29,7 +29,7 @@ class MySQL
                 $host = $config['host'];
                 $username = $config['username'];
                 $passwd = $config['passwd'];
-                $dbname = $config['dbname'];
+                $dbname = $dbname ?: $config['dbname'];
 
                 $this->mysqli = new mysqli($host, $username, $passwd, $dbname);
                 $this->dbname = $dbname;
@@ -37,7 +37,24 @@ class MySQL
                 JsonResponse::sendResponse(['message' => "File $filename not found."], HTTPStatusCodes::InternalServerError);
             }
         } catch (mysqli_sql_exception $exception) {
-            JsonResponse::sendResponse(['message' => $exception->getMessage(), 'code' => $exception->getCode()], HTTPStatusCodes::InternalServerError);
+            $code = $exception->getCode();
+            $error = $exception->getMessage();
+
+            switch ($code) {
+                case 1049:
+                    $mysql = new MySQL('mysql');
+                    $mysql->query(<<<sql
+CREATE DATABASE $dbname;
+sql
+);
+
+                    $error = "Database $dbname didn't exists and was created. try again";
+                    JsonResponse::sendResponse(compact('error', 'code'), HTTPStatusCodes::NotImplemented);
+                    break;
+                default:
+                    JsonResponse::sendResponse(compact('error', 'code'), HTTPStatusCodes::InternalServerError);
+                    break;
+            }
         }
     }
 
@@ -264,4 +281,5 @@ abstract class ColumnTypes
     const DATE = 'date';
     const BIT = 'bit';
     const DECIMAL = 'decimal';
+    const LONGBLOB = 'longblob';
 }
