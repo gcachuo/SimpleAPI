@@ -210,7 +210,7 @@ class System
     {
         switch (REQUEST_METHOD) {
             case 'OPTIONS':
-                JsonResponse::sendResponse([]);
+                JsonResponse::sendResponse([],HTTPStatusCodes::OK);
                 break;
             case 'PATCH':
                 global $_PATCH;
