@@ -286,7 +286,7 @@ class System
                 new TableColumn('archivo', ColumnTypes::VARCHAR, 255),
                 new TableColumn('linea', ColumnTypes::INT, 11),
                 new TableColumn('codigo', ColumnTypes::INT, 11),
-                new TableColumn('_post', ColumnTypes::VARCHAR, 2000),
+                new TableColumn('_post', ColumnTypes::LONGBLOB, 0),
                 new TableColumn('_get', ColumnTypes::VARCHAR, 2000),
                 new TableColumn('_server', ColumnTypes::VARCHAR, 2000),
                 new TableColumn('_session', ColumnTypes::VARCHAR, 2000),
