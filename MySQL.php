@@ -46,7 +46,7 @@ class MySQL
                     $mysql->query(<<<sql
 CREATE DATABASE $dbname;
 sql
-);
+                    );
 
                     $error = "Database $dbname didn't exists and was created. try again";
                     JsonResponse::sendResponse(compact('error', 'code'), HTTPStatusCodes::NotImplemented);
@@ -86,24 +86,40 @@ sql
      */
     function prepare($sql, $params)
     {
-        $this->mysqli->select_db($this->dbname);
-        $stmt = $this->mysqli->prepare($sql);
-        foreach ($params as $k => &$param) {
-            $array[] =& $param;
-        }
-        call_user_func_array(array($stmt, 'bind_param'), $params);
-        $stmt->execute();
-        $row = [];
-        $this->stmt_bind_assoc($stmt, $row);
-        $mysqli_result = [];
-        if (strpos($sql, "select") !== false) {
-            while ($stmt->fetch()) {
-                $mysqli_result[] = $this->array_copy($row);
+        try {
+            $this->mysqli->select_db($this->dbname);
+            $stmt = $this->mysqli->prepare($sql);
+            foreach ($params as $k => &$param) {
+                $array[] =& $param;
+            }
+            call_user_func_array(array($stmt, 'bind_param'), $params);
+            $stmt->execute();
+            $row = [];
+            $this->stmt_bind_assoc($stmt, $row);
+            $mysqli_result = [];
+            if (strpos($sql, "select") !== false) {
+                while ($stmt->fetch()) {
+                    $mysqli_result[] = $this->array_copy($row);
+                }
+            }
+            $stmt->free_result();
+            $stmt->close();
+            return $mysqli_result ?: [];
+
+        } catch (mysqli_sql_exception $exception) {
+            $code = $exception->getCode();
+            $message = $exception->getMessage();
+            switch ($code) {
+                case 1062:
+                    //Duplicate Entry
+                    $message = 'Duplicate Entry.';
+                    JsonResponse::sendResponse(compact( 'message'), HTTPStatusCodes::BadRequest);
+                    break;
+                default:
+                    JsonResponse::sendResponse(compact('code', 'message'), HTTPStatusCodes::InternalServerError);
+                    break;
             }
         }
-        $stmt->free_result();
-        $stmt->close();
-        return $mysqli_result ?: [];
     }
 
     function array_copy(array $array)
