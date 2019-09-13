@@ -101,7 +101,7 @@ class System
         header('Access-Control-Allow-Headers: Content-Type');
         register_shutdown_function(function () {
             if (error_get_last()) {
-                JsonResponse::sendResponse(['message' => 'A fatal error ocurred.'], HTTPStatusCodes::InternalServerError);
+                JsonResponse::sendResponse(['message' => 'A fatal error ocurred.', 'error' => error_get_last()], HTTPStatusCodes::InternalServerError);
             }
         });
         include_once("MySQL.php");
@@ -210,7 +210,7 @@ class System
     {
         switch (REQUEST_METHOD) {
             case 'OPTIONS':
-                JsonResponse::sendResponse([],HTTPStatusCodes::OK);
+                JsonResponse::sendResponse([], HTTPStatusCodes::OK);
                 break;
             case 'PATCH':
                 global $_PATCH;
@@ -357,6 +357,7 @@ class JsonResponse
     {
         $response = $this->encode_items($this->response);
         $code = $this->code;
+        $error = '';
         if (DEBUG_MODE) $error = $this->error;
         $status = $code !== HTTPStatusCodes::OK ? 'error' : 'success';
         if ($status === 'error') {
