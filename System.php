@@ -101,7 +101,14 @@ class System
         header('Access-Control-Allow-Headers: Content-Type');
         register_shutdown_function(function () {
             if (error_get_last()) {
-                JsonResponse::sendResponse(['message' => 'A fatal error ocurred.', 'error' => error_get_last()], HTTPStatusCodes::InternalServerError);
+                $error = error_get_last();
+                switch ($error['type']) {
+                    case 8:
+                        break;
+                    default:
+                        JsonResponse::sendResponse(['message' => 'A fatal error ocurred.', 'error' => $error], HTTPStatusCodes::InternalServerError);
+                        break;
+                }
             }
         });
         include_once("MySQL.php");
