@@ -113,10 +113,11 @@ sql
                 case 1062:
                     //Duplicate Entry
                     $message = 'Duplicate Entry.';
-                    JsonResponse::sendResponse(compact( 'message'), HTTPStatusCodes::BadRequest);
+                    JsonResponse::sendResponse(compact('message'), HTTPStatusCodes::BadRequest);
                     break;
                 default:
-                    JsonResponse::sendResponse(compact('code', 'message'), HTTPStatusCodes::InternalServerError);
+                    $trace = $exception->getTrace();
+                    JsonResponse::sendResponse(compact('code', 'message', 'trace'), HTTPStatusCodes::InternalServerError);
                     break;
             }
         }
