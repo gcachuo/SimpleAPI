@@ -255,6 +255,11 @@ sql;
     {
         return $this->mysqli->real_escape_string($string);
     }
+
+    public function last_error()
+    {
+        return $this->mysqli->error;
+    }
 }
 
 class TableColumn
