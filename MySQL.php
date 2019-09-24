@@ -168,13 +168,18 @@ sql
     function fetch_all($mysqli_result, $index = false, $type = MYSQLI_ASSOC)
     {
         $results = [];
-        if ($type == MYSQLI_ASSOC && !is_array($mysqli_result)) {
+        if ($type != MYSQLI_ASSOC || is_array($mysqli_result)) {
+            if (is_array($mysqli_result)) {
+                $results = $mysqli_result;
+            } elseif ($type == MYSQLI_NUM) {
+                $results = $mysqli_result->fetch_all(MYSQLI_NUM);
+            }
+        } else {
             while ($row = $mysqli_result->fetch_assoc()) {
                 array_push($results, $row);
             }
-        } elseif (is_array($mysqli_result)) {
-            $results = $mysqli_result;
         }
+
         if ($index !== false) {
             $end = [];
             foreach ($results as $result) {
