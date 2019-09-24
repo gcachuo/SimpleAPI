@@ -172,6 +172,8 @@ sql
             while ($row = $mysqli_result->fetch_assoc()) {
                 array_push($results, $row);
             }
+        } elseif (is_array($mysqli_result)) {
+            $results = $mysqli_result;
         }
         if ($index !== false) {
             $end = [];
