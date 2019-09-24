@@ -168,7 +168,7 @@ sql
     function fetch_all($mysqli_result, $index = false, $type = MYSQLI_ASSOC)
     {
         $results = [];
-        if ($type == MYSQLI_ASSOC) {
+        if ($type == MYSQLI_ASSOC && !is_array($mysqli_result)) {
             while ($row = $mysqli_result->fetch_assoc()) {
                 array_push($results, $row);
             }

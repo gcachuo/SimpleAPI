@@ -7,6 +7,11 @@ use Model\TableColumn;
 
 class System
 {
+    /**
+     * @param $variable
+     * @param null $return
+     * @return int|string|null|array
+     */
     public static function isset_get(&$variable, $return = null)
     {
         if (isset($variable)) {
