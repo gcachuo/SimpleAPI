@@ -7,6 +7,13 @@ use Model\TableColumn;
 
 class System
 {
+    public static function allowed_methods(array $methods)
+    {
+        if (!in_array(REQUEST_METHOD, $methods)) {
+            JsonResponse::sendResponse(['message' => 'Method Not Allowed'], HTTPStatusCodes::MethodNotAllowed);
+        }
+    }
+
     /**
      * @param $variable
      * @param null $return
