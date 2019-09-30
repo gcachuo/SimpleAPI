@@ -52,7 +52,8 @@ sql
                     JsonResponse::sendResponse(compact('error', 'code'), HTTPStatusCodes::NotImplemented);
                     break;
                 default:
-                    JsonResponse::sendResponse(compact('error', 'code'), HTTPStatusCodes::InternalServerError);
+                    $type='MySQL';
+                    JsonResponse::sendResponse(compact('error', 'code','type'), HTTPStatusCodes::InternalServerError);
                     break;
             }
         }
