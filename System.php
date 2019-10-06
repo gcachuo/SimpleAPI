@@ -172,10 +172,13 @@ class System
         createDir('Model');
         createDir('Helper');
         createDir('Data');
+        createDir('public');
 
         createConfig();
         createFile('.htaccess');
         createFile('index.php');
+
+        createFile('public/.htaccess');
 
         shell_exec('cd .. && composer install');
 
