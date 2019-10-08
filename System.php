@@ -123,7 +123,10 @@ class System
                 }
             }
         });
-        include_once("MySQL.php");
+
+        $pathMySQL = "MySQL.php";
+        require_once($pathMySQL);
+
         setcookie('XDEBUG_SESSION', 'PHPSTORM');
         error_reporting(E_ALL ^ E_DEPRECATED);
         ini_set('display_errors', 1);
