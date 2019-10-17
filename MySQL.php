@@ -52,8 +52,8 @@ sql
                     JsonResponse::sendResponse(compact('error', 'code'), HTTPStatusCodes::NotImplemented);
                     break;
                 default:
-                    $type='MySQL';
-                    JsonResponse::sendResponse(compact('error', 'code','type'), HTTPStatusCodes::InternalServerError);
+                    $type = 'MySQL';
+                    JsonResponse::sendResponse(compact('error', 'code', 'type'), HTTPStatusCodes::InternalServerError);
                     break;
             }
         }
@@ -223,7 +223,7 @@ sql
                 switch ($column->type) {
                     case ColumnTypes::TIMESTAMP:
                     case ColumnTypes::BIGINT:
-                    case ColumnTypes::INT:
+                    case ColumnTypes::int:
                     case ColumnTypes::BIT:
                         $default = $column->default;
                         break;
@@ -267,6 +267,19 @@ sql;
     public function last_error()
     {
         return $this->mysqli->error;
+    }
+
+    public function delete_tables(array $tables)
+    {
+        if (ENVIRONMENT == 'cli') {
+            $mysql = new MySQL();
+            foreach ($tables as $table) {
+                $sql = <<<sql
+drop table $table;
+sql;
+                $mysql->query($sql);
+            }
+        }
     }
 }
 
