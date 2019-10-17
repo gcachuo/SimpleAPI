@@ -203,11 +203,20 @@ class System
     {
         global $_PATCH;
 
-        define('ENVIRONMENT', isset($_SERVER['SHELL']) ? 'cli' : 'web');
-        define('REQUEST_METHOD', System::isset_get($_SERVER['REQUEST_METHOD']));
-        define('DEBUG_MODE', ENVIRONMENT == 'cli' || preg_match('/Mozilla/', System::isset_get($_SERVER['HTTP_USER_AGENT'])) != 1);
-        define('DIR', $config['DIR']);
-        define('JWT_KEY', file_exists(DIR . '/Config/.jwt_key') ? file_get_contents(DIR . '/Config/.jwt_key') : null);
+        if (!defined('ENVIRONMENT'))
+            define('ENVIRONMENT', isset($_SERVER['SHELL']) ? 'cli' : 'web');
+
+        if (!defined('REQUEST_METHOD'))
+            define('REQUEST_METHOD', System::isset_get($_SERVER['REQUEST_METHOD']));
+
+        if (!defined('DEBUG_MODE'))
+            define('DEBUG_MODE', ENVIRONMENT == 'cli' || preg_match('/Mozilla/', System::isset_get($_SERVER['HTTP_USER_AGENT'])) != 1);
+
+        if (!defined('DIR'))
+            define('DIR', $config['DIR']);
+
+        if (!defined('JWT_KEY'))
+            define('JWT_KEY', file_exists(DIR . '/Config/.jwt_key') ? file_get_contents(DIR . '/Config/.jwt_key') : null);
 
         $entry = (file_get_contents('php://input'));
         if (!empty($entry)) {

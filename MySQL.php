@@ -275,7 +275,7 @@ sql;
             $mysql = new MySQL();
             foreach ($tables as $table) {
                 $sql = <<<sql
-drop table $table;
+drop table if exists $table;
 sql;
                 $mysql->query($sql);
             }
