@@ -307,6 +307,7 @@ abstract class ColumnTypes
     const BIGINT = 'bigint';
     const VARCHAR = 'varchar';
     const INT = 'int';
+    const int = 'int';
     const TIMESTAMP = 'timestamp';
     const DATE = 'date';
     const BIT = 'bit';

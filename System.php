@@ -45,7 +45,7 @@ class System
     private static function get_jwt_key()
     {
         if (empty(JWT_KEY)) {
-            if (!file_exists('Config/.jwt_key')) {
+            if (!file_exists(DIR . '/Config/.jwt_key')) {
                 JsonResponse::sendResponse(['message' => 'Missing file .jwt_key'], HTTPStatusCodes::InternalServerError);
             }
             JsonResponse::sendResponse(['message' => 'JWT key is empty'], HTTPStatusCodes::InternalServerError);
@@ -83,9 +83,13 @@ class System
 
         self::load_composer();
 
-        self::convert_endpoint($controller, $action, $id);
+        if (ENVIRONMENT == 'web') {
+            self::convert_endpoint($controller, $action, $id);
 
-        self::call_action($controller, $action, $id);
+            self::call_action($controller, $action, $id);
+        } else {
+            ob_end_clean();
+        }
     }
 
     public function startup()
@@ -97,20 +101,28 @@ class System
 
     private static function load_composer()
     {
-        $path = getcwd() . "/Lib/vendor/autoload.php";
+        $pathLib = DIR . "/Lib/vendor/autoload.php";
+        $path = DIR . "/vendor/autoload.php";
+        if (!file_exists($pathLib)) {
+            JsonResponse::sendResponse(['message' => 'Composer is not installed on Lib.'], HTTPStatusCodes::InternalServerError);
+        }
         if (!file_exists($path)) {
             JsonResponse::sendResponse(['message' => 'Composer is not installed.'], HTTPStatusCodes::InternalServerError);
         }
+        require_once($pathLib);
         require_once($path);
     }
 
     private static function load_php_functions()
     {
         ob_start();
-        header('Content-Type: application/json');
-        header('Access-Control-Allow-Origin: *');
-        header('Access-Control-Allow-Methods: POST, GET, OPTIONS, PATCH, DELETE');
-        header('Access-Control-Allow-Headers: Content-Type, dataType, contenttype, processdata');
+        if (ENVIRONMENT == 'web') {
+            header('Content-Type: application/json');
+            header('Access-Control-Allow-Origin: *');
+            header('Access-Control-Allow-Methods: POST, GET, OPTIONS, PATCH, DELETE');
+            header('Access-Control-Allow-Headers: Content-Type, dataType, contenttype, processdata');
+            setcookie('XDEBUG_SESSION', 'PHPSTORM');
+        }
         register_shutdown_function(function () {
             if (error_get_last()) {
                 $error = error_get_last();
@@ -127,7 +139,6 @@ class System
         $pathMySQL = "MySQL.php";
         require_once($pathMySQL);
 
-        setcookie('XDEBUG_SESSION', 'PHPSTORM');
         error_reporting(E_ALL ^ E_DEPRECATED);
         ini_set('display_errors', 1);
         ini_set('always_populate_raw_post_data', -1);
@@ -192,10 +203,11 @@ class System
     {
         global $_PATCH;
 
+        define('ENVIRONMENT', isset($_SERVER['SHELL']) ? 'cli' : 'web');
         define('REQUEST_METHOD', System::isset_get($_SERVER['REQUEST_METHOD']));
-        define('DEBUG_MODE', preg_match('/Mozilla/', System::isset_get($_SERVER['HTTP_USER_AGENT'])) != 1);
-        define('JWT_KEY', file_exists('Config/.jwt_key') ? file_get_contents('Config/.jwt_key') : null);
+        define('DEBUG_MODE', ENVIRONMENT == 'cli' || preg_match('/Mozilla/', System::isset_get($_SERVER['HTTP_USER_AGENT'])) != 1);
         define('DIR', $config['DIR']);
+        define('JWT_KEY', file_exists(DIR . '/Config/.jwt_key') ? file_get_contents(DIR . '/Config/.jwt_key') : null);
 
         $entry = (file_get_contents('php://input'));
         if (!empty($entry)) {
@@ -309,8 +321,8 @@ class System
                 new TableColumn('fecha', ColumnTypes::TIMESTAMP, 0, true, 'current_timestamp'),
                 new TableColumn('mensaje', ColumnTypes::VARCHAR, 2000, true),
                 new TableColumn('archivo', ColumnTypes::VARCHAR, 255),
-                new TableColumn('linea', ColumnTypes::INT, 11),
-                new TableColumn('codigo', ColumnTypes::INT, 11),
+                new TableColumn('linea', ColumnTypes::int, 11),
+                new TableColumn('codigo', ColumnTypes::int, 11),
                 new TableColumn('_post', ColumnTypes::LONGBLOB, 0),
                 new TableColumn('_get', ColumnTypes::VARCHAR, 2000),
                 new TableColumn('_server', ColumnTypes::VARCHAR, 2000),
@@ -321,8 +333,8 @@ class System
                 null,//id
                 null,//fecha
                 System::isset_get($response['error']['message'], $response['response']['message']),//mensaje
-                $response['error']['file'],//archivo
-                $response['error']['line'],//linea
+                System::isset_get($response['error']['file']),//archivo
+                System::isset_get($response['error']['line']),//linea
                 System::isset_get($response['error']['type'], $response['code']),//codigo
                 $mysql->escape_string(print_r($_POST, true)),//_post
                 $mysql->escape_string(print_r($_GET, true)),//_get
@@ -375,7 +387,10 @@ class JsonResponse
             System::log_error(compact('status', 'code', 'response', 'error'));
         }
         ob_clean();
-        die(self::$json);
+        if (ENVIRONMENT == 'web') {
+            die(self::$json);
+        }
+        die(print_r(json_decode(self::$json, true), true));
     }
 
     private function json_encode()
