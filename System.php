@@ -191,10 +191,12 @@ class System
         createConfig();
         createFile('.htaccess');
         createFile('index.php');
+        createFile('composer.json');
+        createFile('.gitignore');
 
         createFile('public/.htaccess');
 
-        shell_exec('cd .. && composer install');
+        shell_exec('cd .. && composer install && cd .. && composer install');
 
         JsonResponse::sendResponse([], HTTPStatusCodes::OK);
     }
