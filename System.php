@@ -359,6 +359,48 @@ class System
     }
 }
 
+class Stopwatch
+{
+    private $lap_start = 0;
+    private $begin = 0;
+    private $measure_points = array();
+
+    function start()
+    {
+        $this->begin = microtime(true);
+        $this->lap_start = $this->begin;
+    }
+
+    function lap_end($name)
+    {
+        $time = microtime(true) - $this->lap_start;
+        $this->measure_points[$name] = $time;
+        $this->lap_start = microtime(true);
+    }
+
+    function end($name)
+    {
+        $time = microtime(true) - $this->lap_start;
+        $this->measure_points[$name] = $time;
+    }
+
+    function report()
+    {
+        if (ENVIRONMENT !== 'cli') {
+            return;
+        }
+        $total = 0;
+        foreach ($this->measure_points as $key => $data) {
+            $total = $total + $data;
+        }
+        foreach ($this->measure_points as $key => $data) {
+            $percent = $data / ($total / 100);
+            echo (str_pad($key, 35) . ' : ' . number_format($data, 8) . ' (' . number_format($percent, 2) . '%)') . "\n";
+        }
+        echo (str_pad('Total', 35) . ' : ' . number_format($total, 8)) . "\n";
+    }
+}
+
 class JsonResponse
 {
     private $response, $error, $code;
@@ -429,6 +471,8 @@ class JsonResponse
         foreach ($array as $key => $value) {
             if (is_array($value)) {
                 $array[$key] = $this->encode_items($value);
+            } elseif (is_object($value)) {
+
             } else {
                 if (!mb_detect_encoding($value, 'UTF-8', true)) {
                     $array[$key] = utf8_encode($value);
