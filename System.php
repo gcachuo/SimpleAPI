@@ -126,12 +126,14 @@ class System
         register_shutdown_function(function () {
             if (error_get_last()) {
                 $error = error_get_last();
-                switch ($error['type']) {
-                    case 8:
-                        break;
-                    default:
-                        JsonResponse::sendResponse(['message' => 'A fatal error ocurred.', 'error' => $error], HTTPStatusCodes::InternalServerError);
-                        break;
+                if (!strpos($error['file'], 'vendor')) {
+                    switch ($error['type']) {
+                        case 8:
+                            break;
+                        default:
+                            JsonResponse::sendResponse(['message' => 'A fatal error ocurred.', 'error' => $error], HTTPStatusCodes::InternalServerError);
+                            break;
+                    }
                 }
             }
         });
