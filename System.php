@@ -7,13 +7,6 @@ use Model\TableColumn;
 
 class System
 {
-    public static function allowed_methods(array $methods)
-    {
-        if (!in_array(REQUEST_METHOD, $methods)) {
-            JsonResponse::sendResponse(['message' => 'Method Not Allowed'], HTTPStatusCodes::MethodNotAllowed);
-        }
-    }
-
     /**
      * @param $variable
      * @param null $return
@@ -277,18 +270,17 @@ class System
         $response = null;
         $namespace = "Controller\\$controller";
         if (class_exists($namespace)) {
+            /** @var $class Controller */
             $class = new $namespace();
-            if (method_exists($class, $action)) {
-                $response = $class->$action($id);
-                if (!is_array($response)) {
-                    $message = $response;
-                    $data = null;
-                } else {
-                    $message = 'Completed.';
-                    $data = $response;
-                }
-                JsonResponse::sendResponse(compact('message', 'data'), HTTPStatusCodes::OK);
+            $response = $class->$action($id);
+            if (!is_array($response)) {
+                $message = $response;
+                $data = null;
+            } else {
+                $message = 'Completed.';
+                $data = $response;
             }
+            JsonResponse::sendResponse(compact('message', 'data'), HTTPStatusCodes::OK);
         }
         JsonResponse::sendResponse(['message' => "Endpoint not found."], HTTPStatusCodes::NotFound);
     }
@@ -358,6 +350,39 @@ class System
             ob_clean();
             die(print_r($ex, true));
         }
+    }
+}
+
+class Controller
+{
+    private $_methods;
+    private static $_response;
+
+    public function __construct($methods)
+    {
+        $this->_methods = $methods;
+        $this->allowed_methods($methods);
+    }
+
+    public function __call($action, $arguments)
+    {
+        $name = System::isset_get($this->_methods[REQUEST_METHOD][$action]);
+        if ($name) {
+            return $this->$name();
+        }
+        JsonResponse::sendResponse(['message' => "Endpoint not found."], HTTPStatusCodes::NotFound);
+    }
+
+    private function allowed_methods(array $methods)
+    {
+        if (!isset($methods[REQUEST_METHOD])) {
+            JsonResponse::sendResponse(['message' => 'Method Not Allowed'], HTTPStatusCodes::MethodNotAllowed);
+        }
+    }
+
+    public function method_exists(Controller $class, $action)
+    {
+        return method_exists($class, $this->_methods[REQUEST_METHOD][$action]);
     }
 }
 
