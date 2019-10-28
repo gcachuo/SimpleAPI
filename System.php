@@ -68,7 +68,7 @@ class System
 
     public function init($config)
     {
-        global $_PATCH;
+        global $_PATCH, $_PUT;
 
         self::define_constants($config);
 
@@ -198,7 +198,7 @@ class System
 
     private static function define_constants($config)
     {
-        global $_PATCH;
+        global $_PATCH, $_PUT;
 
         if (!defined('ENVIRONMENT'))
             define('ENVIRONMENT', isset($_SERVER['SHELL']) ? 'cli' : 'web');
@@ -220,10 +220,13 @@ class System
             if (self::isJson($entry)) {
                 $entry = http_build_query(json_decode($entry, true));
             }
+
+            parse_str($entry, ${'_' . REQUEST_METHOD});
             if (REQUEST_METHOD === 'POST') {
                 parse_str($entry, $_POST);
-            } else if (REQUEST_METHOD === 'PATCH') {
-                parse_str($entry, $_PATCH);
+            }
+            if (REQUEST_METHOD === 'GET') {
+                parse_str($entry, $_GET);
             }
         }
     }
@@ -275,12 +278,14 @@ class System
             $response = $class->$action($id);
             if (!is_array($response)) {
                 $message = $response;
-                $data = null;
             } else {
                 $message = 'Completed.';
-                $data = $response;
+                if ($response) {
+                    $data = $response;
+                    JsonResponse::sendResponse(compact('message', 'data'), HTTPStatusCodes::OK);
+                }
             }
-            JsonResponse::sendResponse(compact('message', 'data'), HTTPStatusCodes::OK);
+            JsonResponse::sendResponse(compact('message'), HTTPStatusCodes::OK);
         }
         JsonResponse::sendResponse(['message' => "Endpoint not found."], HTTPStatusCodes::NotFound);
     }
@@ -368,7 +373,7 @@ class Controller
     {
         $name = System::isset_get($this->_methods[REQUEST_METHOD][$action]);
         if ($name) {
-            return $this->$name();
+            return $this->$name(...$arguments);
         }
         JsonResponse::sendResponse(['message' => "Endpoint not found."], HTTPStatusCodes::NotFound);
     }
