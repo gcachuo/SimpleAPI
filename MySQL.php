@@ -113,8 +113,13 @@ sql
             switch ($code) {
                 case 1062:
                     //Duplicate Entry
-                    $message = 'Duplicate Entry.';
-                    JsonResponse::sendResponse(compact('message'), HTTPStatusCodes::BadRequest);
+                    $message = 'Duplicate entry.';
+                    JsonResponse::sendResponse(compact('message'));
+                    break;
+                case 1452:
+                    //Foreign Key
+                    $message = 'A Foreign Key constraint fails.';
+                    JsonResponse::sendResponse(compact('message'));
                     break;
                 default:
                     $trace = $exception->getTrace();
@@ -250,8 +255,9 @@ sql;
                 $sql .= $extra_sql;
             }
             $result = $this->query($sql, true);
-            return true;
+            return false;
         }
+        return true;
     }
 
     public function insertID()
@@ -319,8 +325,8 @@ abstract class ColumnTypes
 {
     const BIGINT = 'bigint';
     const VARCHAR = 'varchar';
-    const INT = 'int';
     const int = 'int';
+    const INT = 'int';
     const TIMESTAMP = 'timestamp';
     const DATE = 'date';
     const BIT = 'bit';
