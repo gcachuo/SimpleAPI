@@ -81,11 +81,11 @@ sql
     }
 
     /**
-     * @param $sql
-     * @param $params
+     * @param string $sql
+     * @param array $params
      * @return false|mysqli_result|array
      */
-    function prepare($sql, $params)
+    function prepare(string $sql, array $params)
     {
         try {
             $this->mysqli->select_db($this->dbname);
