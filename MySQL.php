@@ -228,7 +228,7 @@ sql
                 switch ($column->type) {
                     case ColumnTypes::TIMESTAMP:
                     case ColumnTypes::BIGINT:
-                    case ColumnTypes::int:
+                    case ColumnTypes::INTEGER:
                     case ColumnTypes::BIT:
                         $default = $column->default;
                         break;
@@ -325,8 +325,7 @@ abstract class ColumnTypes
 {
     const BIGINT = 'bigint';
     const VARCHAR = 'varchar';
-    const int = 'int';
-    const INT = 'int';
+    const INTEGER = 'int';
     const TIMESTAMP = 'timestamp';
     const DATE = 'date';
     const BIT = 'bit';

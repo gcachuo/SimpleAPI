@@ -260,10 +260,6 @@ class System
                 break;
             case 'PATCH':
                 global $_PATCH;
-
-                if (!empty($_PATCH)) {
-                    $_POST = $_PATCH;
-                }
                 if (empty($id)) {
                     JsonResponse::sendResponse(['message' => 'Request Method PATCH needs an ID to work'], HTTPStatusCodes::BadRequest);
                 }
