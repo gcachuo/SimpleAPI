@@ -460,7 +460,7 @@ class JsonResponse
 
     private function send_response()
     {
-        if ($this->code >= HTTPStatusCodes::InternalServerError) {
+        if ($this->code >= HTTPStatusCodes::BadRequest) {
             $code = $this->code;
             $status = 'error';
             $response = $this->encode_items($this->response);
