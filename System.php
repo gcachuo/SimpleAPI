@@ -15,8 +15,11 @@ class System
     public static function isset_get(&$variable, $return = null)
     {
         if (isset($variable)) {
+            if(empty($variable)){
+                return $return;
+            }
             $variable = is_string($variable) ? trim($variable) : $variable;
-            return empty($variable) && !is_numeric($variable) ? null : $variable;
+            return $variable;
         }
         unset($variable);
         return $return;
