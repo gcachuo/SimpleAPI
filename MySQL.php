@@ -247,7 +247,9 @@ sql
             $sql_columns = trim($sql_columns, ',');
 
             $sql = <<<sql
-CREATE TABLE IF NOT EXISTS `$table`($sql_columns);
+CREATE TABLE IF NOT EXISTS `$table`($sql_columns) 
+ENGINE = InnoDB
+CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 sql;
             try {
                 $this->mysqli->query("DESCRIBE `$table`");

@@ -204,7 +204,7 @@ class System
         global $_PATCH, $_PUT;
 
         if (!defined('ENVIRONMENT'))
-            define('ENVIRONMENT', isset($_SERVER['SHELL']) ? 'cli' : 'web');
+            define('ENVIRONMENT', isset($_SERVER['SHELL'])||isset($_SERVER['argv']) ? 'cli' : 'web');
 
         if (!defined('REQUEST_METHOD'))
             define('REQUEST_METHOD', System::isset_get($_SERVER['REQUEST_METHOD']));
@@ -330,8 +330,8 @@ class System
                 new TableColumn('fecha', ColumnTypes::TIMESTAMP, 0, true, 'current_timestamp'),
                 new TableColumn('mensaje', ColumnTypes::VARCHAR, 2000, true),
                 new TableColumn('archivo', ColumnTypes::VARCHAR, 255),
-                new TableColumn('linea', ColumnTypes::int, 11),
-                new TableColumn('codigo', ColumnTypes::int, 11),
+                new TableColumn('linea', ColumnTypes::INTEGER, 11),
+                new TableColumn('codigo', ColumnTypes::INTEGER, 11),
                 new TableColumn('_post', ColumnTypes::LONGBLOB, 0),
                 new TableColumn('_get', ColumnTypes::VARCHAR, 2000),
                 new TableColumn('_server', ColumnTypes::VARCHAR, 2000),
