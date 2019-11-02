@@ -7,6 +7,17 @@ use Model\TableColumn;
 
 class System
 {
+    public static function cli_echo(string $string, string $color = null)
+    {
+        $color = [
+                'red' => '01;31',
+                'green' => '0;32',
+                'blue' => '0;34',
+                'yellow' => '1;33'
+            ][$color] ?? '';
+        echo "\033[{$color}m " . $string . " \033[0m" . "\n";
+    }
+
     /**
      * @param $variable
      * @param null $return
@@ -15,7 +26,7 @@ class System
     public static function isset_get(&$variable, $return = null)
     {
         if (isset($variable)) {
-            if(empty($variable)){
+            if (empty($variable)) {
                 return $return;
             }
             $variable = is_string($variable) ? trim($variable) : $variable;
@@ -204,7 +215,7 @@ class System
         global $_PATCH, $_PUT;
 
         if (!defined('ENVIRONMENT'))
-            define('ENVIRONMENT', isset($_SERVER['SHELL'])||isset($_SERVER['argv']) ? 'cli' : 'web');
+            define('ENVIRONMENT', isset($_SERVER['SHELL']) || isset($_SERVER['argv']) ? 'cli' : 'web');
 
         if (!defined('REQUEST_METHOD'))
             define('REQUEST_METHOD', System::isset_get($_SERVER['REQUEST_METHOD']));
@@ -394,7 +405,9 @@ class Stopwatch
 {
     private $lap_start = 0;
     private $begin = 0;
-    private $measure_points = array();
+    public $measure_points = array();
+    private static $_Instance;
+    private $total;
 
     function start()
     {
@@ -413,22 +426,33 @@ class Stopwatch
     {
         $time = microtime(true) - $this->lap_start;
         $this->measure_points[$name] = $time;
-    }
 
-    function report()
-    {
-        if (ENVIRONMENT !== 'cli') {
-            return;
-        }
         $total = 0;
         foreach ($this->measure_points as $key => $data) {
             $total = $total + $data;
         }
-        foreach ($this->measure_points as $key => $data) {
-            $percent = $data / ($total / 100);
-            echo (str_pad($key, 35) . ' : ' . number_format($data, 8) . ' (' . number_format($percent, 2) . '%)') . "\n";
+        $this->total = $total;
+
+        self::$_Instance[$name] = $this;
+    }
+
+    static function report($name = null)
+    {
+        if (ENVIRONMENT !== 'cli') {
+            return null;
         }
-        echo (str_pad('Total', 35) . ' : ' . number_format($total, 8)) . "\n";
+        if (!$name) {
+            return self::$_Instance;
+        }
+        System::cli_echo(str_pad($name, 35), 'yellow');
+        $_this = self::$_Instance[$name];
+        foreach ($_this->measure_points as $key => $data) {
+            $percent = $data / ($_this->total / 100);
+            System::cli_echo(str_pad($key, 35) . ' : ' . number_format($data, 8) . ' (' . number_format($percent, 2) . '%)', 'blue');
+        }
+
+        System::cli_echo(str_pad('Total', 35) . ' : ' . number_format($_this->total, 8), 'green');
+        return $_this->total;
     }
 }
 
