@@ -59,6 +59,11 @@ sql
         }
     }
 
+    public function database()
+    {
+        return $this->dbname;
+    }
+
     public static function default_values(&$values, $keys)
     {
         $values = array_merge(array_fill_keys($keys, null), $values);
