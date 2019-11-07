@@ -197,6 +197,8 @@ class System
         createDir('Helper');
         createDir('Data');
         createDir('public');
+        createDir('Tests');
+        createDir('Tests/Data');
 
         createConfig();
         createFile('.htaccess');
