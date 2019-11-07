@@ -14,7 +14,7 @@ class System
                 'green' => '0;32',
                 'blue' => '0;34',
                 'yellow' => '1;33'
-            ][$color] ?? '';
+            ][$color];
         echo "\033[{$color}m " . $string . " \033[0m" . "\n";
     }
 
