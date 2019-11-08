@@ -7,6 +7,26 @@ use Model\TableColumn;
 
 class System
 {
+    public static function admin_log(int $id_usuario, string $mensaje)
+    {
+        try {
+            $mysql = new MySQL();
+            $mysql->create_table('_admin_log', [
+                new TableColumn('id_admin_log', ColumnTypes::BIGINT, 20, true, null, true, true),
+                new TableColumn('id_usuario', ColumnTypes::BIGINT, 20, true),
+                new TableColumn('fecha',ColumnTypes::TIMESTAMP,0,false,'current_timestamp'),
+                new TableColumn('mensaje',ColumnTypes::LONGBLOB)
+            ]);
+            $mysql->prepare(<<<sql
+insert into _admin_log values(null,?,current_timestamp,?);
+sql
+                , ['is', $id_usuario, $mensaje]);
+        } catch (Exception $ex) {
+            ob_clean();
+            die(print_r($ex, true));
+        }
+    }
+
     public static function cli_echo(string $string, string $color = null)
     {
         $color = [
@@ -188,6 +208,7 @@ class System
             file_put_contents(DIR . '/../Config/.gitignore', join("\n", ['.jwt_key', 'database.json']));
             @chmod(DIR . '/../Config/.jwt_key', 0777);
             @chmod(DIR . '/../Config/database.json', 0777);
+            @chmod(DIR . '/../Config/database.prod.json', 0777);
             @chmod(DIR . '/../Config/.gitignore', 0777);
         }
 
