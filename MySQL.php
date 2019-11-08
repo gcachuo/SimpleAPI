@@ -90,7 +90,7 @@ sql
      * @param array $params
      * @return false|mysqli_result|array
      */
-    function prepare(string $sql, array $params)
+    function prepare($sql, array $params)
     {
         try {
             $this->mysqli->select_db($this->dbname);
