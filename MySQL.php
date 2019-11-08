@@ -103,7 +103,7 @@ sql
             $row = [];
             $this->stmt_bind_assoc($stmt, $row);
             $mysqli_result = [];
-            if (strpos($sql, "select") !== false) {
+            if (stripos($sql, "select") !== false) {
                 while ($stmt->fetch()) {
                     $mysqli_result[] = $this->array_copy($row);
                 }

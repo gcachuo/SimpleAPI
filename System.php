@@ -14,8 +14,8 @@ class System
             $mysql->create_table('_admin_log', [
                 new TableColumn('id_admin_log', ColumnTypes::BIGINT, 20, true, null, true, true),
                 new TableColumn('id_usuario', ColumnTypes::BIGINT, 20, true),
-                new TableColumn('fecha',ColumnTypes::TIMESTAMP,0,false,'current_timestamp'),
-                new TableColumn('mensaje',ColumnTypes::LONGBLOB)
+                new TableColumn('fecha', ColumnTypes::TIMESTAMP, 0, false, 'current_timestamp'),
+                new TableColumn('mensaje', ColumnTypes::LONGBLOB)
             ]);
             $mysql->prepare(<<<sql
 insert into _admin_log values(null,?,current_timestamp,?);
@@ -262,6 +262,11 @@ sql
             parse_str($entry, ${'_' . REQUEST_METHOD});
             if (REQUEST_METHOD === 'POST') {
                 parse_str($entry, $_POST);
+                if (!empty($_POST['form'])) {
+                    parse_str($_POST["form"], $_POST["form"]);
+                    $_POST = array_merge($_POST, $_POST["form"]);
+                    unset($_POST["form"]);
+                }
             }
             if (REQUEST_METHOD === 'GET') {
                 parse_str($entry, $_GET);
@@ -385,7 +390,7 @@ sql
                 $mysql->escape_string(print_r($_SERVER, true)),//_server
                 $mysql->escape_string(print_r(System::isset_get($_SESSION), true)),//_session
             ]);
-        } catch (Exception $ex) {
+        } catch (mysqli_sql_exception $ex) {
             ob_clean();
             die(print_r($ex, true));
         }
@@ -522,7 +527,8 @@ class JsonResponse
         if (ENVIRONMENT == 'web') {
             die(self::$json);
         }
-        die(print_r(json_decode(self::$json, true), true));
+        $exception = json_decode(self::$json, true);
+        throw new JsonException($exception['response']['message'], $exception['code']);
     }
 
     private function json_encode()
