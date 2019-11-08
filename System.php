@@ -72,7 +72,7 @@ sql
 
     public static function get_config()
     {
-        $path = getcwd() . "/Config";
+        $path = DIR . "/Config";
         $env = file_exists("$path/config.dev.json") ? "dev" : "prod";
 
         $ruta = "$path/config.$env.json";
@@ -86,7 +86,7 @@ sql
         return json_decode($json, false);
     }
 
-    public static function set_language(string $idioma)
+    public static function set_language(stdClass $idioma)
     {
         self::$idioma = $idioma;
     }
