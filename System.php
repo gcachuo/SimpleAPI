@@ -7,6 +7,38 @@ use Model\TableColumn;
 
 class System
 {
+    /**
+     * @var string
+     */
+    private static $idioma;
+
+    /**
+     * @param string $json
+     * @param bool $assoc
+     * @return object|array
+     */
+    static function json_decode($json, $assoc)
+    {
+        $json = json_decode($json, $assoc);
+        $error = json_last_error();
+        switch ($error) {
+            case 0:
+                //No Error
+                break;
+            case 5:
+                //Malformed UTF-8 characters, possibly incorrectly encoded
+                array_walk_recursive($array, function (&$item) {
+                    $item = utf8_encode($item);
+                });
+                $json = json_decode($json, $assoc);
+                break;
+            default:
+                $json = json_last_error_msg();
+                break;
+        }
+        return $json;
+    }
+
     public static function admin_log(int $id_usuario, string $mensaje)
     {
         try {
@@ -36,6 +68,27 @@ sql
                 'yellow' => '1;33'
             ][$color] ?? '';
         echo "\033[{$color}m " . $string . " \033[0m" . "\n";
+    }
+
+    public static function get_config()
+    {
+        $path = getcwd() . "/Config";
+        $env = file_exists("$path/config.dev.json") ? "dev" : "prod";
+
+        $ruta = "$path/config.$env.json";
+        if (!file_exists($ruta)) {
+            $ruta = $path . "/config.$env.json";
+            if (!file_exists($ruta)) {
+                JsonResponse::sendResponse(['message'=>"No existe el archivo de configuración $ruta"],HTTPStatusCodes::InternalServerError);
+            }
+        }
+        $json = file_get_contents($ruta);
+        return json_decode($json, false);
+    }
+
+    public static function set_language(string $idioma)
+    {
+        self::$idioma = $idioma;
     }
 
     /**
