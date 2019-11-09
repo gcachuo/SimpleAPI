@@ -320,6 +320,11 @@ sql
                     $_POST = array_merge($_POST, $_POST["form"]);
                     unset($_POST["form"]);
                 }
+                if (!empty($_POST['aside'])) {
+                    parse_str($_POST["aside"], $_POST["aside"]);
+                    $_POST = array_merge($_POST, $_POST["aside"]);
+                    unset($_POST["aside"]);
+                }
             }
             if (REQUEST_METHOD === 'GET') {
                 parse_str($entry, $_GET);
