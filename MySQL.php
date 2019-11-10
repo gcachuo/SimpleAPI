@@ -335,6 +335,7 @@ abstract class ColumnTypes
     const INTEGER = 'int';
     const TIMESTAMP = 'timestamp';
     const DATE = 'date';
+    const DATETIME = 'datetime';
     const BIT = 'bit';
     const DECIMAL = 'decimal';
     const LONGBLOB = 'longblob';
