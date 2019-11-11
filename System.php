@@ -145,20 +145,24 @@ sql
     public static function decode_token($jwt)
     {
         try {
+            if(empty($jwt)){
+                JsonResponse::sendResponse(['message' => 'Empty token.']);
+            }
+
             $jwt_key = self::get_jwt_key();
 
             $time = time();
             $decoded = JWT::decode($jwt, $jwt_key, ['HS256']);
             if ($decoded->exp <= $time) {
-                JsonResponse::sendResponse(['message' => 'The token has expired.'], HTTPStatusCodes::BadRequest);
+                JsonResponse::sendResponse(['message' => 'The token has expired.']);
             }
             return json_decode(json_encode($decoded), true)['data'];
         } catch (Firebase\JWT\ExpiredException $ex) {
-            JsonResponse::sendResponse(['message' => $ex->getMessage()], HTTPStatusCodes::BadRequest);
+            JsonResponse::sendResponse(['message' => $ex->getMessage()]);
         } catch (Firebase\JWT\SignatureInvalidException $ex) {
-            JsonResponse::sendResponse(['message' => $ex->getMessage()], HTTPStatusCodes::BadRequest);
+            JsonResponse::sendResponse(['message' => $ex->getMessage()]);
         } catch (UnexpectedValueException $ex) {
-            JsonResponse::sendResponse(['message' => 'Invalid token.'], HTTPStatusCodes::BadRequest);
+            JsonResponse::sendResponse(['message' => 'Invalid token.']);
         }
     }
 
