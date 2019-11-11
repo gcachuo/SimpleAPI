@@ -91,6 +91,15 @@ sql
         self::$idioma = $idioma;
     }
 
+    public static function request_log()
+    {
+        $data = date('Y-m-d H:i:s') . ' ';
+        $data .= $_SERVER['REQUEST_METHOD'] . ' ';
+        $data .= strstr($_SERVER['REQUEST_URI'], 'api/') . ' ';
+        $data .= preg_replace('/\s/', '', file_get_contents('php://input'));
+        file_put_contents(getcwd() . '/Logs/' . date('Y-m-d') . '.log', $data . "\n", FILE_APPEND);
+    }
+
     /**
      * @param $variable
      * @param null $return
@@ -273,6 +282,7 @@ sql
         createDir('public');
         createDir('Tests');
         createDir('Tests/Data');
+        createDir('Logs');
 
         createConfig();
         createFile('.htaccess');
