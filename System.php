@@ -170,8 +170,6 @@ sql
 
     public function init($config)
     {
-        global $_PATCH, $_PUT;
-
         self::define_constants($config);
 
         self::load_php_functions();
