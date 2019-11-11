@@ -29,7 +29,7 @@ class MySQL
                 $host = $config['host'];
                 $username = $config['username'];
                 $passwd = $config['passwd'];
-                $dbname = $dbname ?: $config['dbname'];
+                $dbname = $dbname ?: (getenv('DATABASE') ?: $config['dbname']);
 
                 $this->mysqli = new mysqli($host, $username, $passwd, $dbname);
                 $this->dbname = $dbname;
