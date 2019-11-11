@@ -79,7 +79,7 @@ sql
         if (!file_exists($ruta)) {
             $ruta = $path . "/config.$env.json";
             if (!file_exists($ruta)) {
-                JsonResponse::sendResponse(['message'=>"No existe el archivo de configuración $ruta"],HTTPStatusCodes::InternalServerError);
+                JsonResponse::sendResponse(['message' => "No existe el archivo de configuración $ruta"], HTTPStatusCodes::InternalServerError);
             }
         }
         $json = file_get_contents($ruta);
@@ -289,7 +289,7 @@ sql
 
     private static function define_constants($config)
     {
-        global $_PATCH, $_PUT;
+        global $_PATCH, $_PUT, $_DELETE;
 
         if (!defined('ENVIRONMENT'))
             define('ENVIRONMENT', isset($_SERVER['SHELL']) || isset($_SERVER['argv']) ? 'cli' : 'web');
