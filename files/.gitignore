@@ -1,3 +1,4 @@
 /.idea/
 /vendor/
 /Config/database.prod.json
+*.log
