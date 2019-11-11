@@ -179,6 +179,8 @@ sql
         self::load_composer();
 
         if (ENVIRONMENT == 'web') {
+            System::request_log();
+
             self::convert_endpoint($controller, $action, $id);
 
             self::call_action($controller, $action, $id);
