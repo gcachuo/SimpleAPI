@@ -93,10 +93,12 @@ sql
 
     public static function request_log()
     {
-        $data = date('Y-m-d H:i:s') . ' ';
-        $data .= $_SERVER['REQUEST_METHOD'] . ' ';
-        $data .= strstr($_SERVER['REQUEST_URI'], 'api/') . ' ';
+        $data = '[' . date('Y-m-d H:i:s') . '] ';
+        $data .= '[' . $_SERVER['REQUEST_METHOD'] . '] ';
+        $data .= '[' . strstr($_SERVER['REQUEST_URI'], 'api/') . '] ';
+
         $data .= preg_replace('/\s/', '', file_get_contents('php://input'));
+
         file_put_contents(getcwd() . '/Logs/' . date('Y-m-d') . '.log', $data . "\n", FILE_APPEND);
     }
 
@@ -145,7 +147,7 @@ sql
     public static function decode_token($jwt)
     {
         try {
-            if(empty($jwt)){
+            if (empty($jwt)) {
                 JsonResponse::sendResponse(['message' => 'Empty token.']);
             }
 
