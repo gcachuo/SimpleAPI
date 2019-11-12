@@ -294,6 +294,17 @@ sql;
             }
         }
     }
+
+    /**
+     * @return int
+     */
+    public function rowCount()
+    {
+        $sql = <<<sql
+SELECT ROW_COUNT() rowCount;
+sql;
+        return $this->fetch_single($this->query($sql))['rowCount'];
+    }
 }
 
 class TableColumn
