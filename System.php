@@ -274,6 +274,7 @@ sql
             file_put_contents(DIR . '/../Config/.jwt_key', '');
             file_put_contents(DIR . '/../Config/database.json', json_encode(["host" => "", "username" => "", "passwd" => "", "dbname" => ""]));
             file_put_contents(DIR . '/../Config/.gitignore', join("\n", ['.jwt_key', 'database.json']));
+            copy(DIR . '/../Config/database.json',DIR . '/../Config/database.prod.json');
             @chmod(DIR . '/../Config/.jwt_key', 0777);
             @chmod(DIR . '/../Config/database.json', 0777);
             @chmod(DIR . '/../Config/database.prod.json', 0777);
@@ -602,7 +603,12 @@ class JsonResponse
             die(self::$json);
         }
         $exception = json_decode(self::$json, true);
-        throw new JsonException($exception['response']['message'], $exception['code']);
+
+        if ($exception['code'] !== HTTPStatusCodes::OK) {
+            throw new JsonException(System::isset_get($exception['response']['message'], $exception['error']['message']), $exception['code']);
+        } else {
+            die($exception['status']);
+        }
     }
 
     private function json_encode()
