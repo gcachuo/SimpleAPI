@@ -249,6 +249,11 @@ sql
                 include $path;
             }
         });
+        if (function_exists('xdebug_disable')) {
+            //Disables stack traces
+            //Disable showing stack traces on error conditions.
+            xdebug_disable();
+        }
     }
 
     private static function create_directories()
