@@ -347,6 +347,11 @@ sql
                     $_POST = array_merge($_POST, $_POST["aside"]);
                     unset($_POST["aside"]);
                 }
+                if (!empty($_POST['post'])) {
+                    parse_str($_POST["post"], $_POST["post"]);
+                    $_POST = array_merge($_POST, $_POST["post"]);
+                    unset($_POST["post"]);
+                }
             }
             if (REQUEST_METHOD === 'GET') {
                 parse_str($entry, $_GET);
