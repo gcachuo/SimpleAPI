@@ -305,6 +305,13 @@ SELECT ROW_COUNT() rowCount;
 sql;
         return $this->fetch_single($this->query($sql))['rowCount'];
     }
+
+    public function from_file($filename)
+    {
+        $path = __DIR__ . "/../Model/Data/$filename.sql";
+        $sql = file_get_contents($path);
+        return $sql;
+    }
 }
 
 class TableColumn
