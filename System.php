@@ -279,7 +279,7 @@ sql
             file_put_contents(DIR . '/../Config/.jwt_key', '');
             file_put_contents(DIR . '/../Config/database.json', json_encode(["host" => "", "username" => "", "passwd" => "", "dbname" => ""]));
             file_put_contents(DIR . '/../Config/.gitignore', join("\n", ['.jwt_key', 'database.json']));
-            copy(DIR . '/../Config/database.json',DIR . '/../Config/database.prod.json');
+            copy(DIR . '/../Config/database.json', DIR . '/../Config/database.prod.json');
             @chmod(DIR . '/../Config/.jwt_key', 0777);
             @chmod(DIR . '/../Config/database.json', 0777);
             @chmod(DIR . '/../Config/database.prod.json', 0777);
@@ -348,7 +348,9 @@ sql
                     unset($_POST["aside"]);
                 }
                 if (!empty($_POST['post'])) {
-                    parse_str($_POST["post"], $_POST["post"]);
+                    if (is_string($_POST['post'])) {
+                        parse_str($_POST["post"], $_POST["post"]);
+                    }
                     $_POST = array_merge($_POST, $_POST["post"]);
                     unset($_POST["post"]);
                 }
@@ -427,10 +429,10 @@ sql
         foreach ($intersect as $key => $value) {
             $value = is_string($value) ? trim($value) : $value;
             if (empty($value) and $value !== "0") {
-                $empty_values .= $key . ',';
+                $empty_values .= $key . ', ';
             }
         }
-        $empty_values = trim($empty_values, ',');
+        $empty_values = trim($empty_values, ', ');
         if (!empty($empty_values)) {
             JsonResponse::sendResponse(['message' => $message . ' ' . "[$empty_values]"], HTTPStatusCodes::BadRequest);
         }
