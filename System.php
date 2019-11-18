@@ -99,7 +99,7 @@ sql
 
         $data .= preg_replace('/\s/', '', file_get_contents('php://input'));
 
-        file_put_contents(getcwd() . '/Logs/' . date('Y-m-d') . '.log', $data . "\n", FILE_APPEND);
+        file_put_contents(__DIR__ . '/../Logs/' . date('Y-m-d') . '.log', $data . "\n", FILE_APPEND);
     }
 
     /**
