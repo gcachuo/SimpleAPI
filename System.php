@@ -242,7 +242,7 @@ sql
         ini_set('max_execution_time', 300);
         spl_autoload_register(function ($class) {
             $file = str_replace('\\', '/', $class);
-            $path = __DIR__."/../$file.php";
+            $path = __DIR__ . "/../$file.php";
             if (file_exists($path)) {
                 include $path;
             }
@@ -396,7 +396,7 @@ sql
         }
         global $_PATCH;
         $response = null;
-        $namespace = "Controller\\$controller";
+        $namespace = "Controller\\".ucfirst($controller);
         if (class_exists($namespace)) {
             /** @var $class Controller */
             $class = new $namespace();
@@ -412,7 +412,7 @@ sql
             }
             JsonResponse::sendResponse(compact('message'), HTTPStatusCodes::OK);
         }
-        JsonResponse::sendResponse(['message' => "Endpoint not found."], HTTPStatusCodes::NotFound);
+        JsonResponse::sendResponse(['message' => "Endpoint not found. [$namespace]"], HTTPStatusCodes::NotFound);
     }
 
     /**
@@ -500,7 +500,7 @@ class Controller
         if ($name) {
             return $this->$name(...$arguments);
         }
-        JsonResponse::sendResponse(['message' => "Endpoint not found."], HTTPStatusCodes::NotFound);
+        JsonResponse::sendResponse(['message' => "Endpoint not found. [$name]"], HTTPStatusCodes::NotFound);
     }
 
     private function allowed_methods(array $methods)
