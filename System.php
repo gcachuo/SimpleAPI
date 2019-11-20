@@ -368,6 +368,10 @@ sql
             if (strpos($end, '?')) {
                 $end = stristr($end, '?', true);
             }
+            $end_decoded = trim(strstr(base64_decode($end), '='), '=');
+            if (!is_nan($end_decoded)) {
+                $end = $end_decoded;
+            }
             $count = ctype_digit($end) ? 3 : 2;
             $request = array_slice($request, -$count, $count, false);
             if (count($request) == 3) {
@@ -396,7 +400,7 @@ sql
         }
         global $_PATCH;
         $response = null;
-        $namespace = "Controller\\".ucfirst($controller);
+        $namespace = "Controller\\" . ucfirst($controller);
         if (class_exists($namespace)) {
             /** @var $class Controller */
             $class = new $namespace();
