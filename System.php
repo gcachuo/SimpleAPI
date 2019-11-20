@@ -241,10 +241,11 @@ sql
         ini_set('always_populate_raw_post_data', -1);
         ini_set('max_execution_time', 300);
         spl_autoload_register(function ($class) {
-            $split = explode('\\', $class);
-            $dir = $split[0];
-            $file = ucfirst(System::isset_get($split[1]));
-            $path = "$dir/$file.php";
+            /* $split = explode('\\', $class);
+             $dir = $split[0];
+             $file = ucfirst(System::isset_get($split[1]));*/
+            $file = str_replace('\\', '/', $class);
+            $path = "$file.php";
             if (file_exists($path)) {
                 include $path;
             }
