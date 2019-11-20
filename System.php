@@ -242,10 +242,11 @@ sql
         ini_set('max_execution_time', 300);
         spl_autoload_register(function ($class) {
             $file = str_replace('\\', '/', $class);
-            $path = "$file.php";
+            $path = __DIR__."/../$file.php";
             if (file_exists($path)) {
                 include $path;
             }
+//            die($path);
         });
         if (function_exists('xdebug_disable')) {
             //Disables stack traces
