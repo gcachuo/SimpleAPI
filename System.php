@@ -91,6 +91,23 @@ sql
         self::$idioma = $idioma;
     }
 
+    public static function encode_id($id)
+    {
+        return base64_encode(rand(10000, 99999) . '=' . $id);
+    }
+
+    public static function decode_id(string &$base64)
+    {
+        $end_decoded = trim(strstr(base64_decode($base64), '='), '=');
+        if (!empty($end_decoded)) {
+            if (!is_nan($end_decoded)) {
+                $base64 = $end_decoded;
+            }
+            return $end_decoded;
+        }
+        return $base64;
+    }
+
     public static function request_log()
     {
         $data = '[' . date('Y-m-d H:i:s') . '] ';
@@ -368,10 +385,7 @@ sql
             if (strpos($end, '?')) {
                 $end = stristr($end, '?', true);
             }
-            $end_decoded = trim(strstr(base64_decode($end), '='), '=');
-            if (!is_nan($end_decoded)) {
-                $end = $end_decoded;
-            }
+            System::decode_id($end);
             $count = ctype_digit($end) ? 3 : 2;
             $request = array_slice($request, -$count, $count, false);
             if (count($request) == 3) {
