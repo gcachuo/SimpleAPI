@@ -2,6 +2,7 @@
 
 namespace Model;
 
+use HTTPStatusCodes;
 use JsonResponse;
 use mysqli;
 use mysqli_result;
@@ -16,7 +17,7 @@ class MySQL
      */
     private $mysqli, $dbname;
 
-    public function __construct()
+    public function __construct($dbname = null)
     {
         mysqli_report(MYSQLI_REPORT_ALL ^ MYSQLI_REPORT_INDEX);
         try {
@@ -28,16 +29,39 @@ class MySQL
                 $host = $config['host'];
                 $username = $config['username'];
                 $passwd = $config['passwd'];
-                $dbname = $config['dbname'];
+                $dbname = $dbname ?: (getenv('DATABASE') ?: $config['dbname']);
 
                 $this->mysqli = new mysqli($host, $username, $passwd, $dbname);
                 $this->dbname = $dbname;
             } else {
-                JsonResponse::sendResponse(['message' => "File 'database.json' not found."], 500);
+                JsonResponse::sendResponse(['message' => "File $filename not found."], HTTPStatusCodes::InternalServerError);
             }
         } catch (mysqli_sql_exception $exception) {
-            JsonResponse::sendResponse(['message' => $exception->getMessage()], $exception->getCode());
+            $code = $exception->getCode();
+            $error = $exception->getMessage();
+
+            switch ($code) {
+                case 1049:
+                    $mysql = new MySQL('mysql');
+                    $mysql->query(<<<sql
+CREATE DATABASE $dbname;
+sql
+                    );
+
+                    $error = "Database $dbname didn't exists and was created. try again";
+                    JsonResponse::sendResponse(compact('error', 'code'), HTTPStatusCodes::NotImplemented);
+                    break;
+                default:
+                    $type = 'MySQL';
+                    JsonResponse::sendResponse(compact('error', 'code', 'type'), HTTPStatusCodes::InternalServerError);
+                    break;
+            }
         }
+    }
+
+    public function database()
+    {
+        return $this->dbname;
     }
 
     public static function default_values(&$values, $keys)
@@ -51,41 +75,63 @@ class MySQL
         try {
             if (!empty($sql)) {
                 if ($multi) {
-                    $this->mysqli->multi_query($sql);
+                    return $this->mysqli->multi_query($sql);
                 } else {
                     return $this->mysqli->query($sql);
                 }
             }
         } catch (mysqli_sql_exception $exception) {
-            JsonResponse::sendResponse(['message' => $exception->getMessage()], $exception->getCode());
+            JsonResponse::sendResponse(['message' => $exception->getMessage(), 'code' => $exception->getCode()], HTTPStatusCodes::InternalServerError);
         }
     }
 
     /**
-     * @param $sql
-     * @param $params
+     * @param string $sql
+     * @param array $params
      * @return false|mysqli_result|array
      */
-    function prepare($sql, $params)
+    function prepare(string $sql, array $params)
     {
-        $this->mysqli->select_db($this->dbname);
-        $stmt = $this->mysqli->prepare($sql);
-        foreach ($params as $k => &$param) {
-            $array[] =& $param;
-        }
-        call_user_func_array(array($stmt, 'bind_param'), $params);
-        $stmt->execute();
-        $row = [];
-        $this->stmt_bind_assoc($stmt, $row);
-        $mysqli_result = [];
-        if (strpos($sql, "select") !== false) {
-            while ($stmt->fetch()) {
-                $mysqli_result[] = $this->array_copy($row);
+        try {
+            $this->mysqli->select_db($this->dbname);
+            $stmt = $this->mysqli->prepare($sql);
+            foreach ($params as $k => &$param) {
+                $array[] =& $param;
+            }
+            call_user_func_array(array($stmt, 'bind_param'), $params);
+            $stmt->execute();
+            $row = [];
+            $this->stmt_bind_assoc($stmt, $row);
+            $mysqli_result = [];
+            if (stripos($sql, "select") !== false) {
+                while ($stmt->fetch()) {
+                    $mysqli_result[] = $this->array_copy($row);
+                }
+            }
+            $stmt->free_result();
+            $stmt->close();
+            return $mysqli_result ?: [];
+
+        } catch (mysqli_sql_exception $exception) {
+            $code = $exception->getCode();
+            $message = $exception->getMessage();
+            switch ($code) {
+                case 1062:
+                    //Duplicate Entry
+                    $message = 'Duplicate entry.';
+                    JsonResponse::sendResponse(compact('message'));
+                    break;
+                case 1452:
+                    //Foreign Key
+                    $message = 'A Foreign Key constraint fails.';
+                    JsonResponse::sendResponse(compact('message'));
+                    break;
+                default:
+                    $trace = $exception->getTrace();
+                    JsonResponse::sendResponse(compact('code', 'message', 'trace'), HTTPStatusCodes::InternalServerError);
+                    break;
             }
         }
-        $stmt->free_result();
-        $stmt->close();
-        return $mysqli_result ?: [];
     }
 
     function array_copy(array $array)
@@ -133,11 +179,18 @@ class MySQL
     function fetch_all($mysqli_result, $index = false, $type = MYSQLI_ASSOC)
     {
         $results = [];
-        if ($type == MYSQLI_ASSOC) {
+        if ($type != MYSQLI_ASSOC || is_array($mysqli_result)) {
+            if (is_array($mysqli_result)) {
+                $results = $mysqli_result;
+            } elseif ($type == MYSQLI_NUM) {
+                $results = $mysqli_result->fetch_all(MYSQLI_NUM);
+            }
+        } else {
             while ($row = $mysqli_result->fetch_assoc()) {
                 array_push($results, $row);
             }
         }
+
         if ($index !== false) {
             $end = [];
             foreach ($results as $result) {
@@ -180,7 +233,7 @@ class MySQL
                 switch ($column->type) {
                     case ColumnTypes::TIMESTAMP:
                     case ColumnTypes::BIGINT:
-                    case ColumnTypes::INT:
+                    case ColumnTypes::INTEGER:
                     case ColumnTypes::BIT:
                         $default = $column->default;
                         break;
@@ -199,16 +252,65 @@ class MySQL
             $sql_columns = trim($sql_columns, ',');
 
             $sql = <<<sql
-CREATE TABLE IF NOT EXISTS `$table`($sql_columns);
+CREATE TABLE IF NOT EXISTS `$table`($sql_columns) 
+ENGINE = InnoDB
+CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 sql;
-            $this->query($sql . $extra_sql, true);
-            return true;
+            try {
+                $this->mysqli->query("DESCRIBE `$table`");
+            } catch (mysqli_sql_exception $exception) {
+                $sql .= $extra_sql;
+            }
+            $result = $this->query($sql, true);
+            return false;
         }
+        return true;
     }
 
     public function insertID()
     {
         return $this->mysqli->insert_id;
+    }
+
+    public function escape_string($string)
+    {
+        return $this->mysqli->real_escape_string($string);
+    }
+
+    public function last_error()
+    {
+        return $this->mysqli->error;
+    }
+
+    public function delete_tables(array $tables)
+    {
+        if (ENVIRONMENT == 'cli') {
+            $mysql = new MySQL();
+            foreach ($tables as $table) {
+                $sql = <<<sql
+drop table if exists $table;
+sql;
+                $mysql->query($sql);
+            }
+        }
+    }
+
+    /**
+     * @return int
+     */
+    public function rowCount()
+    {
+        $sql = <<<sql
+SELECT ROW_COUNT() rowCount;
+sql;
+        return $this->fetch_single($this->query($sql))['rowCount'];
+    }
+
+    public function from_file($filename)
+    {
+        $path = __DIR__ . "/../Model/Data/$filename.sql";
+        $sql = file_get_contents($path);
+        return $sql;
     }
 }
 
@@ -248,8 +350,11 @@ abstract class ColumnTypes
 {
     const BIGINT = 'bigint';
     const VARCHAR = 'varchar';
-    const INT = 'int';
+    const INTEGER = 'int';
     const TIMESTAMP = 'timestamp';
     const DATE = 'date';
+    const DATETIME = 'datetime';
     const BIT = 'bit';
+    const DECIMAL = 'decimal';
+    const LONGBLOB = 'longblob';
 }
