@@ -240,6 +240,11 @@ sql
                 $error = error_get_last();
                 if (!strpos($error['file'], 'vendor')) {
                     switch ($error['type']) {
+                        case 2:
+                            switch($error['message']){
+                                case "session_start(): Cannot start session when headers already sent":
+                                    break 2;
+                            }
                         case 8:
                             break;
                         default:
@@ -514,17 +519,22 @@ class Controller
 
     public function __call($action, $arguments)
     {
-        $name = System::isset_get($this->_methods[REQUEST_METHOD][$action]);
-        if ($name) {
-            return $this->$name(...$arguments);
+        if (ENVIRONMENT == 'web') {
+            $name = System::isset_get($this->_methods[REQUEST_METHOD][$action]);
+            if ($name) {
+                return $this->$name(...$arguments);
+            }
+            JsonResponse::sendResponse(['message' => "Endpoint not found. [$name]"], HTTPStatusCodes::NotFound);
         }
-        JsonResponse::sendResponse(['message' => "Endpoint not found. [$name]"], HTTPStatusCodes::NotFound);
+        return $this->$action(...$arguments);
     }
 
     private function allowed_methods(array $methods)
     {
-        if (!isset($methods[REQUEST_METHOD])) {
-            JsonResponse::sendResponse(['message' => 'Method Not Allowed'], HTTPStatusCodes::MethodNotAllowed);
+        if (ENVIRONMENT == 'web') {
+            if (!isset($methods[REQUEST_METHOD])) {
+                JsonResponse::sendResponse(['message' => 'Method Not Allowed'], HTTPStatusCodes::MethodNotAllowed);
+            }
         }
     }
 
@@ -627,14 +637,14 @@ class JsonResponse
             $error = error_get_last();
             System::log_error(compact('status', 'code', 'response', 'error'));
         }
-        ob_clean();
         if (ENVIRONMENT == 'web') {
+            ob_clean();
             die(self::$json);
         }
         $exception = json_decode(self::$json, true);
 
         if ($exception['code'] !== HTTPStatusCodes::OK) {
-            throw new JsonException(System::isset_get($exception['response']['message'], $exception['error']['message']), $exception['code']);
+            throw new JsonException(System::isset_get($exception['error']['message'],$exception['response']['message']), $exception['code']);
         } else {
             die($exception['status']);
         }
