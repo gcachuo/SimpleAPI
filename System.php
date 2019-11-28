@@ -96,6 +96,12 @@ sql
         return base64_encode(rand(10000, 99999) . '=' . $id);
     }
 
+    public static function format_date(string $format, $value)
+    {
+        $value = strtotime($value);
+        return date($format, $value);
+    }
+
     public static function decode_id(string &$base64)
     {
         $end_decoded = trim(strstr(base64_decode($base64), '='), '=');
@@ -241,7 +247,7 @@ sql
                 if (!strpos($error['file'], 'vendor')) {
                     switch ($error['type']) {
                         case 2:
-                            switch($error['message']){
+                            switch ($error['message']) {
                                 case "session_start(): Cannot start session when headers already sent":
                                     break 2;
                             }
@@ -644,7 +650,7 @@ class JsonResponse
         $exception = json_decode(self::$json, true);
 
         if ($exception['code'] !== HTTPStatusCodes::OK) {
-            throw new JsonException(System::isset_get($exception['error']['message'],$exception['response']['message']), $exception['code']);
+            throw new JsonException(System::isset_get($exception['error']['message'], $exception['response']['message']), $exception['code']);
         } else {
             die($exception['status']);
         }
