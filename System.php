@@ -147,10 +147,12 @@ sql
     {
         $jwt_key = self::get_jwt_key();
 
+        $expiration = (60 * 60) * 12; //12 Hours
+
         $time = time();
         $token = [
             'iat' => $time,
-            'exp' => $time + (60 * 60),
+            'exp' => $time + $expiration,
             'data' => $data
         ];
         return JWT::encode($token, $jwt_key);
