@@ -650,7 +650,14 @@ class JsonResponse
         $exception = json_decode(self::$json, true);
 
         if ($exception['code'] !== HTTPStatusCodes::OK) {
-            throw new JsonException(System::isset_get($exception['error']['message'], $exception['response']['message']), $exception['code']);
+            $error = '';
+            if (is_array($exception['error'])) {
+                $error = $exception['error']['message'];
+            } elseif (System::isset_get($exception['response']['message'])) {
+                $error = $exception['response']['message'];
+            }
+
+            throw new JsonException($error, $exception['code']);
         } else {
             die($exception['status']);
         }
