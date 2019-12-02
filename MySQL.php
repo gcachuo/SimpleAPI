@@ -312,6 +312,32 @@ sql;
         $sql = file_get_contents($path);
         return $sql;
     }
+
+    public function encrypt_data(int $user_id, array $data)
+    {
+        // decrypt secret key with user private key
+        $key = "super secret key";
+        // encrypt data using secret key
+        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-256-cbc'));
+        $encrypted_data = [];
+        foreach ($data as $data_key => $data_value) {
+            $encrypted_data[$data_key] = base64_encode(openssl_encrypt($data_value, "aes-256-cbc", $key, 0, $iv) . "::" . $iv);
+        }
+        return $encrypted_data;
+    }
+
+    public function decrypt_data(int $user_id, array $data)
+    {
+        // decrypt secret key with user private key
+        $key = "super secret key";
+        // decrypt data using secret key
+        $decrypted_data = [];
+        foreach ($data as $data_key => $data_value) {
+            list($decrypted, $iv) = explode('::', base64_decode($data_value), 2);
+            $decrypted_data[$data_key] = openssl_decrypt($decrypted, 'aes-256-cbc', $key, 0, $iv);
+        }
+        return $decrypted_data;
+    }
 }
 
 class TableColumn
