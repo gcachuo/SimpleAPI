@@ -102,6 +102,12 @@ sql
         return date($format, $value);
     }
 
+    public static function format_date_locale(string $format, $locale, $value)
+    {
+        setlocale(LC_TIME, $locale);
+        return strftime($format, strtotime($value));
+    }
+
     public static function decode_id(string &$base64)
     {
         $end_decoded = trim(strstr(base64_decode($base64), '='), '=');
