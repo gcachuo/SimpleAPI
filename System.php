@@ -195,18 +195,14 @@ sql
         } catch (Firebase\JWT\SignatureInvalidException $ex) {
             JsonResponse::sendResponse(['message' => $ex->getMessage()]);
         } catch (UnexpectedValueException $ex) {
-            JsonResponse::sendResponse(['message' => 'Invalid token.']);
+            JsonResponse::sendResponse(['message' => 'Invalid token.', 'error' => $ex->getMessage()]);
         } catch (DomainException $ex) {
-            JsonResponse::sendResponse(['message' => 'Invalid token.']);
+            JsonResponse::sendResponse(['message' => 'Invalid token.', 'error' => $ex->getMessage()]);
         }
     }
 
     public function init($config)
     {
-        if (file_exists(__DIR__ . '/../offline')) {
-            JsonResponse::sendResponse(['message' => 'We are updating the app, please be patient.'], HTTPStatusCodes::ServiceUnavailable);
-        }
-
         self::define_constants($config);
 
         self::load_php_functions();
@@ -294,6 +290,10 @@ sql
             //Disables stack traces
             //Disable showing stack traces on error conditions.
             xdebug_disable();
+        }
+
+        if (file_exists(__DIR__ . '/../offline')) {
+            JsonResponse::sendResponse(['message' => 'We are updating the app, please be patient.'], HTTPStatusCodes::ServiceUnavailable);
         }
     }
 
