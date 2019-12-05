@@ -203,6 +203,10 @@ sql
 
     public function init($config)
     {
+        if (file_exists(__DIR__ . '/../offline')) {
+            JsonResponse::sendResponse(['message' => 'We are updating the app, please be patient.'], HTTPStatusCodes::ServiceUnavailable);
+        }
+
         self::define_constants($config);
 
         self::load_php_functions();
@@ -211,10 +215,6 @@ sql
 
         if (ENVIRONMENT == 'web') {
             System::request_log();
-
-            if (file_exists(__DIR__ . '/../offline')) {
-                JsonResponse::sendResponse(['message' => 'We are updating the app, please be patient.'], HTTPStatusCodes::ServiceUnavailable);
-            }
 
             self::convert_endpoint($controller, $action, $id);
 
