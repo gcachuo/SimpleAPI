@@ -468,6 +468,10 @@ sql
                 $empty_values .= $key . ', ';
             }
         }
+        $empty_values = trim($empty_values, ', ');
+        if (!empty($empty_values)) {
+            JsonResponse::sendResponse(['message' => $message . ' ' . "[$empty_values]"], HTTPStatusCodes::BadRequest);
+        }
 
         foreach ($intersect as $key => $value) {
             $value = is_string($value) ? trim($value) : $value;
