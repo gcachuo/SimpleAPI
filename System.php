@@ -212,6 +212,10 @@ sql
         if (ENVIRONMENT == 'web') {
             System::request_log();
 
+            if (file_exists(__DIR__ . '/../offline')) {
+                JsonResponse::sendResponse(['message' => 'We are updating the app, please be patient.'], HTTPStatusCodes::ServiceUnavailable);
+            }
+
             self::convert_endpoint($controller, $action, $id);
 
             self::call_action($controller, $action, $id);
