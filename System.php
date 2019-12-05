@@ -196,6 +196,8 @@ sql
             JsonResponse::sendResponse(['message' => $ex->getMessage()]);
         } catch (UnexpectedValueException $ex) {
             JsonResponse::sendResponse(['message' => 'Invalid token.']);
+        } catch (DomainException $ex) {
+            JsonResponse::sendResponse(['message' => 'Invalid token.']);
         }
     }
 
@@ -464,7 +466,7 @@ sql
         $empty_values = '';
 
         foreach ($required as $key => $value) {
-            if(!System::isset_get($array[$key])){
+            if (!System::isset_get($array[$key])) {
                 $empty_values .= $key . ', ';
             }
         }
