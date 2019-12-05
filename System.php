@@ -462,6 +462,13 @@ sql
         $required = array_flip($required);
         $intersect = array_intersect_key($array ?: $required, $required);
         $empty_values = '';
+
+        foreach ($required as $key => $value) {
+            if(!System::isset_get($array[$key])){
+                $empty_values .= $key . ', ';
+            }
+        }
+
         foreach ($intersect as $key => $value) {
             $value = is_string($value) ? trim($value) : $value;
             if (empty($value) and $value !== "0") {
