@@ -1,4 +1,13 @@
 {
+  "name": "gcachuo/simple-api",
+  "type": "project",
+  "authors": [
+    {
+      "name": "Memo Cachu",
+      "email": "gcachu.o@gmail.com"
+    }
+  ],
+  "minimum-stability": "beta",
   "require": {
     "firebase/php-jwt": "v5.0.0",
     "ext-json": "*",
