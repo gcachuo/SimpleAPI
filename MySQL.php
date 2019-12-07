@@ -313,7 +313,7 @@ sql;
         return $sql;
     }
 
-    public function encrypt_data(int $user_id, array $data)
+    public function encrypt_data($user_id, array $data)
     {
         // decrypt secret key with user private key
         $key = "super secret key";
