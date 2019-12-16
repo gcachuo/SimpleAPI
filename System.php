@@ -404,10 +404,10 @@ sql
 
     private static function convert_endpoint(&$controller, &$action, &$id)
     {
-        $request = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
+        $request = explode('/', trim(str_replace('/?','?',$_SERVER['REQUEST_URI']), '/'));
         if (count($request) > 2) {
             $end = end($request);
-            if (strpos($end, '?')) {
+            if (strpos($end, '?') !== false) {
                 $end = stristr($end, '?', true);
             }
             System::decode_id($end);
@@ -419,7 +419,7 @@ sql
         }
         $controller = strtolower($request[0]);
         $action = System::isset_get($request[1]);
-        if (strpos($action, '?')) {
+        if (strpos($action, '?') !== false) {
             $action = stristr($action, '?', true);
         }
     }
