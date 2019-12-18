@@ -108,6 +108,17 @@ sql
         return strftime($format, strtotime($value));
     }
 
+    public static function upload_file($file, string $destination)
+    {
+        if (empty($file['tmp_name'])) {
+            JsonResponse::sendResponse(['message' => 'Filename cannot be empty.']);
+        }
+        if (!copy($file['tmp_name'], $destination)) {
+            JsonResponse::sendResponse(['message' => 'File could not be moved.'], HTTPStatusCodes::InternalServerError);
+        }
+        return true;
+    }
+
     public static function decode_id(string &$base64)
     {
         $end_decoded = trim(strstr(base64_decode($base64), '='), '=');
