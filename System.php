@@ -160,18 +160,22 @@ sql
         return $return;
     }
 
-    public static function encode_token(array $data)
+    public static function encode_token(array $data, array $options = [])
     {
         $jwt_key = self::get_jwt_key();
-
-        $expiration = (60 * 60) * 12; //12 Hours
 
         $time = time();
         $token = [
             'iat' => $time,
-            'exp' => $time + $expiration,
             'data' => $data
         ];
+
+        if (!empty($options['exp_hours'])) {
+            $hours = $options['exp_hours'];
+            $expiration = (60 * 60) * $hours; //12 Hours
+            $token['exp'] = $time + $expiration;
+        }
+
         return JWT::encode($token, $jwt_key);
     }
 
@@ -197,7 +201,7 @@ sql
 
             $time = time();
             $decoded = JWT::decode($jwt, $jwt_key, ['HS256']);
-            if ($decoded->exp <= $time) {
+            if (!empty($decoded->exp) && $decoded->exp <= $time) {
                 JsonResponse::sendResponse(['message' => 'The token has expired.']);
             }
             return json_decode(json_encode($decoded), true)['data'];
@@ -415,7 +419,7 @@ sql
 
     private static function convert_endpoint(&$controller, &$action, &$id)
     {
-        $request = explode('/', trim(str_replace('/?','?',$_SERVER['REQUEST_URI']), '/'));
+        $request = explode('/', trim(str_replace('/?', '?', $_SERVER['REQUEST_URI']), '/'));
         if (count($request) > 2) {
             $end = end($request);
             if (strpos($end, '?') !== false) {
