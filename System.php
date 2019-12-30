@@ -144,7 +144,12 @@ sql
         if (!file_put_contents($path, $data . "\n", FILE_APPEND)) {
             if (file_exists($path)) {
                 if (!unlink($path)) {
-                    JsonResponse::sendResponse(['message' => "Error deleting file [$path]"], HTTPStatusCodes::InternalServerError);
+                    $code = HTTPStatusCodes::InternalServerError;
+                    $status = 'error';
+                    $error = [
+                        'message' => "Error deleting file [$path]"
+                    ];
+                    System::log_error(compact('status', 'code', 'response', 'error'));
                 }
                 self::request_log();
             }
