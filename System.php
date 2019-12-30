@@ -139,7 +139,16 @@ sql
 
         $data .= preg_replace('/\s/', '', file_get_contents('php://input'));
 
-        file_put_contents(__DIR__ . '/../Logs/' . date('Y-m-d') . '.log', $data . "\n", FILE_APPEND);
+        $path = __DIR__ . '/../Logs/' . date('Y-m-d') . '.log';
+
+        if (!file_put_contents($path, $data . "\n", FILE_APPEND)) {
+            if (file_exists($path)) {
+                if (!unlink($path)) {
+                    JsonResponse::sendResponse(['message' => "Error deleting file [$path]"], HTTPStatusCodes::InternalServerError);
+                }
+                self::request_log();
+            }
+        }
     }
 
     /**
