@@ -176,21 +176,25 @@ sql
 
     public static function encode_token(array $data, array $options = [])
     {
-        $jwt_key = self::get_jwt_key();
+        try {
+            $jwt_key = self::get_jwt_key();
 
-        $time = time();
-        $token = [
-            'iat' => $time,
-            'data' => $data
-        ];
+            $time = time();
+            $payload = [
+                'iat' => $time,
+                'data' => $data
+            ];
 
-        if (!empty($options['exp_hours'])) {
-            $hours = $options['exp_hours'];
-            $expiration = (60 * 60) * $hours; //12 Hours
-            $token['exp'] = $time + $expiration;
+            if (!empty($options['exp_hours'])) {
+                $hours = $options['exp_hours'];
+                $expiration = (60 * 60) * $hours; //12 Hours
+                $payload['exp'] = $time + $expiration;
+            }
+
+            return JWT::encode($payload, $jwt_key);
+        } catch (DomainException $ex) {
+            JsonResponse::sendResponse(['message' => $ex->getMessage(), 'request' => compact('payload')], HTTPStatusCodes::InternalServerError);
         }
-
-        return JWT::encode($token, $jwt_key);
     }
 
     private static function get_jwt_key()
