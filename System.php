@@ -113,9 +113,18 @@ sql
         if (empty($file['tmp_name'])) {
             JsonResponse::sendResponse(['message' => 'Filename cannot be empty.']);
         }
+
+        if (!file_exists(dirname($destination))) {
+            if (!mkdir(dirname($destination), 0777, true)) {
+                JsonResponse::sendResponse(['message' => 'Directory could not be created.'], HTTPStatusCodes::InternalServerError);
+            }
+            chmod(dirname($destination), 0777);
+        }
+
         if (!copy($file['tmp_name'], $destination)) {
             JsonResponse::sendResponse(['message' => 'File could not be moved.'], HTTPStatusCodes::InternalServerError);
         }
+        chmod($destination, 0777);
         return true;
     }
 
