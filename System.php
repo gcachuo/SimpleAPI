@@ -125,6 +125,9 @@ sql
             JsonResponse::sendResponse(['message' => 'File could not be moved.'], HTTPStatusCodes::InternalServerError);
         }
         chmod($destination, 0777);
+
+        define('FILE', $destination);
+
         return true;
     }
 
@@ -708,6 +711,9 @@ class JsonResponse
             $status = 'error';
             $response = $this->encode_items($this->response);
             $error = error_get_last();
+
+            unlink(FILE);
+
             System::log_error(compact('status', 'code', 'response', 'error'));
         }
         if (ENVIRONMENT == 'web') {
