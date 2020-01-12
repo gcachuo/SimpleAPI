@@ -462,10 +462,16 @@ sql
                 $id = (int)$end;
             }
         }
-        $controller = strtolower($request[0]);
-        $action = System::isset_get($request[1]);
-        if (strpos($action, '?') !== false) {
-            $action = stristr($action, '?', true);
+
+        if ($request[0] == 'api' || $request[1] == 'api') {
+            $controller = 'api';
+            $action = 'version';
+        } else {
+            $controller = strtolower($request[0]);
+            $action = System::isset_get($request[1]);
+            if (strpos($action, '?') !== false) {
+                $action = stristr($action, '?', true);
+            }
         }
     }
 
@@ -499,6 +505,11 @@ sql
                 }
             }
             JsonResponse::sendResponse(compact('message'), HTTPStatusCodes::OK);
+        }
+        if ($controller == 'api' && $action = 'version') {
+            $name = PROJECT;
+            $version = VERSION;
+            JsonResponse::sendResponse(compact('name', 'version'), HTTPStatusCodes::OK);
         }
         JsonResponse::sendResponse(['message' => "Endpoint not found. [$namespace]"], HTTPStatusCodes::NotFound);
     }

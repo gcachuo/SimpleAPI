@@ -1,4 +1,7 @@
 <?php
+define('PROJECT', '');
+define('VERSION', '0.0.0');
+
 include_once "Lib/System.php";
 
 $path = "vendor/autoload.php";
