@@ -153,6 +153,21 @@ sql
 
         $path = __DIR__ . '/../Logs/' . date('Y-m-d') . '.log';
 
+        $dir = dirname($path);
+        if (!is_dir($dir)) {
+            if (!mkdir($dir, 0777, true)) {
+                $code = HTTPStatusCodes::InternalServerError;
+                $status = 'error';
+                $error = [
+                    'message' => "Error creating dir [$dir]"
+                ];
+                System::log_error(compact('status', 'code', 'response', 'error'));
+                JsonResponse::sendResponse(compact('status', 'code', 'response', 'error'), $code);
+            }
+            @chmod($dir, 0777);
+        }
+
+
         if (!file_put_contents($path, $data . "\n", FILE_APPEND)) {
             if (file_exists($path)) {
                 if (!unlink($path)) {
