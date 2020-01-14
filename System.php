@@ -161,7 +161,6 @@ sql
                 $error = [
                     'message' => "Error creating dir [$dir]"
                 ];
-                System::log_error(compact('status', 'code', 'response', 'error'));
                 JsonResponse::sendResponse(compact('status', 'code', 'response', 'error'), $code);
             }
             @chmod($dir, 0777);
