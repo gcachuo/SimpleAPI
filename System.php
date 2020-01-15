@@ -742,18 +742,30 @@ sql
         libxml_clear_errors();
 
         $this->dom = $dom;
-
-        echo $this->dom->saveHTML();
     }
 
     public function load_module($file)
     {
         $path = DIR . '/modules/' . $file . '.php';
         if (!file_exists($path)) {
-            throw new DOMException('Test');
+            throw new DOMException('Not Found: ' . $path, 404);
         }
+
+        ob_start();
+        include $path;
+        $contents = ob_get_contents();
+        ob_end_clean();
+        if (empty($contents)) {
+            throw new DOMException('Empty file: ' . $path, 500);
+        }
+
         $fragment = $this->dom->createDocumentFragment();
-        $fragment->appendXML(file_get_contents($path));
+        $fragment->appendXML(<<<html
+<div>
+    $contents
+</div>
+html
+);
 
         $module = $this->dom->createElement('div');
         $module->setAttribute('id', 'view');
@@ -762,6 +774,11 @@ sql
 
         $view = $this->dom->getElementById('view');
         $view->parentNode->replaceChild($module, $view);
+    }
+
+    public function print_page()
+    {
+        echo $this->dom->saveHTML();
     }
 }
 
