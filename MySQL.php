@@ -90,9 +90,13 @@ sql
      * @param array $params
      * @return false|mysqli_result|array
      */
-    function prepare(string $sql, array $params)
+    function prepare(string $sql, array $params = [])
     {
         try {
+            if (empty($params)) {
+                return $this->query($sql);
+            }
+
             $this->mysqli->select_db($this->dbname);
             $stmt = $this->mysqli->prepare($sql);
             foreach ($params as $k => &$param) {
@@ -313,7 +317,7 @@ sql;
         return $sql;
     }
 
-    public function encrypt_data(int $user_id, array $data)
+    public function encrypt_data($user_id, array $data)
     {
         // decrypt secret key with user private key
         $key = "super secret key";

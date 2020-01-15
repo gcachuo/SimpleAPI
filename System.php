@@ -108,6 +108,29 @@ sql
         return strftime($format, strtotime($value));
     }
 
+    public static function upload_file($file, string $destination)
+    {
+        if (empty($file['tmp_name'])) {
+            JsonResponse::sendResponse(['message' => 'Filename cannot be empty.']);
+        }
+
+        if (!file_exists(dirname($destination))) {
+            if (!mkdir(dirname($destination), 0777, true)) {
+                JsonResponse::sendResponse(['message' => 'Directory could not be created.'], HTTPStatusCodes::InternalServerError);
+            }
+            chmod(dirname($destination), 0777);
+        }
+
+        if (!copy($file['tmp_name'], $destination)) {
+            JsonResponse::sendResponse(['message' => 'File could not be moved.'], HTTPStatusCodes::InternalServerError);
+        }
+        chmod($destination, 0777);
+
+        define('FILE', $destination);
+
+        return true;
+    }
+
     public static function decode_id(string &$base64)
     {
         $end_decoded = trim(strstr(base64_decode($base64), '='), '=');
@@ -128,7 +151,35 @@ sql
 
         $data .= preg_replace('/\s/', '', file_get_contents('php://input'));
 
-        file_put_contents(__DIR__ . '/../Logs/' . date('Y-m-d') . '.log', $data . "\n", FILE_APPEND);
+        $path = __DIR__ . '/../Logs/' . date('Y-m-d') . '.log';
+
+        $dir = dirname($path);
+        if (!is_dir($dir)) {
+            if (!mkdir($dir, 0777, true)) {
+                $code = HTTPStatusCodes::InternalServerError;
+                $status = 'error';
+                $error = [
+                    'message' => "Error creating dir [$dir]"
+                ];
+                JsonResponse::sendResponse(compact('status', 'code', 'response', 'error'), $code);
+            }
+            @chmod($dir, 0777);
+        }
+
+
+        if (!file_put_contents($path, $data . "\n", FILE_APPEND)) {
+            if (file_exists($path)) {
+                if (!unlink($path)) {
+                    $code = HTTPStatusCodes::InternalServerError;
+                    $status = 'error';
+                    $error = [
+                        'message' => "Error deleting file [$path]"
+                    ];
+                    System::log_error(compact('status', 'code', 'response', 'error'));
+                }
+                self::request_log();
+            }
+        }
     }
 
     /**
@@ -149,19 +200,27 @@ sql
         return $return;
     }
 
-    public static function encode_token(array $data)
+    public static function encode_token(array $data, array $options = [])
     {
-        $jwt_key = self::get_jwt_key();
+        try {
+            $jwt_key = self::get_jwt_key();
 
-        $expiration = (60 * 60) * 12; //12 Hours
+            $time = time();
+            $payload = [
+                'iat' => $time,
+                'data' => $data
+            ];
 
-        $time = time();
-        $token = [
-            'iat' => $time,
-            'exp' => $time + $expiration,
-            'data' => $data
-        ];
-        return JWT::encode($token, $jwt_key);
+            if (!empty($options['exp_hours'])) {
+                $hours = $options['exp_hours'];
+                $expiration = (60 * 60) * $hours; //12 Hours
+                $payload['exp'] = $time + $expiration;
+            }
+
+            return JWT::encode($payload, $jwt_key);
+        } catch (DomainException $ex) {
+            JsonResponse::sendResponse(['message' => $ex->getMessage(), 'request' => compact('payload')], HTTPStatusCodes::InternalServerError);
+        }
     }
 
     private static function get_jwt_key()
@@ -186,7 +245,7 @@ sql
 
             $time = time();
             $decoded = JWT::decode($jwt, $jwt_key, ['HS256']);
-            if ($decoded->exp <= $time) {
+            if (!empty($decoded->exp) && $decoded->exp <= $time) {
                 JsonResponse::sendResponse(['message' => 'The token has expired.']);
             }
             return json_decode(json_encode($decoded), true)['data'];
@@ -274,7 +333,7 @@ sql
         $pathMySQL = "MySQL.php";
         require_once($pathMySQL);
 
-        error_reporting(E_ALL ^ E_DEPRECATED);
+//        error_reporting(E_ALL ^ E_DEPRECATED);
         ini_set('display_errors', 1);
         ini_set('always_populate_raw_post_data', -1);
         ini_set('max_execution_time', 300);
@@ -404,10 +463,10 @@ sql
 
     private static function convert_endpoint(&$controller, &$action, &$id)
     {
-        $request = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
+        $request = explode('/', trim(str_replace('/?', '?', $_SERVER['REQUEST_URI']), '/'));
         if (count($request) > 2) {
             $end = end($request);
-            if (strpos($end, '?')) {
+            if (strpos($end, '?') !== false) {
                 $end = stristr($end, '?', true);
             }
             System::decode_id($end);
@@ -417,10 +476,16 @@ sql
                 $id = (int)$end;
             }
         }
-        $controller = strtolower($request[0]);
-        $action = System::isset_get($request[1]);
-        if (strpos($action, '?')) {
-            $action = stristr($action, '?', true);
+
+        if ($request[0] == 'api' || $request[1] == 'api') {
+            $controller = 'api';
+            $action = 'version';
+        } else {
+            $controller = strtolower($request[0]);
+            $action = System::isset_get($request[1]);
+            if (strpos($action, '?') !== false) {
+                $action = stristr($action, '?', true);
+            }
         }
     }
 
@@ -454,6 +519,11 @@ sql
                 }
             }
             JsonResponse::sendResponse(compact('message'), HTTPStatusCodes::OK);
+        }
+        if ($controller == 'api' && $action = 'version') {
+            $name = PROJECT;
+            $version = VERSION;
+            JsonResponse::sendResponse(compact('name', 'version'), HTTPStatusCodes::OK);
         }
         JsonResponse::sendResponse(['message' => "Endpoint not found. [$namespace]"], HTTPStatusCodes::NotFound);
     }
@@ -666,6 +736,9 @@ class JsonResponse
             $status = 'error';
             $response = $this->encode_items($this->response);
             $error = error_get_last();
+
+            unlink(FILE);
+
             System::log_error(compact('status', 'code', 'response', 'error'));
         }
         if (ENVIRONMENT == 'web') {
