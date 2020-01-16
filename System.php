@@ -975,7 +975,7 @@ sql
      */
     public function load_web()
     {
-        ['entry' => $file, 'theme' => $dir, 'modules' => $modules] = json_decode(file_get_contents(DIR . '/config.json'), true);
+        ['project' => $project, 'entry' => $file, 'theme' => $dir, 'modules' => $modules] = json_decode(file_get_contents(DIR . '/config.json'), true);
         self::load_php_functions();
         $this->dom = new DOMDocument;
         libxml_use_internal_errors(true);
@@ -992,6 +992,9 @@ sql
             $old_link = $link->getAttribute("src");
             $link->setAttribute('src', $dir . $old_link);
         }
+        $title = $this->dom->getElementById('project-title')->nodeValue = $project;
+        $logo = $this->dom->getElementById('project-img');
+        $logo->setAttribute('src', 'logo.png');
 
         $fragment = $this->dom->createDocumentFragment();
 
