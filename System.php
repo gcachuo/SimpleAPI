@@ -982,15 +982,15 @@ sql
         $this->dom->loadHTMLFile($dir . $file);
         foreach ($this->dom->getElementsByTagName('link') as $link) {
             $old_link = $link->getAttribute("href");
-            $link->setAttribute('href', $dir . $old_link);
+            $link->setAttribute('href', BASENAME . $dir . $old_link);
         }
         foreach ($this->dom->getElementsByTagName('img') as $link) {
             $old_link = $link->getAttribute("src");
-            $link->setAttribute('src', $dir . $old_link);
+            $link->setAttribute('src', BASENAME . $dir . $old_link);
         }
         foreach ($this->dom->getElementsByTagName('script') as $link) {
             $old_link = $link->getAttribute("src");
-            $link->setAttribute('src', $dir . $old_link);
+            $link->setAttribute('src', BASENAME . $dir . $old_link);
         }
         $this->dom->getElementsByTagName('title')->item(0)->nodeValue = $project;
         $this->dom->getElementById('project-title')->nodeValue = $project;
