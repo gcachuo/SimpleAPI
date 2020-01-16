@@ -969,13 +969,11 @@ sql
     }
 
     /**
-     * @param $dir
-     * @param $file
-     * @return DOMDocument
+     * @return void
      */
     public function load_web()
     {
-        ['project' => $project, 'entry' => $file, 'theme' => $dir, 'modules' => $modules] = json_decode(file_get_contents(DIR . '/config.json'), true);
+        ['project' => $project, 'entry' => $file, 'theme' => $dir, 'modules' => $modules] = json_decode(file_get_contents(WEBDIR . '/config.json'), true);
         self::load_php_functions();
         $this->dom = new DOMDocument;
         libxml_use_internal_errors(true);
@@ -1026,22 +1024,24 @@ html
 
     public function load_module($file)
     {
-        $path = DIR . '/modules/' . $file . '.php';
-        if (!file_exists($path)) {
-            throw new DOMException('Not Found: ' . $path, 404);
+        $module_path = WEBDIR . '/modules/' . $file . '.php';
+        if (!file_exists($module_path)) {
+            throw new DOMException('Not Found: ' . $module_path, 404);
         }
 
         ob_start();
-        include $path;
+        include $module_path;
         $contents = ob_get_contents();
         ob_end_clean();
         if (empty($contents)) {
-            throw new DOMException('Empty file: ' . $path, 500);
+            throw new DOMException('Empty file: ' . $module_path, 500);
         }
 
         $fragment = $this->dom->createDocumentFragment();
         $fragment->appendXML(<<<html
+<div class="container" style="margin-top: 10px">
     $contents
+</div>
 html
         );
 
