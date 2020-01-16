@@ -100,7 +100,13 @@ sql
 
     public static function decode_id(string &$base64)
     {
-        $base64 = str_replace('DAR', '', $base64) - 9734;
+        $end_decoded = str_replace('DAR', '', $base64);
+        if (!empty($end_decoded)) {
+            if (intval($end_decoded)) {
+                $base64 = $end_decoded - 9734;
+            }
+            return $end_decoded;
+        }
         return $base64;
         /*$end_decoded = trim(strstr(base64_decode($base64), '='), '=');
         if (!empty($end_decoded)) {
@@ -474,7 +480,7 @@ sql
                 $end = stristr($end, '?', true);
             }
             System::decode_id($end);
-            $count = is_nan($end) ? 2 : 3;
+            $count = !intval($end) ? 2 : 3;
             $request = array_slice($request, -$count, $count, false);
             if (count($request) == 3) {
                 $id = (int)$end;
