@@ -980,6 +980,9 @@ sql
         $this->dom->loadHTMLFile($dir . $file);
         foreach ($this->dom->getElementsByTagName('link') as $link) {
             $old_link = $link->getAttribute("href");
+            if (strpos($old_link, 'http') !== false) {
+                continue;
+            }
             $link->setAttribute('href', BASENAME . $dir . $old_link);
         }
         foreach ($this->dom->getElementsByTagName('img') as $link) {
@@ -988,6 +991,9 @@ sql
         }
         foreach ($this->dom->getElementsByTagName('script') as $link) {
             $old_link = $link->getAttribute("src");
+            if (strpos($old_link, 'http') !== false) {
+                continue;
+            }
             $link->setAttribute('src', BASENAME . $dir . $old_link);
         }
         $this->dom->getElementsByTagName('title')->item(0)->nodeValue = $project;
