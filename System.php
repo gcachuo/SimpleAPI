@@ -992,7 +992,10 @@ sql
             $old_link = $link->getAttribute("src");
             $link->setAttribute('src', $dir . $old_link);
         }
-        $title = $this->dom->getElementById('project-title')->nodeValue = $project;
+        $this->dom->getElementsByTagName('title')->item(0)->nodeValue = $project;
+        $this->dom->getElementById('project-title')->nodeValue = $project;
+        $favicon = $this->dom->getElementById('favicon');
+        $favicon->setAttribute('href', 'logo.png');
         $logo = $this->dom->getElementById('project-img');
         $logo->setAttribute('src', 'logo.png');
 
