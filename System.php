@@ -975,26 +975,47 @@ sql
      */
     public function load_web()
     {
-        ['entry' => $file, 'theme' => $dir] = json_decode(file_get_contents(DIR . '/config.json'), true);
+        ['entry' => $file, 'theme' => $dir, 'modules' => $modules] = json_decode(file_get_contents(DIR . '/config.json'), true);
         self::load_php_functions();
-        $dom = new DOMDocument;
+        $this->dom = new DOMDocument;
         libxml_use_internal_errors(true);
-        $dom->loadHTMLFile($dir . $file);
-        foreach ($dom->getElementsByTagName('link') as $link) {
+        $this->dom->loadHTMLFile($dir . $file);
+        foreach ($this->dom->getElementsByTagName('link') as $link) {
             $old_link = $link->getAttribute("href");
             $link->setAttribute('href', $dir . $old_link);
         }
-        foreach ($dom->getElementsByTagName('img') as $link) {
+        foreach ($this->dom->getElementsByTagName('img') as $link) {
             $old_link = $link->getAttribute("src");
             $link->setAttribute('src', $dir . $old_link);
         }
-        foreach ($dom->getElementsByTagName('script') as $link) {
+        foreach ($this->dom->getElementsByTagName('script') as $link) {
             $old_link = $link->getAttribute("src");
             $link->setAttribute('src', $dir . $old_link);
         }
-        libxml_clear_errors();
 
-        $this->dom = $dom;
+        $fragment = $this->dom->createDocumentFragment();
+
+        foreach ($modules as ['name' => $name, 'icon' => $icon, 'href' => $href]) {
+            $fragment->appendXML(<<<html
+<li>
+    <a href="$href">
+        <span class="nav-icon">
+            <i class="material-icons">$icon</i>
+        </span>
+        <span class="nav-text">$name</span>
+    </a>
+</li>
+html
+            );
+        }
+        $modules = $this->dom->createElement('ul');
+        $modules->setAttribute('class', 'nav');
+        $modules->appendChild($fragment);
+
+        $nav = $this->dom->getElementsByTagName('nav')[0];
+        $nav->parentNode->replaceChild($modules, $nav);
+
+        libxml_clear_errors();
     }
 
     public function load_module($file)
@@ -1016,7 +1037,7 @@ sql
         $fragment->appendXML(<<<html
     $contents
 html
-);
+        );
 
         $module = $this->dom->createElement('div');
         $module->setAttribute('id', 'view');
