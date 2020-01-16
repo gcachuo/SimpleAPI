@@ -93,7 +93,23 @@ sql
 
     public static function encode_id($id)
     {
-        return base64_encode(rand(10000, 99999) . '=' . $id);
+//        return base64_encode(rand(10000, 99999) . '=' . $id);
+        $salt = 9734 + $id;
+        return 'DAR' . $salt;
+    }
+
+    public static function decode_id(string &$base64)
+    {
+        $base64 = str_replace('DAR', '', $base64) - 9734;
+        return $base64;
+        /*$end_decoded = trim(strstr(base64_decode($base64), '='), '=');
+        if (!empty($end_decoded)) {
+            if (!is_nan($end_decoded)) {
+                $base64 = $end_decoded;
+            }
+            return $end_decoded;
+        }
+        return $base64;*/
     }
 
     public static function format_date(string $format, $value)
@@ -129,18 +145,6 @@ sql
         define('FILE', $destination);
 
         return true;
-    }
-
-    public static function decode_id(string &$base64)
-    {
-        $end_decoded = trim(strstr(base64_decode($base64), '='), '=');
-        if (!empty($end_decoded)) {
-            if (!is_nan($end_decoded)) {
-                $base64 = $end_decoded;
-            }
-            return $end_decoded;
-        }
-        return $base64;
     }
 
     public static function request_log()
@@ -470,7 +474,7 @@ sql
                 $end = stristr($end, '?', true);
             }
             System::decode_id($end);
-            $count = ctype_digit($end) ? 3 : 2;
+            $count = is_nan($end) ? 2 : 3;
             $request = array_slice($request, -$count, $count, false);
             if (count($request) == 3) {
                 $id = (int)$end;
