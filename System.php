@@ -75,6 +75,259 @@ class System
 			$mysql->prepare(<<<sql
 INSERT INTO _admin_log VALUES(NULL,?,current_timestamp,?);
 sql
+                , ['is', $id_usuario, $mensaje]);
+        } catch (Exception $ex) {
+            ob_clean();
+            die(print_r($ex, true));
+        }
+    }
+
+    public static function cli_echo(string $string, string $color = null)
+    {
+        $color = [
+                'red' => '01;31',
+                'green' => '0;32',
+                'blue' => '0;34',
+                'yellow' => '1;33'
+            ][$color] ?? '';
+        echo "\033[{$color}m " . $string . " \033[0m" . "\n";
+    }
+
+    public static function get_config()
+    {
+        $path = DIR . "/Config";
+        $env = file_exists("$path/config.dev.json") ? "dev" : "prod";
+
+        $ruta = "$path/config.$env.json";
+        if (!file_exists($ruta)) {
+            $ruta = $path . "/config.$env.json";
+            if (!file_exists($ruta)) {
+                JsonResponse::sendResponse(['message' => "No existe el archivo de configuración $ruta"], HTTPStatusCodes::InternalServerError);
+            }
+        }
+        $json = file_get_contents($ruta);
+        return json_decode($json, false);
+    }
+
+    public static function set_language(stdClass $idioma)
+    {
+        self::$idioma = $idioma;
+    }
+
+    public static function encode_id($id)
+    {
+        return base64_encode(rand(10000, 99999) . '=' . $id);
+        /*$salt = 9734 + $id;
+        return 'DAR' . $salt;*/
+    }
+
+    public static function decode_id(string &$base64)
+    {
+        /*$end_decoded = str_replace('DAR', '', strtoupper($base64));
+        if (!empty($end_decoded) && !intval($base64)) {
+            if (intval($end_decoded)) {
+                $base64 = $end_decoded - 9734;
+            }
+            return $end_decoded;
+        }
+        return $base64;*/
+        $end_decoded = trim(strstr(base64_decode($base64), '='), '=');
+        if (!empty($end_decoded)) {
+            if (!is_nan($end_decoded)) {
+                $base64 = $end_decoded;
+            }
+            return $end_decoded;
+        }
+        return $base64;
+    }
+
+    public static function format_date(string $format, $value)
+    {
+        $value = strtotime($value);
+        return date($format, $value);
+    }
+
+    public static function format_date_locale(string $format, $locale, $value)
+    {
+        setlocale(LC_TIME, $locale);
+        return strftime($format, strtotime($value));
+    }
+
+    public static function upload_file($file, string $destination)
+    {
+        if (empty($file['tmp_name'])) {
+            JsonResponse::sendResponse(['message' => 'Filename cannot be empty.']);
+        }
+
+        if (!file_exists(dirname($destination))) {
+            if (!mkdir(dirname($destination), 0777, true)) {
+                JsonResponse::sendResponse(['message' => 'Directory could not be created.'], HTTPStatusCodes::InternalServerError);
+            }
+            if (!chmod(dirname($destination), 0777)) {
+                JsonResponse::sendResponse(['message' => 'Directory could not be changed permissions.'], HTTPStatusCodes::InternalServerError);
+            }
+        }
+
+        if (!copy($file['tmp_name'], $destination)) {
+            JsonResponse::sendResponse(['message' => 'File could not be moved.'], HTTPStatusCodes::InternalServerError);
+        }
+
+        define('FILE', $destination);
+
+        return true;
+    }
+
+    /**
+     * @param $variable
+     * @param null $return
+     * @return int|string|null|array
+     */
+    public static function isset_get(&$variable, $return = null)
+    {
+        if (isset($variable)) {
+            if (empty($variable)) {
+                return $return;
+            }
+            $variable = is_string($variable) ? trim($variable) : $variable;
+            return $variable;
+        }
+        unset($variable);
+        return $return;
+    }
+
+    public static function encode_token(array $data, array $options = [])
+    {
+        try {
+            $jwt_key = self::get_jwt_key();
+
+            $time = time();
+            $payload = [
+                'iat' => $time,
+                'data' => $data
+            ];
+
+            if (!empty($options['exp_hours'])) {
+                $hours = $options['exp_hours'];
+                $expiration = (60 * 60) * $hours; //12 Hours
+                $payload['exp'] = $time + $expiration;
+            }
+
+            return JWT::encode($payload, $jwt_key);
+        } catch (DomainException $ex) {
+            JsonResponse::sendResponse(['message' => $ex->getMessage(), 'request' => compact('payload')], HTTPStatusCodes::InternalServerError);
+        }
+    }
+
+    private static function get_jwt_key()
+    {
+        if (empty(JWT_KEY)) {
+            if (!file_exists(DIR . '/Config/.jwt_key')) {
+                JsonResponse::sendResponse(['message' => 'Missing file .jwt_key'], HTTPStatusCodes::InternalServerError);
+            }
+            JsonResponse::sendResponse(['message' => 'JWT key is empty'], HTTPStatusCodes::InternalServerError);
+        }
+        return JWT_KEY;
+    }
+
+    public static function decode_token($jwt)
+    {
+        try {
+            if (empty($jwt)) {
+                JsonResponse::sendResponse(['message' => 'Empty token.']);
+            }
+
+            $jwt_key = self::get_jwt_key();
+
+            $time = time();
+            $decoded = JWT::decode($jwt, $jwt_key, ['HS256']);
+            if (!empty($decoded->exp) && $decoded->exp <= $time) {
+                JsonResponse::sendResponse(['message' => 'The token has expired.']);
+            }
+            return json_decode(json_encode($decoded), true)['data'];
+        } catch (Firebase\JWT\ExpiredException $ex) {
+            JsonResponse::sendResponse(['message' => $ex->getMessage()]);
+        } catch (Firebase\JWT\SignatureInvalidException $ex) {
+            JsonResponse::sendResponse(['message' => $ex->getMessage()]);
+        } catch (UnexpectedValueException $ex) {
+            JsonResponse::sendResponse(['message' => 'Invalid token.', 'error' => $ex->getMessage()]);
+        } catch (DomainException $ex) {
+            JsonResponse::sendResponse(['message' => 'Invalid token.', 'error' => $ex->getMessage()]);
+        }
+    }
+
+    public function init($config)
+    {
+        self::define_constants($config);
+
+        self::load_php_functions();
+
+        self::load_composer();
+
+        if (ENVIRONMENT == 'web') {
+            System::request_log();
+
+            self::convert_endpoint($controller, $action, $id);
+
+            self::call_action($controller, $action, $id);
+        } else {
+            ob_end_clean();
+        }
+    }
+
+    public function startup()
+    {
+        define('ENVIRONMENT', 'init');
+        self::define_constants(['DIR' => __DIR__ . '/']);
+        self::load_php_functions();
+        self::create_directories();
+    }
+
+    private static function load_composer()
+    {
+        $pathLib = DIR . "/Lib/vendor/autoload.php";
+        $path = DIR . "/vendor/autoload.php";
+        if (!file_exists($pathLib)) {
+            JsonResponse::sendResponse(['message' => 'Composer is not installed on Lib.'], HTTPStatusCodes::InternalServerError);
+        }
+        if (!file_exists($path)) {
+            JsonResponse::sendResponse(['message' => 'Composer is not installed.'], HTTPStatusCodes::InternalServerError);
+        }
+        require_once($pathLib);
+        require_once($path);
+    }
+
+    private static function load_php_functions()
+    {
+        ob_start();
+        setcookie('XDEBUG_SESSION', 'PHPSTORM');
+        if (ENVIRONMENT == 'web') {
+            header('Content-Type: application/json');
+            header('Access-Control-Allow-Origin: *');
+            header('Access-Control-Allow-Methods: POST, GET, OPTIONS, PATCH, DELETE');
+            header('Access-Control-Allow-Headers: Content-Type, dataType, contenttype, processdata');
+        }
+        register_shutdown_function(function () {
+            if (error_get_last()) {
+                $error = error_get_last();
+                if (!strpos($error['file'], 'vendor')) {
+                    switch ($error['type']) {
+                        case 2:
+                            switch ($error['message']) {
+                                case "session_start(): Cannot start session when headers already sent":
+                                    break 2;
+                            }
+                        case 8:
+                            break;
+                        default:
+                            JsonResponse::sendResponse(['message' => 'A fatal error ocurred.', 'error' => $error], HTTPStatusCodes::InternalServerError);
+                            break;
+                    }
+                }
+            }
+        });
+
+        $pathMySQL = "MySQL.php";
+        require_once($pathMySQL);
 				, ['is', $id_usuario, $mensaje]);
 		} catch (Exception $ex) {
 			ob_clean();
@@ -761,9 +1014,7 @@ sql
 
         $fragment = $this->dom->createDocumentFragment();
         $fragment->appendXML(<<<html
-<div>
     $contents
-</div>
 html
 );
 
