@@ -153,45 +153,6 @@ sql
         return true;
     }
 
-    public static function request_log()
-    {
-        $data = '[' . date('Y-m-d H:i:s') . '] ';
-        $data .= '[' . $_SERVER['REQUEST_METHOD'] . '] ';
-        $data .= '[' . strstr($_SERVER['REQUEST_URI'], 'api/') . '] ';
-
-        $data .= preg_replace('/\s/', '', file_get_contents('php://input'));
-
-        $path = __DIR__ . '/../Logs/' . date('Y-m-d') . '.log';
-
-        $dir = dirname($path);
-        if (!is_dir($dir)) {
-            if (!mkdir($dir, 0777, true)) {
-                $code = HTTPStatusCodes::InternalServerError;
-                $status = 'error';
-                $error = [
-                    'message' => "Error creating dir [$dir]"
-                ];
-                JsonResponse::sendResponse(compact('status', 'code', 'response', 'error'), $code);
-            }
-            @chmod($dir, 0777);
-        }
-
-
-        if (!file_put_contents($path, $data . "\n", FILE_APPEND)) {
-            if (file_exists($path)) {
-                if (!unlink($path)) {
-                    $code = HTTPStatusCodes::InternalServerError;
-                    $status = 'error';
-                    $error = [
-                        'message' => "Error deleting file [$path]"
-                    ];
-                    System::log_error(compact('status', 'code', 'response', 'error'));
-                }
-                self::request_log();
-            }
-        }
-    }
-
     /**
      * @param $variable
      * @param null $return
@@ -581,38 +542,74 @@ sql
         return $isJson;
     }
 
+    public static function request_log()
+    {
+        $data = '[' . date('Y-m-d H:i:s') . '] ';
+        $data .= '[' . $_SERVER['REQUEST_METHOD'] . '] ';
+        $data .= '[' . strstr($_SERVER['REQUEST_URI'], 'api/') . '] ';
+
+        $data .= preg_replace('/\s/', '', file_get_contents('php://input'));
+
+        $path = __DIR__ . '/../Logs/' . date('Y-m-d') . '.log';
+
+        $dir = dirname($path);
+        if (!is_dir($dir)) {
+            if (!mkdir($dir, 0777, true)) {
+                $code = HTTPStatusCodes::InternalServerError;
+                $status = 'error';
+                $error = [
+                    'message' => "Error creating dir [$dir]"
+                ];
+                JsonResponse::sendResponse(compact('status', 'code', 'response', 'error'), $code);
+            }
+            @chmod($dir, 0777);
+        }
+
+        if (!file_put_contents($path, $data . "\n", FILE_APPEND)) {
+            if (file_exists($path)) {
+                if (!unlink($path)) {
+                    $code = HTTPStatusCodes::InternalServerError;
+                    $status = 'error';
+                    $error = [
+                        'message' => "Error deleting file [$path]"
+                    ];
+                    System::log_error(compact('status', 'code', 'response', 'error'));
+                }
+                self::request_log();
+            }
+        }
+    }
+
     public static function log_error(array $response)
     {
-        try {
-            $mysql = new MySQL();
-            $mysql->create_table("_errores", [
-                new TableColumn('id', ColumnTypes::BIGINT, 20, true, null, true, true),
-                new TableColumn('fecha', ColumnTypes::TIMESTAMP, 0, true, 'current_timestamp'),
-                new TableColumn('mensaje', ColumnTypes::VARCHAR, 2000, true),
-                new TableColumn('archivo', ColumnTypes::VARCHAR, 255),
-                new TableColumn('linea', ColumnTypes::INTEGER, 11),
-                new TableColumn('codigo', ColumnTypes::INTEGER, 11),
-                new TableColumn('_post', ColumnTypes::LONGBLOB, 0),
-                new TableColumn('_get', ColumnTypes::VARCHAR, 2000),
-                new TableColumn('_server', ColumnTypes::VARCHAR, 2000),
-                new TableColumn('_session', ColumnTypes::VARCHAR, 2000),
-            ]);
-            $mysql->prepare("insert into _errores values(?,?,?,?,?,?,?,?,?,?)", [
-                'isssiissss',
-                null,//id
-                null,//fecha
-                System::isset_get($response['error']['message'], $response['response']['message']),//mensaje
-                System::isset_get($response['error']['file']),//archivo
-                System::isset_get($response['error']['line']),//linea
-                System::isset_get($response['error']['type'], $response['code']),//codigo
-                $mysql->escape_string(print_r($_POST, true)),//_post
-                $mysql->escape_string(print_r($_GET, true)),//_get
-                $mysql->escape_string(print_r($_SERVER, true)),//_server
-                $mysql->escape_string(print_r(System::isset_get($_SESSION), true)),//_session
-            ]);
-        } catch (mysqli_sql_exception $ex) {
-            ob_clean();
-            die(print_r($ex, true));
+        global $_PUT, $_PATCH;
+        $data = '[' . date('Y-m-d H:i:s') . '] ';
+        $data .= '[' . $_SERVER['REQUEST_METHOD'] . '] ';
+        $data .= '[' . strstr($_SERVER['REQUEST_URI'], 'api/') . '] ';
+        $data .= '[' . $response['code'] . '] ';
+        $data .= '[' . json_encode($response['response']) . '] ';
+        $data .= json_encode([
+            'GET' => $_GET,
+            'POST' => $_POST,
+            'PUT' => $_PUT,
+            'PATCH' => $_PATCH,
+        ][REQUEST_METHOD]);
+
+        $path = __DIR__ . '/../Logs/' . date('Y-m-d') . '.log';
+
+        if (!file_put_contents($path, $data . "\n", FILE_APPEND)) {
+            if (file_exists($path)) {
+                if (!unlink($path)) {
+                    $code = HTTPStatusCodes::InternalServerError;
+                    $status = 'error';
+                    $error = [
+                        'message' => "Error deleting file [$path]"
+                    ];
+                    self::log_error(compact('status', 'code', 'response', 'error'));
+                    return;
+                }
+                self::log_error($response);
+            }
         }
     }
 }
