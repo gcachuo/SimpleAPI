@@ -506,10 +506,13 @@ sql
                         $entry = preg_split('/\] \[|] |^\[/m', $entry);
                         array_walk($entry, function (&$value) {
                             $value = trim($value, '[] ');
+                            if (self::isJson($value)) {
+                                $value = self::json_decode($value, true);
+                            }
                         });
                         $entry = array_values(array_filter($entry));
                     });
-                    JsonResponse::sendResponse(compact('log', 'version'), HTTPStatusCodes::OK);
+                    JsonResponse::sendResponse(compact('log'), HTTPStatusCodes::OK);
                     break;
             }
         }
