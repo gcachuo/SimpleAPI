@@ -450,7 +450,7 @@ sql
 
         if ($request[0] == 'api' || $request[1] == 'api') {
             $controller = 'api';
-            $action = 'version';
+            $action = $end ?: 'version';
         } else {
             $controller = strtolower($request[0]);
             $action = System::isset_get($request[1]);
@@ -491,12 +491,29 @@ sql
             }
             JsonResponse::sendResponse(compact('message'), HTTPStatusCodes::OK);
         }
-        if ($controller == 'api' && $action = 'version') {
-            $name = PROJECT;
-            $version = VERSION;
-            JsonResponse::sendResponse(compact('name', 'version'), HTTPStatusCodes::OK);
+        if ($controller == 'api') {
+            switch ($action) {
+                case "version":
+                    $name = PROJECT;
+                    $version = VERSION;
+                    JsonResponse::sendResponse(compact('name', 'version'), HTTPStatusCodes::OK);
+                    break;
+                case "errors":
+                    $log = explode("\n", file_get_contents(DIR . '/Logs/' . date('Y-m-d') . '.log'));
+                    rsort($log);
+                    $log = array_filter($log);
+                    array_walk($log, function (&$entry) {
+                        $entry = preg_split('/\] \[|] |^\[/m', $entry);
+                        array_walk($entry, function (&$value) {
+                            $value = trim($value, '[] ');
+                        });
+                        $entry = array_values(array_filter($entry));
+                    });
+                    JsonResponse::sendResponse(compact('log', 'version'), HTTPStatusCodes::OK);
+                    break;
+            }
         }
-        JsonResponse::sendResponse(['message' => "Endpoint not found. [$namespace]"], HTTPStatusCodes::NotFound);
+        JsonResponse::sendResponse(['message' => "Endpoint not found.  [$namespace]"], HTTPStatusCodes::NotFound);
     }
 
     /**
@@ -544,6 +561,11 @@ sql
 
     public static function request_log()
     {
+        $explode = explode('/', $_SERVER['REQUEST_URI']);
+        if (end($explode) === 'errors') {
+            return;
+        }
+
         $data = '[' . date('Y-m-d H:i:s') . '] ';
         $data .= '[' . $_SERVER['REQUEST_METHOD'] . '] ';
         $data .= '[' . strstr($_SERVER['REQUEST_URI'], 'api/') . '] ';
