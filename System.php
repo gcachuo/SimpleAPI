@@ -504,7 +504,11 @@ sql
                     $log = array_filter($log);
                     array_walk($log, function (&$entry) {
                         $entry = preg_split('/\] \[|] |^\[/m', $entry);
-                        array_walk($entry, function (&$value) {
+                        $entry = array_values(array_filter($entry));
+                        array_walk($entry, function (&$value) use ($entry) {
+                            if (count($entry) < 5) {
+                                $value = null;
+                            }
                             $value = trim($value, '[] ');
                             if (self::isJson($value)) {
                                 $value = self::json_decode($value, true);
@@ -512,6 +516,7 @@ sql
                         });
                         $entry = array_values(array_filter($entry));
                     });
+                    $log = array_values(array_filter($log));
                     JsonResponse::sendResponse(compact('log'), HTTPStatusCodes::OK);
                     break;
             }
