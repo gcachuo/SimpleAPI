@@ -499,7 +499,11 @@ sql
                     JsonResponse::sendResponse(compact('name', 'version'), HTTPStatusCodes::OK);
                     break;
                 case "errors":
-                    $log = explode("\n", file_get_contents(DIR . '/Logs/' . date('Y-m-d') . '.log'));
+                    $path = DIR . '/Logs/' . date('Y-m-d') . '.log';
+                    if (!file_exists($path)) {
+                        file_put_contents($path, '');
+                    }
+                    $log = explode("\n", file_get_contents($path));
                     rsort($log);
                     $log = array_filter($log);
                     array_walk($log, function (&$entry) {
