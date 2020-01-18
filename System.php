@@ -435,7 +435,7 @@ sql
     private static function convert_endpoint(&$controller, &$action, &$id)
     {
         $request = explode('/', trim(str_replace('/?', '?', $_SERVER['REQUEST_URI']), '/'));
-        if (count($request) > 2) {
+        if (count($request) >= 2) {
             $end = end($request);
             if (strpos($end, '?') !== false) {
                 $end = stristr($end, '?', true);
