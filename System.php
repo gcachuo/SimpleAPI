@@ -140,13 +140,17 @@ sql
             if (!mkdir(dirname($destination), 0777, true)) {
                 JsonResponse::sendResponse(['message' => 'Directory could not be created.'], HTTPStatusCodes::InternalServerError);
             }
-            chmod(dirname($destination), 0777);
+            if (!chmod(dirname($destination), 0777)) {
+                JsonResponse::sendResponse(['message' => 'Directory could not be changed permissions.'], HTTPStatusCodes::InternalServerError);
+            }
         }
 
         if (!copy($file['tmp_name'], $destination)) {
             JsonResponse::sendResponse(['message' => 'File could not be moved.'], HTTPStatusCodes::InternalServerError);
         }
-        chmod($destination, 0777);
+        if (chmod(dirname($destination), 0777)) {
+            JsonResponse::sendResponse(['message' => "Directory could not be changed permissions. $destination"], HTTPStatusCodes::InternalServerError);
+        }
 
         define('FILE', $destination);
 
