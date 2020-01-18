@@ -148,9 +148,7 @@ sql
         if (!copy($file['tmp_name'], $destination)) {
             JsonResponse::sendResponse(['message' => 'File could not be moved.'], HTTPStatusCodes::InternalServerError);
         }
-        if (chmod(dirname($destination), 0777)) {
-            JsonResponse::sendResponse(['message' => "Directory could not be changed permissions. $destination"], HTTPStatusCodes::InternalServerError);
-        }
+        @chmod(dirname($destination), 0777);
 
         define('FILE', $destination);
 
