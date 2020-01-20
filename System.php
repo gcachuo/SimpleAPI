@@ -500,7 +500,7 @@ sql
                     JsonResponse::sendResponse(compact('name', 'version'), HTTPStatusCodes::OK);
                     break;
                 case "errors":
-                    $path = DIR . '/Logs/' . date('Y-m-d') . '.log';
+                    $path = DIR . '/Logs/' . date('Y-m-d', strtotime(System::isset_get($_GET['date'], date('Y-m-d')))) . '.log';
                     if (!file_exists($path)) {
                         file_put_contents($path, '');
                     }
