@@ -499,7 +499,7 @@ sql
                     $version = VERSION;
                     JsonResponse::sendResponse(compact('name', 'version'), HTTPStatusCodes::OK);
                     break;
-                case "errors":
+                case "logs":
                     $path = DIR . '/Logs/' . date('Y-m-d', strtotime(System::isset_get($_GET['date'], date('Y-m-d')))) . '.log';
                     if (!file_exists($path)) {
                         file_put_contents($path, '');
@@ -511,7 +511,7 @@ sql
                         $entry = preg_split('/\] \[|] |^\[/m', $entry);
                         $entry = array_values(array_filter($entry));
                         array_walk($entry, function (&$value) use ($entry) {
-                            if (count($entry) < 5) {
+                            if (System::isset_get($_GET['errors']) === 'true' && count($entry) < 5) {
                                 $value = null;
                             }
                             $value = trim($value, '[] ');
