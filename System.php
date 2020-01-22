@@ -355,7 +355,7 @@ sql
         global $_PATCH, $_PUT, $_DELETE;
 
         if (!defined('ENVIRONMENT'))
-            define('ENVIRONMENT', isset($_SERVER['SHELL']) || isset($_SERVER['argv']) ? 'cli' : 'web');
+            define('ENVIRONMENT', System::isset_get($_SERVER['SHELL']) ||  System::isset_get($_SERVER['argv']) ? 'cli' : 'web');
 
         if (!defined('REQUEST_METHOD'))
             define('REQUEST_METHOD', System::isset_get($_SERVER['REQUEST_METHOD']));
