@@ -115,7 +115,6 @@ sql
             $stmt->free_result();
             $stmt->close();
             return $mysqli_result ?: [];
-
         } catch (mysqli_sql_exception $exception) {
             $code = $exception->getCode();
             $message = $exception->getMessage();
