@@ -969,44 +969,51 @@ sql
     }
 
     /**
+     * @param string $module
+     * @param array $constants
      * @return void
      */
-    public function load_web()
+    public function init_web(string $module, array $constants)
     {
-        ['project' => $project, 'entry' => $file, 'theme' => $dir, 'modules' => $modules] = json_decode(file_get_contents(WEBDIR . '/config.json'), true);
-        self::load_php_functions();
-        $this->dom = new DOMDocument;
-        libxml_use_internal_errors(true);
-        $this->dom->loadHTMLFile($dir . $file);
-        foreach ($this->dom->getElementsByTagName('link') as $link) {
-            $old_link = $link->getAttribute("href");
-            if (strpos($old_link, 'http') !== false) {
-                continue;
-            }
-            $link->setAttribute('href', BASENAME . $dir . $old_link);
-        }
-        foreach ($this->dom->getElementsByTagName('img') as $link) {
-            $old_link = $link->getAttribute("src");
-            $link->setAttribute('src', BASENAME . $dir . $old_link);
-        }
-        foreach ($this->dom->getElementsByTagName('script') as $link) {
-            $old_link = $link->getAttribute("src");
-            if (strpos($old_link, 'http') !== false) {
-                continue;
-            }
-            $link->setAttribute('src', BASENAME . $dir . $old_link);
-        }
-        $this->dom->getElementsByTagName('title')->item(0)->nodeValue = $project;
-        $this->dom->getElementById('project-title')->nodeValue = $project;
-        $favicon = $this->dom->getElementById('favicon');
-        $favicon->setAttribute('href', 'logo.png');
-        $logo = $this->dom->getElementById('project-img');
-        $logo->setAttribute('src', 'logo.png');
+        try {
+            define('WEBDIR', $constants['WEBDIR']);
+            define('BASENAME', $constants['BASENAME']);
+            define('ENVIRONMENT', 'api');
 
-        $fragment = $this->dom->createDocumentFragment();
+            ['project' => $project, 'entry' => $file, 'theme' => $dir, 'modules' => $modules] = json_decode(file_get_contents(WEBDIR . '/config.json'), true);
+            self::load_php_functions();
+            $this->dom = new DOMDocument;
+            libxml_use_internal_errors(true);
+            $this->dom->loadHTMLFile($dir . $file);
+            foreach ($this->dom->getElementsByTagName('link') as $link) {
+                $old_link = $link->getAttribute("href");
+                if (strpos($old_link, 'http') !== false) {
+                    continue;
+                }
+                $link->setAttribute('href', BASENAME . $dir . $old_link);
+            }
+            foreach ($this->dom->getElementsByTagName('img') as $link) {
+                $old_link = $link->getAttribute("src");
+                $link->setAttribute('src', BASENAME . $dir . $old_link);
+            }
+            foreach ($this->dom->getElementsByTagName('script') as $link) {
+                $old_link = $link->getAttribute("src");
+                if (strpos($old_link, 'http') !== false) {
+                    continue;
+                }
+                $link->setAttribute('src', BASENAME . $dir . $old_link);
+            }
+            $this->dom->getElementsByTagName('title')->item(0)->nodeValue = $project;
+            $this->dom->getElementById('project-title')->nodeValue = $project;
+            $favicon = $this->dom->getElementById('favicon');
+            $favicon->setAttribute('href', 'logo.png');
+            $logo = $this->dom->getElementById('project-img');
+            $logo->setAttribute('src', 'logo.png');
 
-        foreach ($modules as ['name' => $name, 'icon' => $icon, 'href' => $href]) {
-            $fragment->appendXML(<<<html
+            $fragment = $this->dom->createDocumentFragment();
+
+            foreach ($modules?:[['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard']] as ['name' => $name, 'icon' => $icon, 'href' => $href]) {
+                $fragment->appendXML(<<<html
 <li>
     <a href="$href">
         <span class="nav-icon">
@@ -1016,16 +1023,27 @@ sql
     </a>
 </li>
 html
-            );
+                );
+            }
+            $modules = $this->dom->createElement('ul');
+            $modules->setAttribute('class', 'nav');
+            $modules->appendChild($fragment);
+
+            $nav = $this->dom->getElementsByTagName('nav')[0];
+            $nav->parentNode->replaceChild($modules, $nav);
+
+            libxml_clear_errors();
+
+            $this->load_module($module);
+            $this->print_page();
+        } catch (DOMException $exception) {
+            $message = $exception->getMessage();
+            echo <<<html
+<script>
+alert('$message');
+</script>
+html;
         }
-        $modules = $this->dom->createElement('ul');
-        $modules->setAttribute('class', 'nav');
-        $modules->appendChild($fragment);
-
-        $nav = $this->dom->getElementsByTagName('nav')[0];
-        $nav->parentNode->replaceChild($modules, $nav);
-
-        libxml_clear_errors();
     }
 
     public function load_module($file)
