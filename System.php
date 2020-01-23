@@ -973,14 +973,20 @@ sql
      * @param array $constants
      * @return void
      */
-    public function init_web(string $module, array $constants)
+    public function init_web(array $constants)
     {
         try {
             define('WEBDIR', $constants['WEBDIR']);
             define('BASENAME', $constants['BASENAME']);
             define('ENVIRONMENT', 'api');
 
-            ['project' => $project, 'entry' => $file, 'theme' => $dir, 'modules' => $modules] = json_decode(file_get_contents(WEBDIR . '/config.json'), true);
+            [
+                'project' => $project,
+                'entry' => $file,
+                'theme' => $dir,
+                'default' => $default,
+                'modules' => $modules
+            ] = json_decode(file_get_contents(WEBDIR . '/config.json'), true);
             self::load_php_functions();
             $this->dom = new DOMDocument;
             libxml_use_internal_errors(true);
@@ -1012,7 +1018,7 @@ sql
 
             $fragment = $this->dom->createDocumentFragment();
 
-            foreach ($modules?:[['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard']] as ['name' => $name, 'icon' => $icon, 'href' => $href]) {
+            foreach ($modules ?: [['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard']] as ['name' => $name, 'icon' => $icon, 'href' => $href]) {
                 $fragment->appendXML(<<<html
 <li>
     <a href="$href">
@@ -1034,6 +1040,7 @@ html
 
             libxml_clear_errors();
 
+            $module = System::isset_get($_GET['module'], $default) . (System::isset_get($_GET['action']) ? '/' . $_GET['action'] : '');
             $this->load_module($module);
             $this->print_page();
         } catch (DOMException $exception) {
