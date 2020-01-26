@@ -318,7 +318,7 @@ sql;
         // decrypt secret key with user private key
         $key = "super secret key";
         // encrypt data using secret key
-        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-256-cbc'));
+        $iv = 'default';//openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-256-cbc'));
         $encrypted_data = [];
         foreach ($data as $data_key => $data_value) {
             $encrypted_data[$data_key] = base64_encode(openssl_encrypt($data_value, "aes-256-cbc", $key, 0, $iv) . "::" . $iv);
