@@ -315,6 +315,7 @@ sql;
 
     public function encrypt_data($user_id, array $data)
     {
+        /*
         // decrypt secret key with user private key
         $key = "super secret key";
         // encrypt data using secret key
@@ -323,11 +324,13 @@ sql;
         foreach ($data as $data_key => $data_value) {
             $encrypted_data[$data_key] = base64_encode(openssl_encrypt($data_value, "aes-256-cbc", $key, 0, $iv) . "::" . $iv);
         }
-        return $encrypted_data;
+        return $encrypted_data;*/
+        return $data;
     }
 
     public function decrypt_data(int $user_id, array $data)
     {
+        /*
         // decrypt secret key with user private key
         $key = "super secret key";
         // decrypt data using secret key
@@ -336,7 +339,8 @@ sql;
             list($decrypted, $iv) = explode('::', base64_decode($data_value), 2);
             $decrypted_data[$data_key] = openssl_decrypt($decrypted, 'aes-256-cbc', $key, 0, $iv) ?: $data_value;
         }
-        return $decrypted_data;
+        return $decrypted_data;*/
+        return $data;
     }
 }
 
