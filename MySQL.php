@@ -334,7 +334,7 @@ sql;
         $decrypted_data = [];
         foreach ($data as $data_key => $data_value) {
             list($decrypted, $iv) = explode('::', base64_decode($data_value), 2);
-            $decrypted_data[$data_key] = openssl_decrypt($decrypted, 'aes-256-cbc', $key, 0, $iv);
+            $decrypted_data[$data_key] = openssl_decrypt($decrypted, 'aes-256-cbc', $key, 0, $iv) ?: $data_value;
         }
         return $decrypted_data;
     }
