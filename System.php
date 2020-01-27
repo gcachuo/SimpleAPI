@@ -12,6 +12,14 @@ class System
      */
     private static $idioma;
 
+    static function decrypt($value_encrypted)
+    {
+        define('SEED', 'crypt0w4113t');
+        $value_encrypted = html_entity_decode($value_encrypted);
+        $value = openssl_decrypt($value_encrypted, "AES-256-CBC", SEED, 0, str_pad(SEED, 16, 'X', STR_PAD_LEFT));
+        return $value;
+    }
+
     /**
      * @param string $json
      * @param bool $assoc
