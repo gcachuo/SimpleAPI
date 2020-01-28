@@ -11,13 +11,17 @@ class System
      * @var string
      */
     private static $idioma;
+    private const SEED = 'crypt0w4113t';
 
     static function decrypt($value_encrypted)
     {
-        if (!defined('SEED')) define('SEED', 'crypt0w4113t');
         $value_encrypted = html_entity_decode($value_encrypted);
-        $value = openssl_decrypt($value_encrypted, "AES-256-CBC", SEED, 0, str_pad(SEED, 16, 'X', STR_PAD_LEFT));
-        return $value;
+        return openssl_decrypt($value_encrypted, "AES-256-CBC", System::SEED, 0, str_pad(System::SEED, 16, 'X', STR_PAD_LEFT));
+    }
+
+    public static function encrypt($value)
+    {
+        return openssl_encrypt($value, "AES-256-CBC", System::SEED, 0, str_pad(System::SEED, 16, 'X', STR_PAD_LEFT));
     }
 
     /**
