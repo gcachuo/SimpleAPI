@@ -969,7 +969,6 @@ sql
     }
 
     /**
-     * @param string $module
      * @param array $constants
      * @return void
      */
@@ -977,7 +976,6 @@ sql
     {
         try {
             define('WEBDIR', $constants['WEBDIR']);
-            define('BASENAME', $constants['BASENAME']);
             define('ENVIRONMENT', 'api');
 
             [
@@ -985,8 +983,11 @@ sql
                 'entry' => $file,
                 'theme' => $dir,
                 'default' => $default,
+                'basename' => $basename,
                 'modules' => $modules
             ] = json_decode(file_get_contents(WEBDIR . '/config.json'), true);
+            define('BASENAME', $basename);
+
             self::load_php_functions();
             $this->dom = new DOMDocument;
             libxml_use_internal_errors(true);
