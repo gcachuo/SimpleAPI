@@ -3,3 +3,4 @@
 /Config/database.prod.json
 *.log
 /offline
+.phpunit.result.cache
