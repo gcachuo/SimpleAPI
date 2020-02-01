@@ -632,15 +632,19 @@ sql
         global $_PUT, $_PATCH;
         $data = '[' . date('Y-m-d H:i:s') . '] ';
         $data .= '[' . $_SERVER['REQUEST_METHOD'] . '] ';
-        $data .= '[' . strstr($_SERVER['REQUEST_URI'], 'api/') . '] ';
+        if (ENVIRONMENT == 'web') {
+            $data .= '[' . strstr($_SERVER['REQUEST_URI'], 'api/') . '] ';
+        } elseif (ENVIRONMENT == 'cli') {
+            $data .= '[' . $_SERVER['argv'][5] . '] ';
+        }
         $data .= '[' . $response['code'] . '] ';
         $data .= '[' . json_encode($response['response']) . '] ';
         $data .= json_encode([
-            'GET' => $_GET,
-            'POST' => $_POST,
-            'PUT' => $_PUT,
-            'PATCH' => $_PATCH,
-        ][REQUEST_METHOD]);
+                'GET' => $_GET,
+                'POST' => $_POST,
+                'PUT' => $_PUT,
+                'PATCH' => $_PATCH,
+            ][REQUEST_METHOD] ?? ENVIRONMENT);
 
         $path = __DIR__ . '/../Logs/' . date('Y-m-d') . '.log';
 
@@ -791,7 +795,7 @@ class JsonResponse
             $response = $this->encode_items($this->response);
             $error = error_get_last();
 
-            unlink(FILE);
+            if (defined('FILE')) unlink(FILE);
 
             System::log_error(compact('status', 'code', 'response', 'error'));
         }
@@ -807,6 +811,8 @@ class JsonResponse
                 $error = $exception['error']['message'];
             } elseif (System::isset_get($exception['response']['message'])) {
                 $error = $exception['response']['message'];
+            } elseif (System::isset_get($exception['response']['error'])) {
+                $error = '[' . $exception['response']['type'] . '] ' . $exception['response']['error'];
             }
 
             throw new JsonException($error, $exception['code']);
