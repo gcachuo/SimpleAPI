@@ -112,7 +112,7 @@ sql
 
     public static function decode_id(string &$base64)
     {
-        $end_decoded = str_replace('DAR', '', $base64);
+        $end_decoded = str_replace('DAR', '', strtoupper($base64));
         if (!empty($end_decoded) && !intval($base64)) {
             if (intval($end_decoded)) {
                 $base64 = $end_decoded - 9734;
