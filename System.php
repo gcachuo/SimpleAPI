@@ -984,7 +984,6 @@ sql
                 'entry' => $file,
                 'theme' => $dir,
                 'default' => $default,
-                'basename' => $basename,
                 'modules' => $modules
             ] = json_decode(file_get_contents(WEBDIR . '/config.json'), true);
             define('BASENAME', dirname($_SERVER['SCRIPT_NAME']) . '/');
