@@ -7,73 +7,74 @@ use Model\TableColumn;
 
 class System
 {
-	/**
-	 * @var string
-	 */
-	private static $idioma;
-	private const SEED = 'crypt0w4113t';
+    /**
+     * @var string
+     */
+    private static $idioma;
+    /**
+     * @var DOMDocument
+     */
+    private $dom;
 
-	static function decrypt($value_encrypted)
-	{
-		$value_encrypted = html_entity_decode($value_encrypted);
-		return openssl_decrypt($value_encrypted, "AES-256-CBC", System::SEED, 0, str_pad(System::SEED, 16, 'X', STR_PAD_LEFT));
-	}
+    private const SEED = 'crypt0w4113t';
 
-	public static function encrypt($value)
-	{
-		return openssl_encrypt($value, "AES-256-CBC", System::SEED, 0, str_pad(System::SEED, 16, 'X', STR_PAD_LEFT));
-	}
+    static function decrypt($value_encrypted)
+    {
+        $value_encrypted = html_entity_decode($value_encrypted);
+        return openssl_decrypt($value_encrypted, "AES-256-CBC", System::SEED, 0, str_pad(System::SEED, 16, 'X', STR_PAD_LEFT));
+    }
 
-	public static function query_log(string $sql)
-	{
-		$date = date('Y-m-d H:i:s');
-		$request = trim(stristr($_SERVER['REQUEST_URI'], 'api'), '/');
-		$path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/';
-		if (!is_dir($path)) {
-			mkdir($path, 0777, true);
-		}
-		file_put_contents($path . date('Y-m-d') . '.sql', "#$date $request\n" . $sql . "\n\n", FILE_APPEND);
-	}
+    public static function encrypt($value)
+    {
+        return openssl_encrypt($value, "AES-256-CBC", System::SEED, 0, str_pad(System::SEED, 16, 'X', STR_PAD_LEFT));
+    }
 
-	/**
-	 * @param string $json
-	 * @param bool $assoc
-	 * @return object|array
-	 */
-	static function json_decode($json, $assoc)
-	{
-		$json = json_decode($json, $assoc);
-		$error = json_last_error();
-		switch ($error) {
-			case 0:
-				//No Error
-				break;
-			case 5:
-				//Malformed UTF-8 characters, possibly incorrectly encoded
-				array_walk_recursive($array, function (&$item) {
-					$item = utf8_encode($item);
-				});
-				$json = json_decode($json, $assoc);
-				break;
-			default:
-				$json = json_last_error_msg();
-				break;
-		}
-		return $json;
-	}
+    public static function query_log(string $sql)
+    {
+        $request = trim(stristr($_SERVER['REQUEST_URI'], 'api'), '/');
+        $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/' . date('Y-m-d') . '.sql';
+        file_put_contents($path, "#$request\n" . $sql . "\n\n", FILE_APPEND);
+    }
 
-	public static function admin_log(int $id_usuario, string $mensaje)
-	{
-		try {
-			$mysql = new MySQL();
-			$mysql->create_table('_admin_log', [
-				new TableColumn('id_admin_log', ColumnTypes::BIGINT, 20, true, null, true, true),
-				new TableColumn('id_usuario', ColumnTypes::BIGINT, 20, true),
-				new TableColumn('fecha', ColumnTypes::TIMESTAMP, 0, false, 'current_timestamp'),
-				new TableColumn('mensaje', ColumnTypes::LONGBLOB)
-			]);
-			$mysql->prepare(<<<sql
-INSERT INTO _admin_log VALUES(NULL,?,current_timestamp,?);
+    /**
+     * @param string $json
+     * @param bool $assoc
+     * @return object|array
+     */
+    static function json_decode($json, $assoc)
+    {
+        $json = json_decode($json, $assoc);
+        $error = json_last_error();
+        switch ($error) {
+            case 0:
+                //No Error
+                break;
+            case 5:
+                //Malformed UTF-8 characters, possibly incorrectly encoded
+                array_walk_recursive($array, function (&$item) {
+                    $item = utf8_encode($item);
+                });
+                $json = json_decode($json, $assoc);
+                break;
+            default:
+                $json = json_last_error_msg();
+                break;
+        }
+        return $json;
+    }
+
+    public static function admin_log(int $id_usuario, string $mensaje)
+    {
+        try {
+            $mysql = new MySQL();
+            $mysql->create_table('_admin_log', [
+                new TableColumn('id_admin_log', ColumnTypes::BIGINT, 20, true, null, true, true),
+                new TableColumn('id_usuario', ColumnTypes::BIGINT, 20, true),
+                new TableColumn('fecha', ColumnTypes::TIMESTAMP, 0, false, 'current_timestamp'),
+                new TableColumn('mensaje', ColumnTypes::LONGBLOB)
+            ]);
+            $mysql->prepare(<<<sql
+insert into _admin_log values(null,?,current_timestamp,?);
 sql
                 , ['is', $id_usuario, $mensaje]);
         } catch (Exception $ex) {
@@ -986,7 +987,7 @@ sql
                 'basename' => $basename,
                 'modules' => $modules
             ] = json_decode(file_get_contents(WEBDIR . '/config.json'), true);
-            define('BASENAME', $basename);
+            define('BASENAME', dirname($_SERVER['SCRIPT_NAME']) . '/');
 
             self::load_php_functions();
             $this->dom = new DOMDocument;
