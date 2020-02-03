@@ -1019,10 +1019,12 @@ sql
 
             $fragment = $this->dom->createDocumentFragment();
 
-            foreach ($modules ?: [['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard']] as ['name' => $name, 'icon' => $icon, 'href' => $href]) {
+            foreach ($modules ?: [['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard', 'disabled' => '']] as $module) {
+                ['name' => $name, 'icon' => $icon, 'href' => $href] = $module;
+                $disabled = System::isset_get($module['disabled']) ? 'disabled' : '';
                 $fragment->appendXML(<<<html
 <li>
-    <a href="$href">
+    <a href="$href" class="$disabled">
         <span class="nav-icon">
             <i class="material-icons">$icon</i>
         </span>
