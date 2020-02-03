@@ -3,6 +3,7 @@ cd "$parent_path"
 
 mkdir -p ../../modules;
 mkdir -p ../../themes;
+mkdir -p ../../Logs;
 
 cp ../web/index.php ../../
 cp ../web/config.json ../../
