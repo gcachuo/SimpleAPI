@@ -1013,19 +1013,23 @@ sql
                 }
                 $link->setAttribute('src', BASENAME . $dir . $old_link);
             }
-            $this->dom->getElementsByTagName('title')->item(0)->nodeValue = $project;
-            $this->dom->getElementById('project-title')->nodeValue = $project;
-            $favicon = $this->dom->getElementById('favicon');
-            $favicon->setAttribute('href', 'logo.png');
-            $logo = $this->dom->getElementById('project-img');
-            $logo->setAttribute('src', 'logo.png');
 
-            $fragment = $this->dom->createDocumentFragment();
+            if ($file != $entry) {
+                $this->dom->getElementById('project-title')->nodeValue = $project;
+            } else {
+                $this->dom->getElementsByTagName('title')->item(0)->nodeValue = $project;
+                $this->dom->getElementById('project-title')->nodeValue = $project;
+                $favicon = $this->dom->getElementById('favicon');
+                $favicon->setAttribute('href', 'logo.png');
+                $logo = $this->dom->getElementById('project-img');
+                $logo->setAttribute('src', 'logo.png');
 
-            foreach ($module_list ?: [['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard', 'disabled' => '']] as $module) {
-                ['name' => $name, 'icon' => $icon, 'href' => $href] = $module;
-                $disabled = System::isset_get($module['disabled']) ? 'disabled' : '';
-                $fragment->appendXML(<<<html
+                $fragment = $this->dom->createDocumentFragment();
+
+                foreach ($module_list ?: [['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard', 'disabled' => '']] as $module) {
+                    ['name' => $name, 'icon' => $icon, 'href' => $href] = $module;
+                    $disabled = System::isset_get($module['disabled']) ? 'disabled' : '';
+                    $fragment->appendXML(<<<html
 <li>
     <a href="$href" class="$disabled">
         <span class="nav-icon">
@@ -1035,18 +1039,19 @@ sql
     </a>
 </li>
 html
-                );
+                    );
+                }
+                $modules = $this->dom->createElement('ul');
+                $modules->setAttribute('class', 'nav');
+                $modules->appendChild($fragment);
+
+                $nav = $this->dom->getElementsByTagName('nav')[0];
+                $nav->parentNode->replaceChild($modules, $nav);
+
+                libxml_clear_errors();
+
+                $this->load_module($module_file);
             }
-            $modules = $this->dom->createElement('ul');
-            $modules->setAttribute('class', 'nav');
-            $modules->appendChild($fragment);
-
-            $nav = $this->dom->getElementsByTagName('nav')[0];
-            $nav->parentNode->replaceChild($modules, $nav);
-
-            libxml_clear_errors();
-
-            $this->load_module($module_file);
             $this->print_page();
         } catch (DOMException $exception) {
             $message = $exception->getMessage();
