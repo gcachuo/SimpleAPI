@@ -1027,10 +1027,17 @@ sql
             $favicon->setAttribute('href', 'logo.png');
             $logo = $this->dom->getElementById('project-img');
             $logo->setAttribute('src', 'logo.png');
+
             if ($file != $entry) {
+                $fragment = $this->dom->createDocumentFragment();
+                $fragment->appendXML(<<<html
+<script src="assets/js/signin.js"></script>
+html
+                );
 
+                $body = $this->dom->getElementsByTagName('body');
+                $body->item(0)->appendChild($fragment);
             } else {
-
                 $fragment = $this->dom->createDocumentFragment();
 
                 foreach ($module_list ?: [['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard', 'disabled' => '']] as $module) {
@@ -1055,10 +1062,10 @@ html
                 $nav = $this->dom->getElementsByTagName('nav')[0];
                 $nav->parentNode->replaceChild($modules, $nav);
 
-                libxml_clear_errors();
-
                 $this->load_module($module_file);
             }
+
+            libxml_clear_errors();
             $this->print_page();
         } catch (DOMException $exception) {
             $message = $exception->getMessage();
