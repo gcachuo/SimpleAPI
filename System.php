@@ -981,16 +981,19 @@ sql
 
             [
                 'project' => $project,
-                'entry' => $file,
+                'entry' => $entry,
                 'theme' => $dir,
                 'default' => $default,
-                'modules' => $modules
+                'modules' => $module_list
             ] = json_decode(file_get_contents(WEBDIR . '/config.json'), true);
             define('BASENAME', dirname($_SERVER['SCRIPT_NAME']) . '/');
-
             self::load_php_functions();
             $this->dom = new DOMDocument;
             libxml_use_internal_errors(true);
+
+            $module_file = System::isset_get($_GET['module'], $default) . (System::isset_get($_GET['action']) ? '/' . $_GET['action'] : '');
+            $file = $module_list[array_search($module_file, array_column($module_list, 'href'))]['file'] ?? $entry;
+
             $this->dom->loadHTMLFile($dir . $file);
             foreach ($this->dom->getElementsByTagName('link') as $link) {
                 $old_link = $link->getAttribute("href");
@@ -1019,7 +1022,7 @@ sql
 
             $fragment = $this->dom->createDocumentFragment();
 
-            foreach ($modules ?: [['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard', 'disabled' => '']] as $module) {
+            foreach ($module_list ?: [['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard', 'disabled' => '']] as $module) {
                 ['name' => $name, 'icon' => $icon, 'href' => $href] = $module;
                 $disabled = System::isset_get($module['disabled']) ? 'disabled' : '';
                 $fragment->appendXML(<<<html
@@ -1043,8 +1046,7 @@ html
 
             libxml_clear_errors();
 
-            $module = System::isset_get($_GET['module'], $default) . (System::isset_get($_GET['action']) ? '/' . $_GET['action'] : '');
-            $this->load_module($module);
+            $this->load_module($module_file);
             $this->print_page();
         } catch (DOMException $exception) {
             $message = $exception->getMessage();
