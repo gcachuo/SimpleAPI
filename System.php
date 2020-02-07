@@ -1002,6 +1002,13 @@ sql
                 }
                 $link->setAttribute('href', BASENAME . $dir . $old_link);
             }
+            foreach ($this->dom->getElementsByTagName('div') as $link) {
+                $old_link = $link->getAttribute("ui-include");
+                if ($old_link) {
+                    $old_link = str_replace("'", '', $old_link);
+                    $link->setAttribute('ui-include', "'" . BASENAME . $dir . $old_link . "'");
+                }
+            }
             foreach ($this->dom->getElementsByTagName('img') as $link) {
                 $old_link = $link->getAttribute("src");
                 $link->setAttribute('src', BASENAME . $dir . $old_link);
@@ -1014,15 +1021,15 @@ sql
                 $link->setAttribute('src', BASENAME . $dir . $old_link);
             }
 
+            $this->dom->getElementsByTagName('title')->item(0)->nodeValue = $project;
+            $this->dom->getElementById('project-title')->nodeValue = $project;
+            $favicon = $this->dom->getElementById('favicon');
+            $favicon->setAttribute('href', 'logo.png');
+            $logo = $this->dom->getElementById('project-img');
+            $logo->setAttribute('src', 'logo.png');
             if ($file != $entry) {
-                $this->dom->getElementById('project-title')->nodeValue = $project;
+
             } else {
-                $this->dom->getElementsByTagName('title')->item(0)->nodeValue = $project;
-                $this->dom->getElementById('project-title')->nodeValue = $project;
-                $favicon = $this->dom->getElementById('favicon');
-                $favicon->setAttribute('href', 'logo.png');
-                $logo = $this->dom->getElementById('project-img');
-                $logo->setAttribute('src', 'logo.png');
 
                 $fragment = $this->dom->createDocumentFragment();
 
