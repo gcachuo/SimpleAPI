@@ -105,29 +105,29 @@ sql
 
     public static function encode_id($id)
     {
-//        return base64_encode(rand(10000, 99999) . '=' . $id);
-        $salt = 9734 + $id;
-        return 'DAR' . $salt;
+        return base64_encode(rand(10000, 99999) . '=' . $id);
+        /*$salt = 9734 + $id;
+        return 'DAR' . $salt;*/
     }
 
     public static function decode_id(string &$base64)
     {
-        $end_decoded = str_replace('DAR', '', strtoupper($base64));
+        /*$end_decoded = str_replace('DAR', '', strtoupper($base64));
         if (!empty($end_decoded) && !intval($base64)) {
             if (intval($end_decoded)) {
                 $base64 = $end_decoded - 9734;
             }
             return $end_decoded;
         }
-        return $base64;
-        /*$end_decoded = trim(strstr(base64_decode($base64), '='), '=');
+        return $base64;*/
+        $end_decoded = trim(strstr(base64_decode($base64), '='), '=');
         if (!empty($end_decoded)) {
             if (!is_nan($end_decoded)) {
                 $base64 = $end_decoded;
             }
             return $end_decoded;
         }
-        return $base64;*/
+        return $base64;
     }
 
     public static function format_date(string $format, $value)
