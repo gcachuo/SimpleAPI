@@ -447,7 +447,24 @@ sql
 
     private static function convert_endpoint(&$controller, &$action, &$id)
     {
-        $request = explode('/', trim(str_replace('/?', '?', $_SERVER['REQUEST_URI']), '/'));
+        $request = trim(stristr($_SERVER['REQUEST_URI'], 'api'), '/');
+        if (strpos($request, '?') !== false) {
+            $request = stristr($request, '?', true);
+        }
+        preg_match_all('/\/\b(\w+?)\W+(\w+)(?:\W+(.+))?/i', $request, $request, PREG_SET_ORDER, 0);
+        if (!empty($request)) {
+            $request = array_splice($request[0], 1);
+            [$controller, $action] = $request;
+            $id = System::isset_get($request[2]);
+            if (!empty($id)) {
+                System::decode_id($id);
+            }
+        } else {
+            $request = explode('/', trim(stristr($_SERVER['REQUEST_URI'], 'api/'), '/'));
+            [$controller, $action] = $request;
+        }
+
+        /*$request = explode('/', trim(str_replace('/?', '?', $_SERVER['REQUEST_URI']), '/'));
         if (count($request) >= 2) {
             $end = end($request);
             if (strpos($end, '?') !== false) {
@@ -470,7 +487,7 @@ sql
             if (strpos($action, '?') !== false) {
                 $action = stristr($action, '?', true);
             }
-        }
+        }*/
     }
 
     private static function call_action($controller, $action, $id)
