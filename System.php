@@ -24,6 +24,13 @@ class System
         return openssl_encrypt($value, "AES-256-CBC", System::SEED, 0, str_pad(System::SEED, 16, 'X', STR_PAD_LEFT));
     }
 
+    public static function query_log(string $sql)
+    {
+        $request = trim(stristr($_SERVER['REQUEST_URI'], 'api'), '/');
+        $path = __DIR__ . '/../Logs/' . date('Y-m-d') . '.sql';
+        file_put_contents($path, "#$request\n" . $sql . "\n\n", FILE_APPEND);
+    }
+
     /**
      * @param string $json
      * @param bool $assoc

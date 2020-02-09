@@ -93,6 +93,8 @@ sql
     function prepare(string $sql, array $params = [])
     {
         try {
+            System::query_log(self::interpolate_query($sql, $params));
+
             if (empty($params)) {
                 return $this->query($sql);
             }
@@ -340,6 +342,36 @@ sql;
             $decrypted_data[$data_key] = openssl_decrypt($decrypted, 'aes-256-cbc', $key, 0, $iv);
         }
         return $decrypted_data;
+    }
+
+    private static function interpolate_query($query, $params)
+    {
+        $params = array_splice($params, 1);
+
+        $keys = array();
+        $values = $params;
+
+        # build a regular expression for each parameter
+        foreach ($params as $key => $value) {
+            if (is_string($key)) {
+                $keys[] = '/:'.$key.'/';
+            } else {
+                $keys[] = '/[?]/';
+            }
+
+            if (is_string($value))
+                $values[$key] = "'" . $value . "'";
+
+            if (is_array($value))
+                $values[$key] = "'" . implode("','", $value) . "'";
+
+            if (is_null($value))
+                $values[$key] = 'NULL';
+        }
+
+        $query = preg_replace($keys, $values, $query);
+
+        return $query;
     }
 }
 
