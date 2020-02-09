@@ -463,31 +463,6 @@ sql
             $request = explode('/', trim(stristr($_SERVER['REQUEST_URI'], 'api/'), '/'));
             [$controller, $action] = $request;
         }
-
-        /*$request = explode('/', trim(str_replace('/?', '?', $_SERVER['REQUEST_URI']), '/'));
-        if (count($request) >= 2) {
-            $end = end($request);
-            if (strpos($end, '?') !== false) {
-                $end = stristr($end, '?', true);
-            }
-            System::decode_id($end);
-            $count = !intval($end) ? 2 : 3;
-            $request = array_slice($request, -$count, $count, false);
-            if (count($request) == 3) {
-                $id = (int)$end;
-            }
-        }
-
-        if ($request[0] == 'api' || $request[1] == 'api') {
-            $controller = 'api';
-            $action = $end ?: 'version';
-        } else {
-            $controller = strtolower($request[0]);
-            $action = System::isset_get($request[1]);
-            if (strpos($action, '?') !== false) {
-                $action = stristr($action, '?', true);
-            }
-        }*/
     }
 
     private static function call_action($controller, $action, $id)
