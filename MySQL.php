@@ -21,10 +21,11 @@ class MySQL
     {
         mysqli_report(MYSQLI_REPORT_ALL ^ MYSQLI_REPORT_INDEX);
         try {
-            $filename = DIR . '/Config/database.json';
+            $filename = DIR . '/Config/' . CONFIG['project']['code'] . '.json';
             if (file_exists($filename)) {
                 $contents = file_get_contents($filename);
                 $config = json_decode($contents, true);
+                $config = $config['database'];
 
                 $host = $config['host'];
                 $username = $config['username'];
@@ -354,7 +355,7 @@ sql;
         # build a regular expression for each parameter
         foreach ($params as $key => $value) {
             if (is_string($key)) {
-                $keys[] = '/:'.$key.'/';
+                $keys[] = '/:' . $key . '/';
             } else {
                 $keys[] = '/[?]/';
             }

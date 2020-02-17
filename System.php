@@ -27,7 +27,7 @@ class System
     public static function query_log(string $sql)
     {
         $request = trim(stristr($_SERVER['REQUEST_URI'], 'api'), '/');
-        $path = __DIR__ . '/../Logs/' . date('Y-m-d') . '.sql';
+        $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/' . date('Y-m-d') . '.sql';
         file_put_contents($path, "#$request\n" . $sql . "\n\n", FILE_APPEND);
     }
 
@@ -368,12 +368,12 @@ sql
         function createConfig()
         {
             file_put_contents(DIR . '/../Config/.jwt_key', '');
-            file_put_contents(DIR . '/../Config/database.json', json_encode(["host" => "", "username" => "", "passwd" => "", "dbname" => ""]));
+//            file_put_contents(DIR . '/../Config/database.json', json_encode(["host" => "", "username" => "", "passwd" => "", "dbname" => ""]));
             file_put_contents(DIR . '/../Config/.gitignore', join("\n", ['.jwt_key', 'database.json']));
-            copy(DIR . '/../Config/database.json', DIR . '/../Config/database.prod.json');
+//            copy(DIR . '/../Config/database.json', DIR . '/../Config/database.prod.json');
             @chmod(DIR . '/../Config/.jwt_key', 0777);
-            @chmod(DIR . '/../Config/database.json', 0777);
-            @chmod(DIR . '/../Config/database.prod.json', 0777);
+//            @chmod(DIR . '/../Config/database.json', 0777);
+//            @chmod(DIR . '/../Config/database.prod.json', 0777);
             @chmod(DIR . '/../Config/.gitignore', 0777);
         }
 
@@ -418,6 +418,17 @@ sql
 
         if (!defined('JWT_KEY'))
             define('JWT_KEY', file_exists(DIR . '/Config/.jwt_key') ? file_get_contents(DIR . '/Config/.jwt_key') : null);
+
+        if (!defined('PROJECT')) {
+            $project = getenv('PROJECT');
+            $config = file_exists(DIR . '/Config/' . $project . '.json') ? file_get_contents(DIR . '/Config/' . $project . '.json') : null;
+            if ($config) {
+                define('CONFIG', json_decode($config, true));
+            } else {
+                header('Content-Type: application/json');
+                JsonResponse::sendResponse(['message' => "Config not found for project '$project'"], HTTPStatusCodes::InternalServerError);
+            }
+        }
 
         $entry = (file_get_contents('php://input'));
         if (!empty($entry)) {
@@ -506,12 +517,12 @@ sql
         if ($controller == 'api') {
             switch ($action) {
                 case "version":
-                    $name = PROJECT;
+                    $name = CONFIG['project']['name'];
                     $version = VERSION;
                     JsonResponse::sendResponse(compact('name', 'version'), HTTPStatusCodes::OK);
                     break;
                 case "logs":
-                    $path = DIR . '/Logs/' . date('Y-m-d', strtotime(System::isset_get($_GET['date'], date('Y-m-d')))) . '.log';
+                    $path = DIR . '/Logs/' . CONFIG['project']['code'] . '/' . date('Y-m-d', strtotime(System::isset_get($_GET['date'], date('Y-m-d')))) . '.log';
                     if (!file_exists($path)) {
                         file_put_contents($path, '');
                     }
@@ -591,12 +602,13 @@ sql
         }
 
         $data = '[' . date('Y-m-d H:i:s') . '] ';
+        $data .= '[' . $_SERVER['HTTP_HOST'] . '] ';
         $data .= '[' . $_SERVER['REQUEST_METHOD'] . '] ';
         $data .= '[' . strstr($_SERVER['REQUEST_URI'], 'api/') . '] ';
 
         $data .= preg_replace('/\s/', '', file_get_contents('php://input'));
 
-        $path = __DIR__ . '/../Logs/' . date('Y-m-d') . '.log';
+        $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/' . date('Y-m-d') . '.log';
 
         $dir = dirname($path);
         if (!is_dir($dir)) {
@@ -645,7 +657,7 @@ sql
                 'PATCH' => $_PATCH,
             ][REQUEST_METHOD] ?? ENVIRONMENT);
 
-        $path = __DIR__ . '/../Logs/' . date('Y-m-d') . '.log';
+        $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/' . date('Y-m-d') . '.log';
 
         if (!file_put_contents($path, $data . "\n", FILE_APPEND)) {
             if (file_exists($path)) {
