@@ -395,6 +395,11 @@ sql;
         return $query;
     }
 
+    public function fetch()
+    {
+        return $this->stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
     public function fetchAll()
     {
         return $this->stmt->fetchAll(PDO::FETCH_ASSOC);
