@@ -8,14 +8,20 @@ use mysqli;
 use mysqli_result;
 use mysqli_sql_exception;
 use mysqli_stmt;
+use PDO;
+use PDOStatement;
 use System;
 
 class MySQL
 {
-    /**
-     * @var mysqli $mysqli
-     */
-    private $mysqli, $dbname;
+    /** @var mysqli */
+    private $mysqli;
+    /** @var PDO */
+    private $pdo;
+    /** @var string */
+    private $dbname;
+    /** @var PDOStatement */
+    private $stmt;
 
     public function __construct($dbname = null)
     {
@@ -33,6 +39,7 @@ class MySQL
                 $dbname = $dbname ?: (getenv('DATABASE') ?: $config['dbname']);
 
                 $this->mysqli = new mysqli($host, $username, $passwd, $dbname);
+                $this->pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $passwd);
                 $this->dbname = $dbname;
             } else {
                 JsonResponse::sendResponse(['message' => "File $filename not found."], HTTPStatusCodes::InternalServerError);
@@ -90,6 +97,7 @@ sql
      * @param string $sql
      * @param array $params
      * @return false|mysqli_result|array
+     * @deprecated Use prepare2
      */
     function prepare(string $sql, array $params = [])
     {
@@ -138,6 +146,18 @@ sql
                     break;
             }
         }
+    }
+
+    public function prepare2(string $sql, array $params = [])
+    {
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $key => &$val) {
+            $stmt->bindParam($key, $val);
+        }
+        $stmt->execute();
+        $this->stmt = $stmt;
+        $error = $this->pdo->errorInfo();
+        return $this;
     }
 
     function array_copy(array $array)
@@ -373,6 +393,11 @@ sql;
         $query = preg_replace($keys, $values, $query);
 
         return $query;
+    }
+
+    public function fetchAll()
+    {
+        return $this->stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
 
