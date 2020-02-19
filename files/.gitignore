@@ -2,7 +2,7 @@
 /vendor/
 /Config/database.prod.json
 /Config/database.dev.json
-/Logs/*.log
-/Logs/*.sql
+/Logs/**/*.log
+/Logs/**/*.sql
 /offline
 .phpunit.result.cache
