@@ -421,12 +421,26 @@ sql
 
         if (!defined('PROJECT')) {
             $project = getenv('PROJECT');
-            $config = file_exists(DIR . '/Config/' . $project . '.json') ? file_get_contents(DIR . '/Config/' . $project . '.json') : null;
-            if ($config) {
-                define('CONFIG', json_decode($config, true));
+            if (empty($project)) {
+                $config = file_exists(DIR . '/Config/default.json')
+                    ? file_get_contents(DIR . '/Config/default.json')
+                    : null;
+                if ($config) {
+                    define('CONFIG', json_decode($config, true));
+                } else {
+                    header('Content-Type: application/json');
+                    JsonResponse::sendResponse(['message' => "default.json not found"], HTTPStatusCodes::InternalServerError);
+                }
             } else {
-                header('Content-Type: application/json');
-                JsonResponse::sendResponse(['message' => "Config not found for project '$project'"], HTTPStatusCodes::InternalServerError);
+                $config = file_exists(DIR . '/Config/' . $project . '.json')
+                    ? file_get_contents(DIR . '/Config/' . $project . '.json')
+                    : null;
+                if ($config) {
+                    define('CONFIG', json_decode($config, true));
+                } else {
+                    header('Content-Type: application/json');
+                    JsonResponse::sendResponse(['message' => "Config not found for project '$project'"], HTTPStatusCodes::InternalServerError);
+                }
             }
         }
 
