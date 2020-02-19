@@ -992,7 +992,8 @@ sql
             libxml_use_internal_errors(true);
 
             $module_file = System::isset_get($_GET['module'], $default) . (System::isset_get($_GET['action']) ? '/' . $_GET['action'] : '');
-            $file = $module_list[array_search($module_file, array_column($module_list, 'href'))]['file'] ?? $entry;
+
+            $file = $module_list[array_search(strstr($module_file, '/', true) ?: $module_file, array_column($module_list, 'href'))]['file'] ?? $entry;
 
             $this->dom->loadHTMLFile($dir . $file);
             foreach ($this->dom->getElementsByTagName('link') as $link) {
