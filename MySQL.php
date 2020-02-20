@@ -14,6 +14,7 @@ use System;
 
 class MySQL
 {
+    const PARAM_INT = PDO::PARAM_INT;
     /** @var mysqli */
     private $mysqli;
     /** @var PDO */
@@ -152,7 +153,11 @@ sql
     {
         $stmt = $this->pdo->prepare($sql);
         foreach ($params as $key => &$val) {
-            $stmt->bindParam($key, $val);
+            if (is_array($val)) {
+                $stmt->bindParam($key, $val[0], $val[1]);
+            } else {
+                $stmt->bindParam($key, $val);
+            }
         }
         $stmt->execute();
         $this->stmt = $stmt;
