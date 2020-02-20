@@ -272,6 +272,7 @@ sql
 
     public function startup()
     {
+        define('ENVIRONMENT', 'init');
         self::define_constants(['DIR' => __DIR__ . '/']);
         self::load_php_functions();
         self::create_directories();
@@ -428,6 +429,22 @@ sql
                 if ($config) {
                     define('CONFIG', json_decode($config, true));
                 } else {
+                    $config = [
+                        "project" => [
+                            "code" => "default"
+                        ],
+                        "database" => [
+                            "host" => "",
+                            "username" => "",
+                            "passwd" => "",
+                            "dbname" => ""
+                        ]
+                    ];
+                    if (ENVIRONMENT == 'init') {
+                        return;
+                    }
+                    file_put_contents(DIR . '/Config/default.json', json_encode($config));
+
                     header('Content-Type: application/json');
                     JsonResponse::sendResponse(['message' => "default.json not found"], HTTPStatusCodes::InternalServerError);
                 }
@@ -654,13 +671,16 @@ sql
 
     public static function log_error(array $response)
     {
+        if (!defined('CONFIG')) {
+            return;
+        }
         global $_PUT, $_PATCH;
         $data = '[' . date('Y-m-d H:i:s') . '] ';
         $data .= '[' . $_SERVER['REQUEST_METHOD'] . '] ';
         if (ENVIRONMENT == 'web') {
             $data .= '[' . strstr($_SERVER['REQUEST_URI'], 'api/') . '] ';
         } elseif (ENVIRONMENT == 'cli') {
-            $data .= '[' . $_SERVER['argv'][5] . '] ';
+            $data .= '[' . System::isset_get($_SERVER['argv'][5]) . '] ';
         }
         $data .= '[' . $response['code'] . '] ';
         $data .= '[' . json_encode($response['response']) . '] ';
