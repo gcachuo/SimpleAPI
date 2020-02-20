@@ -326,6 +326,7 @@ sql
         require_once($pathMySQL);
 
 //        error_reporting(E_ALL ^ E_DEPRECATED);
+        ini_set('memory_limit', '2048M');
         ini_set('display_errors', 1);
         ini_set('always_populate_raw_post_data', -1);
         ini_set('max_execution_time', 300);
@@ -594,7 +595,7 @@ sql
         $empty_values = '';
 
         foreach ($required as $key => $value) {
-            if (!System::isset_get($array[$key])) {
+            if (!System::isset_get($array[$key]) && $array[$key] != 0) {
                 $empty_values .= $key . ', ';
             }
         }
@@ -605,7 +606,7 @@ sql
 
         foreach ($intersect as $key => $value) {
             $value = is_string($value) ? trim($value) : $value;
-            if (empty($value) and $value !== "0") {
+            if (empty($value) and $value != 0) {
                 $empty_values .= $key . ', ';
             }
         }
