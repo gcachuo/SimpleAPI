@@ -370,7 +370,7 @@ sql
         {
             file_put_contents(DIR . '/../Config/.jwt_key', '');
 //            file_put_contents(DIR . '/../Config/database.json', json_encode(["host" => "", "username" => "", "passwd" => "", "dbname" => ""]));
-            file_put_contents(DIR . '/../Config/.gitignore', join("\n", ['.jwt_key', 'database.json']));
+            file_put_contents(DIR . '/../Config/.gitignore', join("\n", ['.jwt_key', 'database.json', '*.json', '!default.json']));
 //            copy(DIR . '/../Config/database.json', DIR . '/../Config/database.prod.json');
             @chmod(DIR . '/../Config/.jwt_key', 0777);
 //            @chmod(DIR . '/../Config/database.json', 0777);
