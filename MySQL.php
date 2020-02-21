@@ -382,9 +382,13 @@ sql;
         # build a regular expression for each parameter
         foreach ($params as $key => $value) {
             if (is_string($key)) {
-                $keys[] = '/:' . $key . '/';
+                $keys[] = '/' . $key . '/';
             } else {
                 $keys[] = '/[?]/';
+            }
+
+            if (is_array($value)) {
+                $value = $value[0];
             }
 
             if (is_string($value))
