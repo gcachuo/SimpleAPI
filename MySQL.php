@@ -151,6 +151,8 @@ sql
 
     public function prepare2(string $sql, array $params = [])
     {
+        System::query_log(self::interpolate_query($sql, $params));
+
         $stmt = $this->pdo->prepare($sql);
         foreach ($params as $key => &$val) {
             if (is_array($val)) {
