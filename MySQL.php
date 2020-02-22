@@ -401,7 +401,7 @@ sql;
                 $values[$key] = 'NULL';
         }
 
-        $query = preg_replace($keys, $values, $query);
+        $query = @preg_replace($keys, $values, $query);
 
         return $query;
     }
