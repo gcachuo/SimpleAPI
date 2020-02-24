@@ -32,8 +32,11 @@ class System
     public static function query_log(string $sql)
     {
         $request = trim(stristr($_SERVER['REQUEST_URI'], 'api'), '/');
-        $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/' . date('Y-m-d') . '.sql';
-        file_put_contents($path, "#$request\n" . $sql . "\n\n", FILE_APPEND);
+        $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/';
+        if (!is_dir($path)) {
+            mkdir($path, 0777, true);
+        }
+        file_put_contents($path . date('Y-m-d') . '.sql', "#$request\n" . $sql . "\n\n", FILE_APPEND);
     }
 
     /**
