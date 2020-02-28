@@ -162,6 +162,7 @@ sql
 			}
 			$stmt->execute();
 			$this->stmt = $stmt;
+			$error = $this->pdo->errorInfo();
 			return $this;
 		} catch (PDOException $exception) {
 			$code = $exception->getCode();
