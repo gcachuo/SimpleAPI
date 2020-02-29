@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Model;
 
@@ -158,11 +158,7 @@ sql
 
 			$stmt = $this->pdo->prepare($sql);
 			foreach ($params as $key => &$val) {
-				if (is_array($val)) {
-					$stmt->bindParam($key, $val[0], $val[1]);
-				} else {
-					$stmt->bindParam($key, $val);
-				}
+                $stmt->bindParam($key, $val);
 			}
 			$stmt->execute();
 			$this->stmt = $stmt;
