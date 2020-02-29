@@ -331,9 +331,9 @@ sql
 
 //        error_reporting(E_ALL ^ E_DEPRECATED);
         ini_set('memory_limit', '2048M');
-        ini_set('display_errors', 1);
-        ini_set('always_populate_raw_post_data', -1);
-        ini_set('max_execution_time', 300);
+        ini_set('display_errors', 'On');
+        ini_set('always_populate_raw_post_data', '-1');
+        ini_set('max_execution_time', '300');
         spl_autoload_register(function ($class) {
             $file = str_replace('\\', '/', $class);
             $path = __DIR__ . "/../$file.php";
@@ -706,7 +706,8 @@ sql
                     $error = [
                         'message' => "Error deleting file [$path]"
                     ];
-                    self::log_error(compact('status', 'code', 'response', 'error'));
+                    print_r($error);
+                    exit;
                     return;
                 }
                 self::log_error($response);
@@ -899,7 +900,7 @@ class JsonResponse
             } elseif (is_object($value)) {
 
             } else {
-                if (!mb_detect_encoding($value, 'UTF-8', true)) {
+                if (!mb_detect_encoding((string)$value, 'UTF-8', true)) {
                     $array[$key] = utf8_encode($value);
                 } else {
                     $array[$key] = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
