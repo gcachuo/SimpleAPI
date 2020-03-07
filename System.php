@@ -849,7 +849,7 @@ html;
 
 		$fragment = $this->dom->createDocumentFragment();
 		$fragment->appendXML(<<<html
-<div class="container" style="margin-top: 10px">
+<div class="container-fluid" style="margin-top: 10px">
     $contents
 </div>
 html
