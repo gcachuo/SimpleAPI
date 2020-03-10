@@ -851,7 +851,7 @@ html;
 html;
 
         $fragment = new DOMDocument();
-        $fragment->loadHTML(mb_convert_encoding($chunk, 'HTML-ENTITIES', 'UTF-8'), LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        $fragment->loadHTML(mb_convert_encoding($chunk, 'HTML-ENTITIES', 'UTF-8'), 8192 | 4);
 
         $module = $this->dom->createElement('div');
         $module->setAttribute('id', 'view');
