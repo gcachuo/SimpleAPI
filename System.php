@@ -341,7 +341,7 @@ sql
         ini_set('max_execution_time', '300');
         spl_autoload_register(function ($class) {
             $file = str_replace('\\', '/', $class);
-            $path = DIR . "/../$file.php";
+            $path = __DIR__ . "/../$file.php";
             if (file_exists($path)) {
                 include $path;
             }
@@ -738,7 +738,7 @@ sql
             ] = json_decode(file_get_contents(WEBDIR . '/config.json'), true);
             define('BASENAME', '/' . (trim(dirname($_SERVER['SCRIPT_NAME']), '/') ?: '.') . '/');
             self::load_php_functions();
-            $this->dom = new DOMDocument;
+            $this->dom = new DOMDocument();
             libxml_use_internal_errors(true);
 
             $module_file = System::isset_get($_GET['module'], $default) . (System::isset_get($_GET['action']) ? '/' . $_GET['action'] : '');
@@ -851,7 +851,7 @@ html;
 html;
 
         $fragment = new DOMDocument();
-        $fragment->loadHTML($chunk, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        $fragment->loadHTML(mb_convert_encoding($chunk, 'HTML-ENTITIES', 'UTF-8'), LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
 
         $module = $this->dom->createElement('div');
         $module->setAttribute('id', 'view');
