@@ -843,12 +843,9 @@ html;
         include $module_path;
         $contents = ob_get_contents();
         ob_end_clean();
-        if (empty($contents)) {
-            throw new DOMException('Empty file: ' . $module_path, 500);
-        }
 
         $chunk = <<<html
-<div class="container-fluid" style="margin-top: 10px">
+<div class="container-fluid" style="margin-top: 10em">
     $contents
 </div>
 html;
