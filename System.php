@@ -845,7 +845,7 @@ html;
         ob_end_clean();
 
         $chunk = <<<html
-<div class="container-fluid" style="margin-top: 10em">
+<div class="container-fluid">
     $contents
 </div>
 html;
