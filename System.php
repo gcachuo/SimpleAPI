@@ -341,7 +341,7 @@ sql
         ini_set('max_execution_time', '300');
         spl_autoload_register(function ($class) {
             $file = str_replace('\\', '/', $class);
-            $path = __DIR__ . "/../$file.php";
+            $path = DIR . "/$file.php";
             if (file_exists($path)) {
                 include $path;
             }
