@@ -1018,7 +1018,7 @@ class JsonResponse
                 $error = '[' . $exception['response']['type'] . '] ' . $exception['response']['error'];
             }
 
-            throw new JsonException($error, $exception['code']);
+            throw new Exception($error, $exception['code']);
         } else {
             die($exception['status']);
         }
