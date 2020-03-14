@@ -417,7 +417,7 @@ sql
             define('REQUEST_METHOD', System::isset_get($_SERVER['REQUEST_METHOD']));
 
         if (!defined('DEBUG_MODE'))
-            define('DEBUG_MODE', ENVIRONMENT == 'cli' || preg_match('/Mozilla/', System::isset_get($_SERVER['HTTP_USER_AGENT'])) != 1);
+            define('DEBUG_MODE', ENVIRONMENT == 'cli' || preg_match('/Mozilla/', $_SERVER['HTTP_USER_AGENT'] ?? '') != 1);
 
         if (!defined('DIR'))
             define('DIR', $config['DIR']);
@@ -436,6 +436,7 @@ sql
                 } else {
                     $config = [
                         "project" => [
+                            "name" => "default",
                             "code" => "default"
                         ],
                         "database" => [
@@ -552,6 +553,7 @@ sql
         }
         if ($controller == 'api') {
             switch ($action) {
+                default:
                 case "version":
                     $name = CONFIG['project']['name'];
                     $version = VERSION;
