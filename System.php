@@ -33,11 +33,36 @@ class System
     {
         $date = date('Y-m-d H:i:s');
         $request = trim(stristr($_SERVER['REQUEST_URI'], 'api'), '/');
-        $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/';
+        if (defined('CONFIG')) {
+            $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/';
+        } else {
+            $path = __DIR__ . '/../Logs/';
+        }
         if (!is_dir($path)) {
             mkdir($path, 0777, true);
         }
         file_put_contents($path . date('Y-m-d') . '.sql', "#$date $request\n" . $sql . "\n\n", FILE_APPEND);
+    }
+
+    public static function log(string $message)
+    {
+        $date = date('Y-m-d H:i:s');
+        $request = trim(stristr($_SERVER['REQUEST_URI'], 'api'), '/');
+        if (defined('CONFIG')) {
+            $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/';
+        } else {
+            $path = __DIR__ . '/../Logs/';
+        }
+        if (!is_dir($path)) {
+            mkdir($path, 0777, true);
+        }
+        file_put_contents($path . 'custom' . date('Y-m-d') . '.log', "#$date $request\n" . $message . "\n\n", FILE_APPEND);
+    }
+
+    public static function redirect(string $path = '')
+    {
+        $path = ltrim($path, '/');
+        header('Location: ' . BASENAME . $path);
     }
 
     /**
@@ -649,7 +674,11 @@ sql
 
         $data .= preg_replace('/\s/', '', file_get_contents('php://input'));
 
-        $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/' . date('Y-m-d') . '.log';
+        if (defined('CONFIG')) {
+            $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/' . date('Y-m-d') . '.log';
+        } else {
+            $path = __DIR__ . '/../Logs/' . date('Y-m-d') . '.log';
+        }
 
         $dir = dirname($path);
         if (!is_dir($dir)) {
@@ -669,10 +698,10 @@ sql
                 if (!unlink($path)) {
                     $code = HTTPStatusCodes::InternalServerError;
                     $status = 'error';
-                    $error = [
+                    $response = [
                         'message' => "Error deleting file [$path]"
                     ];
-                    System::log_error(compact('status', 'code', 'response', 'error'));
+                    System::log_error(compact('status', 'code', 'response'));
                 }
                 self::request_log();
             }
@@ -681,9 +710,6 @@ sql
 
     public static function log_error(array $response)
     {
-        if (!defined('CONFIG')) {
-            return;
-        }
         global $_PUT, $_PATCH;
         $data = '[' . date('Y-m-d H:i:s') . '] ';
         $data .= '[' . $_SERVER['REQUEST_METHOD'] . '] ';
@@ -701,13 +727,20 @@ sql
                 'PATCH' => $_PATCH,
             ][REQUEST_METHOD] ?? ENVIRONMENT);
 
-        $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/' . date('Y-m-d') . '.log';
+        if (defined('CONFIG')) {
+            $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/' . date('Y-m-d') . '.log';
+        } else {
+            $path = __DIR__ . '/../Logs/' . date('Y-m-d') . '.log';
+        }
 
         if (!file_put_contents($path, $data . "\n", FILE_APPEND)) {
             if (file_exists($path)) {
                 if (!unlink($path)) {
                     $code = HTTPStatusCodes::InternalServerError;
                     $status = 'error';
+                    $response = [
+                        'message' => "Error deleting file [$path]"
+                    ];
                     $error = [
                         'message' => "Error deleting file [$path]"
                     ];
@@ -834,9 +867,22 @@ html;
 
     public function load_module($file)
     {
-        $module_path = WEBDIR . '/modules/' . $file . '.php';
+        $pathinfo = pathinfo($file);//['extension'];
+        if (!($pathinfo['extension'] ?? null)) {
+            if ($file[strlen($file) - 1] === '/') {
+                $file .= 'index';
+            }
+            $file .= '.php';
+        }
+        $module_path = WEBDIR . '/modules/' . $file;
         if (!file_exists($module_path)) {
-            throw new DOMException('Not Found: ' . $module_path, 404);
+            $code = HTTPStatusCodes::NotFound;
+            $status = 'error';
+            $response = [
+                'message' => "File not found [$module_path]"
+            ];
+            System::log_error(compact('status', 'code', 'response'));
+            System::redirect('/');
         }
 
         ob_start();
