@@ -121,7 +121,7 @@ sql
         return 'DAR' . $salt;*/
     }
 
-    public static function decode_id(string &$base64)
+    public static function decode_id(string $id)
     {
         /*$end_decoded = str_replace('DAR', '', strtoupper($base64));
         if (!empty($end_decoded) && !intval($base64)) {
@@ -131,14 +131,20 @@ sql
             return $end_decoded;
         }
         return $base64;*/
-        $end_decoded = trim(strstr(base64_decode($base64), '='), '=');
-        if (!empty($end_decoded)) {
-            if (!is_nan($end_decoded)) {
-                $base64 = $end_decoded;
+        $base64 = base64_decode($id);
+        $end_decoded = strstr($base64, '=');
+        if (!empty($base64) && $end_decoded) {
+            $end_decoded = trim($end_decoded, '=');
+            if (!empty($end_decoded)) {
+                if (!is_nan($end_decoded)) {
+                    return intval($end_decoded);
+                }
+                return $end_decoded;
             }
-            return $end_decoded;
+        } elseif (!is_nan((float)$id)) {
+            return intval($id);
         }
-        return $base64;
+        return null;
     }
 
     public static function format_date(string $format, $value)
@@ -512,7 +518,7 @@ sql
             [$controller, $action] = $request;
             $id = System::isset_get($request[2]);
             if (!empty($id)) {
-                System::decode_id($id);
+                $id = System::decode_id($id);
             }
         } else {
             $request = explode('/', trim(stristr($_SERVER['REQUEST_URI'], 'api/'), '/'));
