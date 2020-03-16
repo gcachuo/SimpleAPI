@@ -607,7 +607,7 @@ sql
         $empty_values = '';
 
         foreach ($required as $key => $value) {
-            if (!System::isset_get($array[$key]) && $array[$key] != 0) {
+            if (!isset($array[$key]) || empty($array[$key]) && $array[$key] !== 0) {
                 $empty_values .= $key . ', ';
             }
         }
