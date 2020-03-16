@@ -29,7 +29,11 @@ class MySQL
     {
         mysqli_report(MYSQLI_REPORT_ALL ^ MYSQLI_REPORT_INDEX);
         try {
-            $filename = DIR . '/Config/' . CONFIG['project']['code'] . '.json';
+            if (defined('CONFIG')) {
+                $filename = DIR . '/Config/' . CONFIG['project']['code'] . '.json';
+            } else {
+                $filename = DIR . '/Config/default.json';
+            }
             if (file_exists($filename)) {
                 $contents = file_get_contents($filename);
                 $config = json_decode($contents, true);

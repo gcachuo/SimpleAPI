@@ -365,6 +365,9 @@ sql
         ini_set('always_populate_raw_post_data', '-1');
         ini_set('max_execution_time', '300');
         spl_autoload_register(function ($class) {
+            if (defined('WEBDIR') && !defined('DIR')) {
+                define('DIR', WEBDIR . '/api');
+            }
             $file = str_replace('\\', '/', $class);
             $path = DIR . "/$file.php";
             if (file_exists($path)) {
