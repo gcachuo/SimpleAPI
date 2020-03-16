@@ -779,6 +779,7 @@ sql
             $file = $module_list[array_search(strstr($module_file, '/', true) ?: $module_file, array_column($module_list, 'href'))]['file'] ?? $entry;
 
             $this->dom->loadHTMLFile($dir . $file);
+            
             foreach ($this->dom->getElementsByTagName('link') as $link) {
                 $old_link = $link->getAttribute("href");
                 if (strpos($old_link, 'http') !== false) {
