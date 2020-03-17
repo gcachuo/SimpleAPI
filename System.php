@@ -308,7 +308,7 @@ sql
         if (ENVIRONMENT == 'web') {
             header('Content-Type: application/json');
             header('Access-Control-Allow-Origin: *');
-            header('Access-Control-Allow-Methods: POST, GET, OPTIONS, PATCH, DELETE');
+            header('Access-Control-Allow-Methods: PUT, POST, GET, OPTIONS, PATCH, DELETE');
             header('Access-Control-Allow-Headers: Content-Type, dataType, contenttype, processdata');
             setcookie('XDEBUG_SESSION', 'PHPSTORM');
         }
