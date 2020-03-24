@@ -309,10 +309,22 @@ sql;
 		return true;
 	}
 
-	public function insertID()
-	{
-		return $this->mysqli->insert_id;
-	}
+    /**
+     * @deprecated
+     * @return mixed
+     */
+    public function insertID()
+    {
+        return $this->mysqli->insert_id;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function lastInsertId()
+    {
+        return $this->pdo->lastInsertId();
+    }
 
 	public function escape_string($string)
 	{
