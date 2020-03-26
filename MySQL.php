@@ -213,6 +213,7 @@ sql
 	}
 
 	/**
+     * @deprecated
 	 * @param mysqli_result $mysqli_result
 	 * @param bool $index
 	 * @param int $type
