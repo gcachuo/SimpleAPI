@@ -245,6 +245,7 @@ sql
 	}
 
 	/**
+     * @deprecated
 	 * @param mysqli_result $mysqli_result
 	 * @param int $type
 	 * @return mixed
