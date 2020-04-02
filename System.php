@@ -806,6 +806,7 @@ sql
 
             $this->dom->loadHTMLFile($dir . $file);
 
+            /** @var DOMElement $link */
             foreach ($this->dom->getElementsByTagName('link') as $link) {
                 $old_link = $link->getAttribute("href");
                 if (strpos($old_link, 'http') !== false) {
