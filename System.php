@@ -791,12 +791,15 @@ sql
                 'default' => $default,
                 'modules' => $module_list
             ] = json_decode(file_get_contents(WEBDIR . '/config.json'), true);
-            define('BASENAME', '/' . (trim(dirname($_SERVER['SCRIPT_NAME']), '/') ?: '.') . '/');
+            define('BASENAME', '/' . (trim(dirname($_SERVER['REDIRECT_URL'] ?? $_SERVER['SCRIPT_NAME']), '/') ?: '.') . '/');
             self::load_php_functions();
             $this->dom = new DOMDocument();
             libxml_use_internal_errors(true);
 
             $module_file = System::isset_get($_GET['module'], $default) . (System::isset_get($_GET['action']) ? '/' . $_GET['action'] : '');
+            if (strpos($module_file, '/')) {
+                $module_file = trim(str_replace(BASENAME, '', '/' . $module_file), '/');
+            }
 
             $file = $module_list[array_search(strstr($module_file, '/', true) ?: $module_file, array_column($module_list, 'href'))]['file'] ?? $entry;
 
