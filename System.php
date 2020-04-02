@@ -151,7 +151,7 @@ sql
         return 'DAR' . $salt;*/
     }
 
-    public static function decode_id(string &$base64)
+    public static function decode_id(string $id)
     {
         /*$end_decoded = str_replace('DAR', '', strtoupper($base64));
         if (!empty($end_decoded) && !intval($base64)) {
@@ -161,14 +161,20 @@ sql
             return $end_decoded;
         }
         return $base64;*/
-        $end_decoded = trim(strstr(base64_decode($base64), '='), '=');
-        if (!empty($end_decoded)) {
-            if (!is_nan($end_decoded)) {
-                $base64 = $end_decoded;
+        $base64 = base64_decode($id);
+        $end_decoded = strstr($base64, '=');
+        if (!empty($base64) && $end_decoded) {
+            $end_decoded = trim($end_decoded, '=');
+            if (!empty($end_decoded)) {
+                if (!is_nan($end_decoded)) {
+                    return intval($end_decoded);
+                }
+                return $end_decoded;
             }
-            return $end_decoded;
+        } elseif (!is_nan((float)$id)) {
+            return intval($id);
         }
-        return $base64;
+        return null;
     }
 
     public static function format_date(string $format, $value)
@@ -333,7 +339,7 @@ sql
         if (ENVIRONMENT == 'web') {
             header('Content-Type: application/json');
             header('Access-Control-Allow-Origin: *');
-            header('Access-Control-Allow-Methods: POST, GET, OPTIONS, PATCH, DELETE');
+            header('Access-Control-Allow-Methods: PUT, POST, GET, OPTIONS, PATCH, DELETE');
             header('Access-Control-Allow-Headers: Content-Type, dataType, contenttype, processdata');
         }
         register_shutdown_function(function () {
@@ -450,7 +456,7 @@ sql
             define('REQUEST_METHOD', System::isset_get($_SERVER['REQUEST_METHOD']));
 
         if (!defined('DEBUG_MODE'))
-            define('DEBUG_MODE', ENVIRONMENT == 'cli' || preg_match('/Mozilla/', System::isset_get($_SERVER['HTTP_USER_AGENT'])) != 1);
+            define('DEBUG_MODE', ENVIRONMENT == 'cli' || preg_match('/Mozilla/', $_SERVER['HTTP_USER_AGENT'] ?? '') != 1);
 
         if (!defined('DIR'))
             define('DIR', $config['DIR']);
@@ -469,6 +475,7 @@ sql
                 } else {
                     $config = [
                         "project" => [
+                            "name" => "default",
                             "code" => "default"
                         ],
                         "database" => [
@@ -544,7 +551,7 @@ sql
             [$controller, $action] = $request;
             $id = System::isset_get($request[2]);
             if (!empty($id)) {
-                System::decode_id($id);
+                $id = System::decode_id($id);
             }
         } else {
             $request = explode('/', trim(stristr($_SERVER['REQUEST_URI'], 'api/'), '/'));
@@ -585,6 +592,7 @@ sql
         }
         if ($controller == 'api') {
             switch ($action) {
+                default:
                 case "version":
                     $name = CONFIG['project']['name'];
                     $version = VERSION;
@@ -632,7 +640,7 @@ sql
         $empty_values = '';
 
         foreach ($required as $key => $value) {
-            if (!System::isset_get($array[$key]) && $array[$key] != 0) {
+            if (!isset($array[$key]) || empty($array[$key]) && $array[$key] !== 0) {
                 $empty_values .= $key . ', ';
             }
         }
