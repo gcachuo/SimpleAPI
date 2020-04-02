@@ -444,11 +444,6 @@ sql;
     {
         return $this->stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-
-    public function lastInsertId()
-    {
-        return $this->pdo->lastInsertId();
-    }
 }
 
 class TableColumn
