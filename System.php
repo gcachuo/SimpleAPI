@@ -827,7 +827,7 @@ sql
             }
             foreach ($this->dom->getElementsByTagName('script') as $link) {
                 $old_link = $link->getAttribute("src");
-                if($old_link) {
+                if ($old_link) {
                     if (strpos($old_link, 'http') !== false) {
                         continue;
                     }
@@ -848,7 +848,7 @@ sql
 
             if ($this->dom->getElementById('project-img')) {
                 $logo = $this->dom->getElementById('project-img');
-                $logo->setAttribute('src', 'logo.png');
+                $logo->setAttribute('src', BASENAME . 'logo.png');
             }
 
             if ($file != $entry) {
@@ -872,7 +872,7 @@ html
                     }
                     $fragment->appendXML(<<<html
 <li>
-    <a href="$href" class="$disabled">
+    <a href="$href" class="$disabled" style="display: flex; align-items: center">
         <span class="nav-icon">
             <i class="material-icons">$icon</i>
         </span>
@@ -886,8 +886,14 @@ html
                 $modules->setAttribute('class', 'nav');
                 $modules->appendChild($fragment);
 
+                /** @var DOMElement $nav */
                 $nav = $this->dom->getElementsByTagName('nav')[0];
-                $nav->parentNode->replaceChild($modules, $nav);
+                if ($nav) {
+                    if ($nav->parentNode) {
+                        $modules->setAttribute('id', $nav->getAttribute('id'));
+                        $nav->parentNode->replaceChild($modules, $nav);
+                    }
+                }
 
                 $this->load_module($module_file);
             }
