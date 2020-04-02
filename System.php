@@ -827,10 +827,12 @@ sql
             }
             foreach ($this->dom->getElementsByTagName('script') as $link) {
                 $old_link = $link->getAttribute("src");
-                if (strpos($old_link, 'http') !== false) {
-                    continue;
+                if($old_link) {
+                    if (strpos($old_link, 'http') !== false) {
+                        continue;
+                    }
+                    $link->setAttribute('src', BASENAME . $dir . $old_link);
                 }
-                $link->setAttribute('src', BASENAME . $dir . $old_link);
             }
 
             $this->dom->getElementsByTagName('title')->item(0)->nodeValue = $project;
