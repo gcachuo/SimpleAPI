@@ -464,6 +464,9 @@ sql
         if (!defined('JWT_KEY'))
             define('JWT_KEY', file_exists(DIR . '/Config/.jwt_key') ? file_get_contents(DIR . '/Config/.jwt_key') : null);
 
+        if (!defined('BASENAME'))
+            define('BASENAME', stristr($_SERVER['REQUEST_URI'], 'api/', true));
+
         if (!defined('PROJECT')) {
             $project = getenv('PROJECT');
             if (empty($project)) {
@@ -545,7 +548,7 @@ sql
         if (strpos($request, '?') !== false) {
             $request = stristr($request, '?', true);
         }
-        preg_match_all('/\/\b(\w+?)\W+(\w+)(?:\W+(.+))?/i', $request, $request, PREG_SET_ORDER, 0);
+        preg_match_all('/\/\b([a-z-]+?)\/+([a-z-]+)(?:\W+(.+))?/i', $request, $request, PREG_SET_ORDER, 0);
         if (!empty($request)) {
             $request = array_splice($request[0], 1);
             [$controller, $action] = $request;
