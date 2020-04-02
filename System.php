@@ -725,6 +725,10 @@ sql
     public static function log_error(array $response)
     {
         global $_PUT, $_PATCH;
+
+        if (!defined('REQUEST_METHOD'))
+            define('REQUEST_METHOD', $_SERVER['REQUEST_METHOD']);
+
         $data = '[' . date('Y-m-d H:i:s') . '] ';
         $data .= '[' . $_SERVER['REQUEST_METHOD'] . '] ';
         if (ENVIRONMENT == 'web') {
@@ -829,11 +833,20 @@ sql
             }
 
             $this->dom->getElementsByTagName('title')->item(0)->nodeValue = $project;
-            $this->dom->getElementById('project-title')->nodeValue = $project;
-            $favicon = $this->dom->getElementById('favicon');
-            $favicon->setAttribute('href', 'logo.png');
-            $logo = $this->dom->getElementById('project-img');
-            $logo->setAttribute('src', 'logo.png');
+
+            if ($this->dom->getElementById('project-title')) {
+                $this->dom->getElementById('project-title')->nodeValue = $project;
+            }
+
+            if ($this->dom->getElementById('favicon')) {
+                $favicon = $this->dom->getElementById('favicon');
+                $favicon->setAttribute('href', 'logo.png');
+            }
+
+            if ($this->dom->getElementById('project-img')) {
+                $logo = $this->dom->getElementById('project-img');
+                $logo->setAttribute('src', 'logo.png');
+            }
 
             if ($file != $entry) {
                 $fragment = $this->dom->createDocumentFragment();
@@ -905,7 +918,9 @@ html;
                 'message' => "File not found [$module_path]"
             ];
             System::log_error(compact('status', 'code', 'response'));
-            System::redirect('/');
+            if ($_SERVER['REQUEST_URI'] != BASENAME) {
+                System::redirect('/');
+            }
         }
 
         ob_start();
@@ -927,8 +942,12 @@ html;
         $module->setAttribute('class', 'app-body');
         $module->appendChild($this->dom->importNode($fragment->documentElement, true));
 
-        $view = $this->dom->getElementById('view');
-        $view->parentNode->replaceChild($module, $view);
+        if ($this->dom->getElementById('view')) {
+            $view = $this->dom->getElementById('view');
+            if ($view->parentNode) {
+                $view->parentNode->replaceChild($module, $view);
+            }
+        }
     }
 
     public function print_page()
@@ -1095,6 +1114,9 @@ class JsonResponse
 
     private function json_encode()
     {
+        if (!defined('DEBUG_MODE'))
+            define('DEBUG_MODE', true);
+
         $response = $this->encode_items($this->response);
         $code = $this->code;
         $error = '';
