@@ -779,7 +779,7 @@ sql
     {
         try {
             define('WEBDIR', $constants['WEBDIR']);
-            define('ENVIRONMENT', 'web');
+            define('ENVIRONMENT', 'www');
 
             if (!file_exists(WEBDIR . '/config.json')) {
                 die('config.json does not exist');
