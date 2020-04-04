@@ -291,7 +291,7 @@ sql
         }
     }
 
-    public function init($config)
+    public static function init($config)
     {
         self::define_constants($config);
 
