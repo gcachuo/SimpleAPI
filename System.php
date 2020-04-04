@@ -689,6 +689,12 @@ sql
 
         $data .= preg_replace('/\s/', '', file_get_contents('php://input'));
 
+        if ($_FILES) {
+            foreach($_FILES as $file) {
+                $data .= $file['name'];
+            }
+        }
+
         if (defined('CONFIG')) {
             $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/' . date('Y-m-d') . '.log';
         } else {
