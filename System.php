@@ -690,8 +690,14 @@ sql
         $data .= preg_replace('/\s/', '', file_get_contents('php://input'));
 
         if ($_FILES) {
-            foreach($_FILES as $file) {
-                $data .= $file['name'];
+            foreach ($_FILES as $files) {
+                if (is_array($files)) {
+                    foreach ($files as $file) {
+                        $data .= $files['name'];
+                    }
+                } else {
+                    $data .= $files['name'];
+                }
             }
         }
 
