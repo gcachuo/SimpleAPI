@@ -692,9 +692,7 @@ sql
         if ($_FILES) {
             foreach ($_FILES as $files) {
                 if (is_array($files)) {
-                    foreach ($files as $file) {
-                        $data .= $files['name'];
-                    }
+                    $data .= print_r($files['name'], true);
                 } else {
                     $data .= $files['name'];
                 }
