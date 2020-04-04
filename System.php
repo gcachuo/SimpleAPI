@@ -779,7 +779,7 @@ sql
     {
         try {
             define('WEBDIR', $constants['WEBDIR']);
-            define('ENVIRONMENT', 'api');
+            define('ENVIRONMENT', 'web');
 
             if (!file_exists(WEBDIR . '/config.json')) {
                 die('config.json does not exist');
@@ -1093,7 +1093,7 @@ class JsonResponse
 
     private function send_response()
     {
-        if ($this->code >= HTTPStatusCodes::BadRequest) {
+        /*if ($this->code >= HTTPStatusCodes::BadRequest) {
             $code = $this->code;
             $status = 'error';
             $response = $this->encode_items($this->response);
@@ -1102,7 +1102,7 @@ class JsonResponse
             if (defined('FILE')) unlink(FILE);
 
             System::log_error(compact('status', 'code', 'response', 'error'));
-        }
+        }*/
         if (ENVIRONMENT == 'web') {
             ob_clean();
             die(self::$json);
