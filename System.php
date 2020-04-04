@@ -332,7 +332,7 @@ sql
         require_once($path);
     }
 
-    private static function load_php_functions($config)
+    private static function load_php_functions($config = [])
     {
         ob_start();
         setcookie('XDEBUG_SESSION', 'PHPSTORM');
