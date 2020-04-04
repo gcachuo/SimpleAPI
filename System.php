@@ -1106,6 +1106,10 @@ class JsonResponse
         if (ENVIRONMENT == 'web') {
             ob_clean();
             die(self::$json);
+        } else if (ENVIRONMENT == 'www') {
+            ob_clean();
+            var_dump(json_decode(self::$json, true));
+            exit;
         }
         $exception = json_decode(self::$json, true);
 
