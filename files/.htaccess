@@ -3,7 +3,7 @@ RewriteEngine on
 ErrorDocument 503 503.html
 
 php_flag  log_errors on
-php_value error_log  error.log
+php_value error_log error.log
 
 RewriteCond %{REQUEST_URI} !doc
 RewriteCond %{REQUEST_URI} !public
