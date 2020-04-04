@@ -295,7 +295,7 @@ sql
     {
         self::define_constants($config);
 
-        self::load_php_functions();
+        self::load_php_functions($config);
 
         self::load_composer();
 
@@ -332,7 +332,7 @@ sql
         require_once($path);
     }
 
-    private static function load_php_functions()
+    private static function load_php_functions($config)
     {
         ob_start();
         setcookie('XDEBUG_SESSION', 'PHPSTORM');
@@ -370,7 +370,7 @@ sql
         ini_set('display_errors', 'On');
         ini_set('always_populate_raw_post_data', '-1');
         ini_set('max_execution_time', '300');
-        date_default_timezone_set('America/Mexico_City');
+        date_default_timezone_set($config['TIMEZONE'] ?? 'America/Mexico_City');
         spl_autoload_register(function ($class) {
             if (defined('WEBDIR') && !defined('DIR')) {
                 define('DIR', WEBDIR . '/api');
