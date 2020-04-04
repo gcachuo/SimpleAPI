@@ -692,7 +692,7 @@ sql
         if ($_FILES) {
             foreach ($_FILES as $files) {
                 if (is_array($files)) {
-                    $data .= json_encode($files['name']);
+                    $data .= implode(',', $files['name']);
                 } else {
                     $data .= $files['name'];
                 }
