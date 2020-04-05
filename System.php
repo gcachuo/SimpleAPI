@@ -688,8 +688,8 @@ sql
         $data .= '[' . strstr($_SERVER['REQUEST_URI'], 'api/') . '] ';
 
         $data .= preg_replace('/\s/', '', file_get_contents('php://input'));
-        if($_POST) {
-            $data .= json_encode($_POST);
+        if ($_POST) {
+            $data .= preg_replace('/\s/', '', json_encode($_POST));
         }
         if ($_FILES) {
             foreach ($_FILES as $files) {
