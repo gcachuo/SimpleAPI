@@ -444,6 +444,14 @@ sql;
     {
         return $this->stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function convertEncoding(string $table, string $field)
+    {
+        $sql = <<<sql
+UPDATE $table SET $field = CONVERT(CAST(CONVERT($field USING latin1) AS BINARY) USING utf8);
+sql;
+        $this->prepare2($sql);
+    }
 }
 
 class TableColumn
