@@ -685,18 +685,18 @@ sql
         $data = '[' . date('Y-m-d H:i:s') . '] ';
         $data .= '[' . $_SERVER['HTTP_HOST'] . '] ';
         $data .= '[' . $_SERVER['REQUEST_METHOD'] . '] ';
-        $data .= '[' . strstr($_SERVER['REQUEST_URI'], 'api/') . '] ';
+        $data .= '[' . strstr($_SERVER['REQUEST_URI'], 'api/') . ']';
 
-        $data .= preg_replace('/\s/', '', file_get_contents('php://input'));
+        $data .= ' ' . preg_replace('/\s/', '', file_get_contents('php://input'));
         if ($_POST) {
-            $data .= preg_replace('/\s/', '', json_encode($_POST));
+            $data .= ' ' . preg_replace('/\s/', '', json_encode($_POST));
         }
         if ($_FILES) {
             foreach ($_FILES as $files) {
                 if (is_array($files)) {
-                    $data .= implode(',', $files['name']);
+                    $data .= ' ' . implode(',', $files['name']);
                 } else {
-                    $data .= $files['name'];
+                    $data .= ' ' . $files['name'];
                 }
             }
         }
