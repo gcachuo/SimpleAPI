@@ -368,7 +368,7 @@ sql;
 
     public function from_file($filename)
     {
-        $path = __DIR__ . "/../Model/Data/$filename.sql";
+        $path = DIR . "/Model/Data/$filename.sql";
         $sql = file_get_contents($path);
         return $sql;
     }
