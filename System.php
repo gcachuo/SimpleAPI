@@ -450,8 +450,13 @@ sql
     {
         global $_PATCH, $_PUT, $_DELETE;
 
-        if (!defined('ENVIRONMENT'))
-            define('ENVIRONMENT', isset($_SERVER['SHELL']) || isset($_SERVER['argv']) ? 'cli' : 'web');
+
+        if (!defined('ENVIRONMENT')) {
+            if ($config['ENV'] ?? null)
+                define('ENVIRONMENT', $config['ENV']);
+            else
+                define('ENVIRONMENT', isset($_SERVER['SHELL']) || isset($_SERVER['argv']) ? 'cli' : 'web');
+        }
 
         if (!defined('REQUEST_METHOD'))
             define('REQUEST_METHOD', System::isset_get($_SERVER['REQUEST_METHOD']));
@@ -1120,8 +1125,10 @@ class JsonResponse
             die(self::$json);
         } else if (ENVIRONMENT == 'www') {
             ob_clean();
-            var_dump(json_decode(self::$json, true));
-            exit;
+//            var_dump(json_decode(self::$json, true));
+//            exit;
+            header('Content-Type: application/json');
+            die(self::$json);
         }
         $exception = json_decode(self::$json, true);
 
