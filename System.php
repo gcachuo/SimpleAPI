@@ -884,15 +884,19 @@ html
             } else {
                 $fragment = $this->dom->createDocumentFragment();
 
-                foreach ($module_list ?: [['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard', 'disabled' => '']] as $module) {
+                $module_list = $module_list ?: [['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard', 'disabled' => '']];
+                define('MODULES', $module_list);
+
+                foreach ($module_list as $module) {
                     ['name' => $name, 'icon' => $icon, 'href' => $href] = $module;
                     $disabled = System::isset_get($module['disabled']) ? 'disabled' : '';
+                    $hidden = System::isset_get($module['hidden']) ? 'none' : 'unset';
                     $file = System::isset_get($module['file'], $entry);
                     if ($file != $entry) {
                         continue;
                     }
                     $fragment->appendXML(<<<html
-<li>
+<li style="display: $hidden">
     <a href="$href" class="$disabled" style="display: flex; align-items: center">
         <span class="nav-icon">
             <i class="material-icons">$icon</i>
@@ -958,7 +962,11 @@ html;
         $contents = ob_get_contents();
         ob_end_clean();
 
+        $href = strstr($file, '.php', true);
+        $module = ucfirst(strtolower(MODULES[$href]['name']));
+
         $chunk = <<<html
+<p class="text-left breadcrumbs"><span class="text-muted">Usted se encuentra en:</span> <span>$module</span></p>
 <div class="container-fluid">
     $contents
 </div>
