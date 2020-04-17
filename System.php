@@ -867,9 +867,11 @@ sql
                 $favicon->setAttribute('href', 'logo.png');
             }
 
-            if ($this->dom->getElementById('project-img')) {
-                $logo = $this->dom->getElementById('project-img');
-                $logo->setAttribute('src', BASENAME . 'logo.png');
+            if ($this->getElementsByClass($this->dom, 'img', 'project-img')) {
+                $imgs =($this->getElementsByClass($this->dom, 'img', 'project-img'));
+                foreach ($imgs as $img) {
+                    $img->setAttribute('src', BASENAME . 'logo.png');
+                }
             }
 
             if ($file != $entry) {
@@ -933,6 +935,21 @@ alert('$message');
 </script>
 html;
         }
+    }
+
+    function getElementsByClass(&$parentNode, $tagName, $className)
+    {
+        $nodes = array();
+
+        $childNodeList = $parentNode->getElementsByTagName($tagName);
+        for ($i = 0; $i < $childNodeList->length; $i++) {
+            $temp = $childNodeList->item($i);
+            if (stripos($temp->getAttribute('class'), $className) !== false) {
+                $nodes[] = $temp;
+            }
+        }
+
+        return $nodes;
     }
 
     public function load_module($file)
