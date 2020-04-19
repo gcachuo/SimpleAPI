@@ -4,6 +4,7 @@ use Firebase\JWT\JWT;
 use Model\ColumnTypes;
 use Model\MySQL;
 use Model\TableColumn;
+use PHPMailer\PHPMailer\PHPMailer;
 
 class System
 {
@@ -57,6 +58,37 @@ class System
             mkdir($path, 0777, true);
         }
         file_put_contents($path . 'custom' . date('Y-m-d') . '.log', "#$date $request\n" . $message . "\n\n", FILE_APPEND);
+    }
+
+    public static function sendEmail(array $to, array $options)
+    {
+        try {
+            $mail = new PHPMailer(true);
+
+            $mail->Username = CONFIG['email']['username'];
+            $mail->Password = CONFIG['email']['password'];
+
+            $mail->SMTPDebug = 1;
+            $mail->SMTPSecure = 'ssl';
+            $mail->Host = "smtp.gmail.com"; // GMail
+            $mail->Port = 465;
+            $mail->IsSMTP(); // use SMTP
+            $mail->SMTPAuth = true;
+
+            $mail->setFrom(CONFIG['email']['username'], CONFIG['email']['name']);
+
+            foreach ($to as $item) {
+                $mail->addAddress($item['email'], $item['name'] ?? null);
+            }
+
+            $mail->Subject = $options['subject'] ?? null;
+            $mail->Body = $options['body'];
+            $mail->AltBody = $options['altbody'] ?? $options['body'];
+
+            $mail->send();
+        } catch (\PHPMailer\PHPMailer\Exception $exception) {
+            JsonResponse::sendResponse(['message' => $exception->getMessage(), 'trace' => $exception->getTrace()], HTTPStatusCodes::InternalServerError);
+        }
     }
 
     public static function redirect(string $path = '')
@@ -473,45 +505,49 @@ sql
         if (!defined('BASENAME'))
             define('BASENAME', stristr($_SERVER['REQUEST_URI'], 'api/', true));
 
-        if (!defined('PROJECT')) {
-            $project = getenv('PROJECT');
-            if (empty($project)) {
-                $config = file_exists(DIR . '/Config/default.json')
-                    ? file_get_contents(DIR . '/Config/default.json')
-                    : null;
-                if ($config) {
-                    define('CONFIG', json_decode($config, true));
-                } else {
-                    $config = [
-                        "project" => [
-                            "name" => "default",
-                            "code" => "default"
-                        ],
-                        "database" => [
-                            "host" => "",
-                            "username" => "",
-                            "passwd" => "",
-                            "dbname" => ""
-                        ]
-                    ];
-                    if (ENVIRONMENT == 'init') {
-                        return;
-                    }
-                    file_put_contents(DIR . '/Config/default.json', json_encode($config));
-
-                    header('Content-Type: application/json');
-                    JsonResponse::sendResponse(['message' => "default.json not found"], HTTPStatusCodes::InternalServerError);
-                }
+        $project = getenv('PROJECT');
+        if (empty($project)) {
+            $project_config = file_exists(DIR . '/Config/default.json')
+                ? file_get_contents(DIR . '/Config/default.json')
+                : null;
+            if ($project_config) {
+                $project_config = json_decode($project_config, true);
+                apache_setenv('PROJECT', $project_config['project']['code']);
+                self::define_constants($config);
             } else {
-                $config = file_exists(DIR . '/Config/' . $project . '.json')
-                    ? file_get_contents(DIR . '/Config/' . $project . '.json')
-                    : null;
-                if ($config) {
-                    define('CONFIG', json_decode($config, true));
-                } else {
-                    header('Content-Type: application/json');
-                    JsonResponse::sendResponse(['message' => "Config not found for project '$project'"], HTTPStatusCodes::InternalServerError);
+                $project_config = [
+                    "project" => [
+                        "name" => "default",
+                        "code" => "default"
+                    ],
+                    "database" => [
+                        "host" => "",
+                        "username" => "",
+                        "passwd" => "",
+                        "dbname" => ""
+                    ],
+                    'email' => [
+                        'username' => '',
+                        'password' => ''
+                    ]
+                ];
+                if (ENVIRONMENT == 'init') {
+                    return;
                 }
+                file_put_contents(DIR . '/Config/default.json', json_encode($project_config));
+
+                header('Content-Type: application/json');
+                JsonResponse::sendResponse(['message' => "default.json not found"], HTTPStatusCodes::InternalServerError);
+            }
+        } else {
+            $project_config = file_exists(DIR . '/Config/' . $project . '.json')
+                ? file_get_contents(DIR . '/Config/' . $project . '.json')
+                : null;
+            if ($project_config) {
+                define('CONFIG', json_decode($project_config, true));
+            } else {
+                header('Content-Type: application/json');
+                JsonResponse::sendResponse(['message' => "Config not found for project '$project'"], HTTPStatusCodes::InternalServerError);
             }
         }
 
@@ -868,7 +904,7 @@ sql
             }
 
             if ($this->getElementsByClass($this->dom, 'img', 'project-img')) {
-                $imgs =($this->getElementsByClass($this->dom, 'img', 'project-img'));
+                $imgs = ($this->getElementsByClass($this->dom, 'img', 'project-img'));
                 foreach ($imgs as $img) {
                     $img->setAttribute('src', BASENAME . 'logo.png');
                 }
