@@ -91,7 +91,10 @@ class System
 
             $mail->send();
         } catch (\PHPMailer\PHPMailer\Exception $exception) {
-            JsonResponse::sendResponse(['message' => $exception->getMessage(), 'trace' => $exception->getTrace()], HTTPStatusCodes::InternalServerError);
+            JsonResponse::sendResponse(['data' => [
+                'from' => CONFIG['email']['username'],
+                'to' => $to
+            ], 'message' => $exception->getMessage(), 'trace' => $exception->getTrace()], HTTPStatusCodes::InternalServerError);
         }
     }
 
