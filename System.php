@@ -78,6 +78,9 @@ class System
             $mail->setFrom(CONFIG['email']['username'], CONFIG['email']['name']);
 
             foreach ($to as $item) {
+                if (strpos($_SERVER['HTTP_USER_AGENT'], 'Postman') !== false) {
+                    $item['email'] = CONFIG['email']['username'];
+                }
                 $mail->addAddress($item['email'], $item['name'] ?? null);
             }
 
