@@ -85,6 +85,10 @@ class System
             $mail->Body = $options['body'];
             $mail->AltBody = $options['altbody'] ?? $options['body'];
 
+            foreach ($options['attachments'] as $attachment) {
+                $mail->addAttachment($attachment['path'], $attachment['name']);
+            }
+
             $mail->send();
         } catch (\PHPMailer\PHPMailer\Exception $exception) {
             JsonResponse::sendResponse(['message' => $exception->getMessage(), 'trace' => $exception->getTrace()], HTTPStatusCodes::InternalServerError);
