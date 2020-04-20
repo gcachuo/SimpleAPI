@@ -1025,8 +1025,8 @@ html;
         $contents = ob_get_contents();
         ob_end_clean();
 
-        $href = strstr($file, '.php', true);
-        $module = ucfirst(strtolower(MODULES[$href]['name']));
+        $href = strstr(strstr($file, '.php', true), '/', true);
+        $module = ucfirst(strtolower(MODULES[$href]['name'] ?? ''));
 
         $chunk = <<<html
 <div class="row justify-content-center">
