@@ -1025,7 +1025,10 @@ html;
         $contents = ob_get_contents();
         ob_end_clean();
 
-        $href = strstr(strstr($file, '.php', true), '/', true);
+        $href = strstr($file, '.php', true);
+        if (strpos($href, '/') !== false) {
+            $href = strstr($href, '/', true);
+        }
         $module = ucfirst(strtolower(MODULES[$href]['name'] ?? ''));
 
         $chunk = <<<html
