@@ -1030,7 +1030,7 @@ html;
 
         $chunk = <<<html
 <div class="row justify-content-center">
-    <div class="col-12">
+    <div class="col-12" style="padding: 0 25px">
         <p class="text-left breadcrumbs"><span class="text-muted">Usted se encuentra en:</span> <span>$module</span></p>
         <div class="container-fluid">
             $contents
