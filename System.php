@@ -1029,12 +1029,13 @@ html;
         $module = ucfirst(strtolower(MODULES[$href]['name']));
 
         $chunk = <<<html
-        <div class="row justify-content-center">
-        <div class="col-12 col-lg-9">
-<p class="text-left breadcrumbs"><span class="text-muted">Usted se encuentra en:</span> <span>$module</span></p>
-<div class="container-fluid">
-    $contents
-</div> </div>
+<div class="row justify-content-center">
+    <div class="col-12">
+        <p class="text-left breadcrumbs"><span class="text-muted">Usted se encuentra en:</span> <span>$module</span></p>
+        <div class="container-fluid">
+            $contents
+        </div>
+    </div>
 </div>
 html;
 
