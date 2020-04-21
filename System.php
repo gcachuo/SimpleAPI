@@ -855,7 +855,13 @@ sql
                 'default' => $default,
                 'modules' => $module_list
             ] = json_decode(file_get_contents(WEBDIR . '/config.json'), true);
-            define('BASENAME', '/' . (trim(dirname($_SERVER['REDIRECT_URL'] ?? $_SERVER['SCRIPT_NAME']), '/') ?: '.') . '/');
+            
+            if ($constants['BASENAME']) {
+                define('BASENAME', $constants['BASENAME']);
+            } else {
+                define('BASENAME', '/' . (trim(dirname($_SERVER['SCRIPT_NAME']), '/') ?: '.') . '/');
+            }
+
             self::load_php_functions();
             $this->dom = new DOMDocument();
             libxml_use_internal_errors(true);
