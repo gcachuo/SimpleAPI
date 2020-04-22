@@ -163,161 +163,161 @@ sql
             $stmt = $this->pdo->prepare($sql);
             foreach ($params as $key => &$val) {
                 $stmt->bindParam($key, $val);
-			}
-			$stmt->execute();
-			$this->stmt = $stmt;
-			return $this;
-		} catch (PDOException $exception) {
-			$code = $exception->getCode();
-			$message = $exception->getMessage();
-			System::query_log('#' . $message);
-			switch ($code) {
-				default:
-					$trace = $exception->getTrace();
-					JsonResponse::sendResponse(compact('code', 'message', 'trace'), HTTPStatusCodes::InternalServerError);
-					break;
-			}
-		}
-	}
+            }
+            $stmt->execute();
+            $this->stmt = $stmt;
+            return $this;
+        } catch (PDOException $exception) {
+            $code = $exception->getCode();
+            $message = $exception->getMessage();
+            System::query_log('#' . $message);
+            switch ($code) {
+                default:
+                    $trace = $exception->getTrace();
+                    JsonResponse::sendResponse(compact('code', 'message', 'trace'), HTTPStatusCodes::InternalServerError);
+                    break;
+            }
+        }
+    }
 
-	function array_copy(array $array)
-	{
-		$result = array();
-		foreach ($array as $key => $val) {
-			if (is_array($val)) {
-				$result[$key] = $this->array_copy($val);
-			} elseif (is_object($val)) {
-				$result[$key] = clone $val;
-			} else {
-				$result[$key] = $val;
-			}
-		}
-		return $result;
-	}
+    function array_copy(array $array)
+    {
+        $result = array();
+        foreach ($array as $key => $val) {
+            if (is_array($val)) {
+                $result[$key] = $this->array_copy($val);
+            } elseif (is_object($val)) {
+                $result[$key] = clone $val;
+            } else {
+                $result[$key] = $val;
+            }
+        }
+        return $result;
+    }
 
-	/**
-	 * Take a statement and bind its fields to an assoc array in PHP with the same fieldnames
-	 * @param mysqli_stmt $stmt
-	 * @param $bound_assoc
-	 */
-	function stmt_bind_assoc(&$stmt, &$bound_assoc)
-	{
-		$metadata = $stmt->result_metadata();
-		if ($metadata !== false) {
-			$fields = array();
-			$bound_assoc = array();
+    /**
+     * Take a statement and bind its fields to an assoc array in PHP with the same fieldnames
+     * @param mysqli_stmt $stmt
+     * @param $bound_assoc
+     */
+    function stmt_bind_assoc(&$stmt, &$bound_assoc)
+    {
+        $metadata = $stmt->result_metadata();
+        if ($metadata !== false) {
+            $fields = array();
+            $bound_assoc = array();
 
-			$fields[] = $stmt;
+            $fields[] = $stmt;
 
-			while ($field = $metadata->fetch_field()) {
-				$fields[] = &$bound_assoc[$field->name];
-			}
-			call_user_func_array("mysqli_stmt_bind_result", $fields);
-		}
-	}
+            while ($field = $metadata->fetch_field()) {
+                $fields[] = &$bound_assoc[$field->name];
+            }
+            call_user_func_array("mysqli_stmt_bind_result", $fields);
+        }
+    }
 
-	/**
+    /**
+     * @param mysqli_result $mysqli_result
+     * @param bool $index
+     * @param int $type
+     * @return mixed
      * @deprecated
-	 * @param mysqli_result $mysqli_result
-	 * @param bool $index
-	 * @param int $type
-	 * @return mixed
-	 */
-	function fetch_all($mysqli_result, $index = false, $type = MYSQLI_ASSOC)
-	{
-		$results = [];
-		if ($type != MYSQLI_ASSOC || is_array($mysqli_result)) {
-			if (is_array($mysqli_result)) {
-				$results = $mysqli_result;
-			} elseif ($type == MYSQLI_NUM) {
-				$results = $mysqli_result->fetch_all(MYSQLI_NUM);
-			}
-		} else {
-			while ($row = $mysqli_result->fetch_assoc()) {
-				array_push($results, $row);
-			}
-		}
+     */
+    function fetch_all($mysqli_result, $index = false, $type = MYSQLI_ASSOC)
+    {
+        $results = [];
+        if ($type != MYSQLI_ASSOC || is_array($mysqli_result)) {
+            if (is_array($mysqli_result)) {
+                $results = $mysqli_result;
+            } elseif ($type == MYSQLI_NUM) {
+                $results = $mysqli_result->fetch_all(MYSQLI_NUM);
+            }
+        } else {
+            while ($row = $mysqli_result->fetch_assoc()) {
+                array_push($results, $row);
+            }
+        }
 
-		if ($index !== false) {
-			$end = [];
-			foreach ($results as $result) {
-				$end[$result[$index]] = $result;
-			}
-			return $end;
-		}
-		return $results;
-	}
+        if ($index !== false) {
+            $end = [];
+            foreach ($results as $result) {
+                $end[$result[$index]] = $result;
+            }
+            return $end;
+        }
+        return $results;
+    }
 
-	/**
+    /**
+     * @param mysqli_result $mysqli_result
+     * @param int $type
+     * @return mixed
      * @deprecated
-	 * @param mysqli_result $mysqli_result
-	 * @param int $type
-	 * @return mixed
-	 */
-	public function fetch_single($mysqli_result, $type = MYSQLI_ASSOC)
-	{
-		if (!is_array($mysqli_result)) {
-			$result = $mysqli_result->fetch_array($type);
-		} else {
-			$result = System::isset_get($mysqli_result[0], []);
-		}
+     */
+    public function fetch_single($mysqli_result, $type = MYSQLI_ASSOC)
+    {
+        if (!is_array($mysqli_result)) {
+            $result = $mysqli_result->fetch_array($type);
+        } else {
+            $result = System::isset_get($mysqli_result[0], []);
+        }
 
-		return $result;
-	}
+        return $result;
+    }
 
-	/**
-	 * @param string $table
-	 * @param TableColumn[] $columns
-	 * @param string $extra_sql
-	 * @return bool
-	 */
-	function create_table($table, $columns, $extra_sql = '')
-	{
-		$result = System::isset_get($this->fetch_all($this->query("show tables;"), 0, MYSQLI_NUM)[$table]);
+    /**
+     * @param string $table
+     * @param TableColumn[] $columns
+     * @param string $extra_sql
+     * @return bool
+     */
+    function create_table($table, $columns, $extra_sql = '')
+    {
+        $result = System::isset_get($this->fetch_all($this->query("show tables;"), 0, MYSQLI_NUM)[$table]);
 
-		if (!$result) {
-			$sql_columns = "";
-			foreach ($columns as $column) {
-				switch ($column->type) {
-					case ColumnTypes::TIMESTAMP:
-					case ColumnTypes::BIGINT:
-					case ColumnTypes::INTEGER:
-					case ColumnTypes::BIT:
-						$default = $column->default;
-						break;
-					default:
-						$default = "'$column->default'";
-						break;
-				}
-				$sql_columns .=
-					$column->name . " " .
-					$column->type . ($column->type_size ? "($column->type_size)" : '') . " " .
-					($column->default ? "default " . $default : '') . " " .
-					($column->auto_increment ? 'auto_increment' : '') . " " .
-					($column->primary_key ? 'primary key' : '') . " " .
-					($column->not_null ? 'not null' : '') . ',';
-			}
-			$sql_columns = trim($sql_columns, ',');
+        if (!$result) {
+            $sql_columns = "";
+            foreach ($columns as $column) {
+                switch ($column->type) {
+                    case ColumnTypes::TIMESTAMP:
+                    case ColumnTypes::BIGINT:
+                    case ColumnTypes::INTEGER:
+                    case ColumnTypes::BIT:
+                        $default = $column->default;
+                        break;
+                    default:
+                        $default = "'$column->default'";
+                        break;
+                }
+                $sql_columns .=
+                    $column->name . " " .
+                    $column->type . ($column->type_size ? "($column->type_size)" : '') . " " .
+                    ($column->default ? "default " . $default : '') . " " .
+                    ($column->auto_increment ? 'auto_increment' : '') . " " .
+                    ($column->primary_key ? 'primary key' : '') . " " .
+                    ($column->not_null ? 'not null' : '') . ',';
+            }
+            $sql_columns = trim($sql_columns, ',');
 
-			$sql = <<<sql
+            $sql = <<<sql
 CREATE TABLE IF NOT EXISTS `$table`($sql_columns) 
 ENGINE = InnoDB
 CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 sql;
-			try {
-				$this->mysqli->query("DESCRIBE `$table`");
-			} catch (mysqli_sql_exception $exception) {
-				$sql .= $extra_sql;
-			}
-			$result = $this->query($sql, true);
-			return false;
-		}
-		return true;
-	}
+            try {
+                $this->mysqli->query("DESCRIBE `$table`");
+            } catch (mysqli_sql_exception $exception) {
+                $sql .= $extra_sql;
+            }
+            $result = $this->query($sql, true);
+            return false;
+        }
+        return true;
+    }
 
     /**
-     * @deprecated
      * @return mixed
+     * @deprecated
      */
     public function insertID()
     {
@@ -332,22 +332,22 @@ sql;
         return $this->pdo->lastInsertId();
     }
 
-	public function escape_string($string)
-	{
-		return $this->mysqli->real_escape_string($string);
-	}
+    public function escape_string($string)
+    {
+        return $this->mysqli->real_escape_string($string);
+    }
 
-	public function last_error()
-	{
-		return $this->mysqli->error;
-	}
+    public function last_error()
+    {
+        return $this->mysqli->error;
+    }
 
-	public function delete_tables(array $tables)
-	{
-		if (ENVIRONMENT == 'cli') {
-			$mysql = new MySQL();
-			foreach ($tables as $table) {
-				$sql = <<<sql
+    public function delete_tables(array $tables)
+    {
+        if (ENVIRONMENT == 'cli') {
+            $mysql = new MySQL();
+            foreach ($tables as $table) {
+                $sql = <<<sql
 drop table if exists $table;
 sql;
                 $mysql->query($sql);
@@ -428,6 +428,9 @@ sql;
 
             if (is_null($value))
                 $values[$key] = 'NULL';
+
+            if (is_bool($value))
+                $values[$key] = $value ? "true" : "false";
         }
 
         $query = @preg_replace($keys, $values, $query);
