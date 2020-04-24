@@ -855,7 +855,7 @@ sql
                 'default' => $default,
                 'modules' => $module_list
             ] = json_decode(file_get_contents(WEBDIR . '/config.json'), true);
-            
+
             if ($constants['BASENAME']) {
                 define('BASENAME', $constants['BASENAME']);
             } else {
@@ -1170,31 +1170,29 @@ class JsonResponse
 
     static function sendResponse(array $response, $code = 400)
     {
-        new JsonResponse($response, $code);
-    }
+        $jsonResponse = new JsonResponse();
 
-    private function __construct(array $response, $code = null)
-    {
         if (self::$alreadySent and $code !== HTTPStatusCodes::OK) {
-            $this->send_response();
+            $jsonResponse->send_response();
             exit;
         }
         if (!empty($code)) {
             http_response_code($code);
-            $this->code = $code;
+            $jsonResponse->code = $code;
         } else {
-            $this->code = http_response_code();
+            $jsonResponse->code = http_response_code();
         }
 
-        $this->response = $response;
-        $this->error = error_get_last();
-        $this->json_encode();
-        $this->send_response();
+        $jsonResponse->response = $response;
+        $jsonResponse->error = error_get_last();
+        $jsonResponse->json_encode();
+        $jsonResponse->send_response();
     }
 
     private function send_response()
     {
-        /*if ($this->code >= HTTPStatusCodes::BadRequest) {
+        //Log error in file
+        if ($this->code >= HTTPStatusCodes::BadRequest) {
             $code = $this->code;
             $status = 'error';
             $response = $this->encode_items($this->response);
@@ -1203,7 +1201,8 @@ class JsonResponse
             if (defined('FILE')) unlink(FILE);
 
             System::log_error(compact('status', 'code', 'response', 'error'));
-        }*/
+        }
+
         if (ENVIRONMENT == 'web') {
             ob_clean();
             die(self::$json);
