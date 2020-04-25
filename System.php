@@ -1,6 +1,7 @@
 <?php
 
 use Firebase\JWT\JWT;
+use mikehaertl\wkhtmlto\Pdf;
 use Model\ColumnTypes;
 use Model\MySQL;
 use Model\TableColumn;
@@ -98,6 +99,21 @@ class System
                 'from' => CONFIG['email']['username'],
                 'to' => $to
             ], 'message' => $exception->getMessage(), 'trace' => $exception->getTrace()], HTTPStatusCodes::InternalServerError);
+        }
+    }
+
+    public static function generatePDF(array $pages, string $output)
+    {
+        $pdf = new Pdf();
+
+        foreach ($pages as $page) {
+            $pdf->addPage($page);
+        }
+
+        // Save the PDF
+        if (!$pdf->saveAs($output)) {
+            $error = $pdf->getError();
+            JsonResponse::sendResponse(['message' => $error], HTTPStatusCodes::InternalServerError);
         }
     }
 
