@@ -90,7 +90,7 @@ class System
             $mail->AltBody = $options['altbody'] ?? $options['body'];
 
             foreach ($options['attachments'] as $attachment) {
-                $mail->addAttachment($attachment['path'], $attachment['name']);
+                $mail->addAttachment($attachment['path'], $attachment['name'] . '.pdf');
             }
 
             $mail->send();
