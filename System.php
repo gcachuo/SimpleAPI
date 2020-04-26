@@ -528,8 +528,9 @@ sql
         if (!defined('JWT_KEY'))
             define('JWT_KEY', file_exists(DIR . '/Config/.jwt_key') ? file_get_contents(DIR . '/Config/.jwt_key') : null);
 
-        if (!defined('BASENAME'))
-            define('BASENAME', stristr($_SERVER['REQUEST_URI'], 'api/', true));
+        if (!defined('BASENAME')) {
+            define('BASENAME', dirname($_SERVER['SCRIPT_NAME']));
+        }
 
         $project = getenv('PROJECT');
         if (empty($project)) {
