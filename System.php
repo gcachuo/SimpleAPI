@@ -885,7 +885,15 @@ sql
 
             $module_file = System::isset_get($_GET['module'], $default) . (System::isset_get($_GET['action']) ? '/' . $_GET['action'] : '');
             if (strpos($module_file, '/')) {
-                $module_file = trim(str_replace(BASENAME, '', '/' . $module_file), '/');
+                $module_file_array = explode('/', $module_file);
+
+                $basename = explode('/', BASENAME);
+                $basename = array_values(array_filter($basename));
+
+                $module_file_intersect = array_diff($module_file_array, $basename);
+                $module_file_intersect = array_values($module_file_intersect);
+
+                $module_file = implode('/', $module_file_intersect);
             }
 
             $file = $module_list[array_search(strstr($module_file, '/', true) ?: $module_file, array_column($module_list, 'href'))]['file'] ?? $entry;
