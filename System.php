@@ -1,6 +1,7 @@
 <?php
 
 use Firebase\JWT\JWT;
+use ForceUTF8\Encoding;
 use mikehaertl\wkhtmlto\Pdf;
 use Model\ColumnTypes;
 use Model\MySQL;
@@ -61,20 +62,22 @@ class System
         file_put_contents($path . 'custom' . date('Y-m-d') . '.log', "#$date $request\n" . $message . "\n\n", FILE_APPEND);
     }
 
-    public static function sendEmail(array $to, array $options)
+    public static function sendEmail(array $to, string $body, array $options)
     {
         try {
             $mail = new PHPMailer(true);
 
             $mail->Username = CONFIG['email']['username'];
             $mail->Password = CONFIG['email']['password'];
+            $mail->Host = CONFIG['email']['host'] ?? "smtp.gmail.com"; // GMail
+            $mail->Port = CONFIG['email']['port'] ?? 465;
 
             $mail->SMTPDebug = 1;
             $mail->SMTPSecure = 'ssl';
-            $mail->Host = "smtp.gmail.com"; // GMail
-            $mail->Port = 465;
             $mail->IsSMTP(); // use SMTP
             $mail->SMTPAuth = true;
+            $mail->CharSet = 'UTF-8';
+            $mail->Encoding = 'base64';
 
             $mail->setFrom(CONFIG['email']['username'], CONFIG['email']['name']);
 
@@ -86,8 +89,8 @@ class System
             }
 
             $mail->Subject = $options['subject'] ?? null;
-            $mail->Body = $options['body'];
-            $mail->AltBody = $options['altbody'] ?? $options['body'];
+            $mail->Body = $body;
+            $mail->AltBody = $options['altbody'] ?? $body;
 
             foreach ($options['attachments'] as $attachment) {
                 $mail->addAttachment($attachment['path'], $attachment['name'] . '.pdf');
@@ -100,6 +103,16 @@ class System
                 'to' => $to
             ], 'message' => $exception->getMessage(), 'trace' => $exception->getTrace()], HTTPStatusCodes::InternalServerError);
         }
+    }
+
+    public static function utf8($value)
+    {
+        if ( mb_detect_encoding( utf8_decode( $value ) ) === 'UTF-8' ) {
+            // Double encoded, or bad encoding
+            $value = utf8_decode( $value );
+        }
+
+       return Encoding::toUTF8( $value );
     }
 
     public static function generatePDF(array $pages, string $output)
