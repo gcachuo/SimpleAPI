@@ -27,7 +27,7 @@ class System
         return openssl_decrypt($value_encrypted, "AES-256-CBC", System::SEED, 0, str_pad(System::SEED, 16, 'X', STR_PAD_LEFT));
     }
 
-    public static function encrypt($value)
+    public static function encrypt(string $value)
     {
         return openssl_encrypt($value, "AES-256-CBC", System::SEED, 0, str_pad(System::SEED, 16, 'X', STR_PAD_LEFT));
     }
