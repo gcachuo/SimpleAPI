@@ -117,7 +117,7 @@ class System
 
     public function getHost()
     {
-        return $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'];
+        return $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . BASENAME;
     }
 
     public static function generatePDF(array $pages, string $output)
