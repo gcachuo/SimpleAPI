@@ -21,7 +21,7 @@ class System
 
     private const SEED = 'crypt0w4113t';
 
-    static function decrypt($value_encrypted)
+    static function decrypt(string $value_encrypted)
     {
         $value_encrypted = html_entity_decode($value_encrypted);
         return openssl_decrypt($value_encrypted, "AES-256-CBC", System::SEED, 0, str_pad(System::SEED, 16, 'X', STR_PAD_LEFT));
@@ -138,7 +138,7 @@ class System
     public static function redirect(string $path = '')
     {
         $path = ltrim($path, '/');
-        header('Location: ' . BASENAME . $path);
+        header('Location: ' . rtrim(BASENAME, '/') . '/' . $path);
     }
 
     /**
