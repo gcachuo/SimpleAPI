@@ -107,12 +107,17 @@ class System
 
     public static function utf8($value)
     {
-        if ( mb_detect_encoding( utf8_decode( $value ) ) === 'UTF-8' ) {
+        if (mb_detect_encoding(utf8_decode($value)) === 'UTF-8') {
             // Double encoded, or bad encoding
-            $value = utf8_decode( $value );
+            $value = utf8_decode($value);
         }
 
-       return Encoding::toUTF8( $value );
+        return Encoding::toUTF8($value);
+    }
+
+    public function getHost()
+    {
+        return $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'];
     }
 
     public static function generatePDF(array $pages, string $output)
