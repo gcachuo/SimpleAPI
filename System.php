@@ -92,7 +92,7 @@ class System
             $mail->Body = $body;
             $mail->AltBody = $options['altbody'] ?? $body;
 
-            foreach ($options['attachments'] as $attachment) {
+            foreach ($options['attachments'] ?? [] as $attachment) {
                 $mail->addAttachment($attachment['path'], $attachment['name'] . '.pdf');
             }
 
@@ -115,7 +115,7 @@ class System
         return Encoding::toUTF8($value);
     }
 
-    public function getHost()
+    public static function getHost()
     {
         return $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . BASENAME;
     }
