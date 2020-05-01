@@ -914,7 +914,7 @@ sql
                 $module_file = implode('/', $module_file_intersect);
             }
 
-            $file = $module_list[array_search(strstr($module_file, '/', true) ?: $module_file, array_column($module_list, 'href'))]['file'] ?? $entry;
+            $file = $module_list[$module_file]['file'] ?? $entry;
 
             if (!file_exists($dir . $file)) {
                 die($dir . $file . ' does not exist');
