@@ -1124,7 +1124,7 @@ class Controller
         $this->allowed_methods($methods);
     }
 
-    public function __call($action, $arguments)
+    /*public function __call($action, $arguments)
     {
         if (ENVIRONMENT == 'web') {
             $name = System::isset_get($this->_methods[REQUEST_METHOD][$action]);
@@ -1134,7 +1134,7 @@ class Controller
             JsonResponse::sendResponse(['message' => "Endpoint not found. [$name]"], HTTPStatusCodes::NotFound);
         }
         return $this->$action(...$arguments);
-    }
+    }*/
 
     private function allowed_methods(array $methods)
     {
