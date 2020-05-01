@@ -972,7 +972,7 @@ sql
             if ($file != $entry) {
                 $fragment = $this->dom->createDocumentFragment();
                 $fragment->appendXML(<<<html
-<script src="assets/js/signin.js"></script>
+<script src="assets/js/$module_file.js"></script>
 html
                 );
 
