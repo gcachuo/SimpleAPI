@@ -668,7 +668,7 @@ sql
         if (class_exists($namespace)) {
             /** @var $class Controller */
             $class = new $namespace();
-            $response = $class->$action($id);
+            $response = $class->call($action, $id);
             if (!is_array($response)) {
                 $message = $response;
             } else {
@@ -1122,6 +1122,17 @@ class Controller
     {
         $this->_methods = $methods;
         $this->allowed_methods($methods);
+    }
+
+    public function call($action, $arguments)
+    {
+        $name = System::isset_get($this->_methods[REQUEST_METHOD][$action]);
+        if ($name) {
+            return $this->$name(...$arguments);
+        } else {
+            $name = $action;
+        }
+        JsonResponse::sendResponse(['message' => "Endpoint not found. [$name]"], HTTPStatusCodes::NotFound);
     }
 
     /*public function __call($action, $arguments)
