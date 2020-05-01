@@ -956,6 +956,11 @@ sql
             if ($this->dom->getElementById('project-title')) {
                 $this->dom->getElementById('project-title')->nodeValue = $project;
             }
+            if ($this->dom->getElementById('project-user')) {
+                session_start();
+                $this->dom->getElementById('project-user')->nodeValue = $_SESSION['user']['nombre'];
+                session_write_close();
+            }
 
             if ($this->dom->getElementById('favicon')) {
                 $favicon = $this->dom->getElementById('favicon');
