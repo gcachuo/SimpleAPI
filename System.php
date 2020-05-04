@@ -958,7 +958,7 @@ sql
             }
             if ($this->dom->getElementById('project-user')) {
                 session_start();
-                $this->dom->getElementById('project-user')->nodeValue = $_SESSION['user']['nombre'];
+                $this->dom->getElementById('project-user')->nodeValue = $_SESSION['user']['nombre'] ?? null;
                 session_write_close();
             }
 
