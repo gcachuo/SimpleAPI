@@ -7,3 +7,4 @@
 /public/**/*.png
 /offline
 .phpunit.result.cache
+error.log
