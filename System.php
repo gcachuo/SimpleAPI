@@ -1133,7 +1133,7 @@ class Controller
     {
         $name = System::isset_get($this->_methods[REQUEST_METHOD][$action]);
         if ($name) {
-            return $this->$name(...$arguments);
+            return $this->$name(...($arguments ?: []));
         } else {
             $name = $action;
         }
