@@ -44,7 +44,7 @@ class System
     public static function query_log(string $sql)
     {
         $date = date('Y-m-d H:i:s');
-        $request = trim(stristr($_SERVER['REQUEST_URI'], 'api'), '/');
+        $request = ($_SERVER['REQUEST_URI'] ?? NULL) ? trim(stristr($_SERVER['REQUEST_URI'], 'api'), '/') : '';
         if (defined('CONFIG')) {
             $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/';
         } else {
@@ -559,14 +559,14 @@ sql
             define('BASENAME', dirname($_SERVER['SCRIPT_NAME']));
         }
 
-        $project = getenv('PROJECT');
+        $project = defined('PROJECT') ? PROJECT : getenv('PROJECT');
         if (empty($project)) {
             $project_config = file_exists(DIR . '/Config/default.json')
                 ? file_get_contents(DIR . '/Config/default.json')
                 : null;
             if ($project_config) {
                 $project_config = json_decode($project_config, true);
-                apache_setenv('PROJECT', $project_config['project']['code']);
+                define('PROJECT', $project_config['project']['code']);
                 self::define_constants($config);
             } else {
                 $project_config = [
