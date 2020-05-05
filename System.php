@@ -669,16 +669,16 @@ sql
             /** @var $class Controller */
             $class = new $namespace();
             $response = $class->call($action, $id);
-            if (!is_array($response)) {
-                $message = $response;
+
+            $message = 'Completed.';
+            if (!$response) {
+                JsonResponse::sendResponse(compact('message'), HTTPStatusCodes::OK);
+            } else if (is_scalar($response)) {
+                JsonResponse::sendResponse(['message' => $response], HTTPStatusCodes::OK);
             } else {
-                $message = 'Completed.';
-                if ($response) {
-                    $data = $response;
-                    JsonResponse::sendResponse(compact('message', 'data'), HTTPStatusCodes::OK);
-                }
+                $data = $response;
+                JsonResponse::sendResponse(compact('message', 'data'), HTTPStatusCodes::OK);
             }
-            JsonResponse::sendResponse(compact('message'), HTTPStatusCodes::OK);
         }
         if ($controller == 'api') {
             switch ($action) {
