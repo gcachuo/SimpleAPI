@@ -1,8 +1,7 @@
 <?php
-define('PROJECT', '');
 define('VERSION', '0.0.0');
 
-include_once "Lib/System.php";
+include __DIR__ . "/core/System.php";
 
 $path = "vendor/autoload.php";
 if (file_exists($path)) {

@@ -2,11 +2,14 @@ RewriteEngine on
 
 ErrorDocument 503 503.html
 
+php_flag  log_errors on
+php_value error_log error.log
+
 RewriteCond %{REQUEST_URI} !doc
 RewriteCond %{REQUEST_URI} !public
 RewriteRule ^(.*)$ index.php [QSA]
 
-AddHandler application/x-httpd-php72 .php
+AddHandler application/x-httpd-php73 .php
 
 php_value post_max_size 30M
 php_value upload_max_filesize 30M

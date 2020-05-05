@@ -1,0 +1,10 @@
+{
+  "project": "",
+  "theme": "themes/flatkit/html/",
+  "entry": "index.html",
+  "default": "dashboard",
+  "basename": "/web/",
+  "modules": [
+
+  ]
+}

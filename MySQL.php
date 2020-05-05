@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Model;
 
@@ -8,23 +8,36 @@ use mysqli;
 use mysqli_result;
 use mysqli_sql_exception;
 use mysqli_stmt;
+use PDO;
+use PDOException;
+use PDOStatement;
 use System;
 
 class MySQL
 {
-    /**
-     * @var mysqli $mysqli
-     */
-    private $mysqli, $dbname;
+    const PARAM_INT = PDO::PARAM_INT;
+    /** @var mysqli */
+    private $mysqli;
+    /** @var PDO */
+    private $pdo;
+    /** @var string */
+    private $dbname;
+    /** @var PDOStatement */
+    private $stmt;
 
     public function __construct($dbname = null)
     {
         mysqli_report(MYSQLI_REPORT_ALL ^ MYSQLI_REPORT_INDEX);
         try {
-            $filename = DIR . '/Config/database.json';
+            if (defined('CONFIG')) {
+                $filename = DIR . '/Config/' . CONFIG['project']['code'] . '.json';
+            } else {
+                $filename = DIR . '/Config/default.json';
+            }
             if (file_exists($filename)) {
                 $contents = file_get_contents($filename);
                 $config = json_decode($contents, true);
+                $config = $config['database'];
 
                 $host = $config['host'];
                 $username = $config['username'];
@@ -32,6 +45,8 @@ class MySQL
                 $dbname = $dbname ?: (getenv('DATABASE') ?: $config['dbname']);
 
                 $this->mysqli = new mysqli($host, $username, $passwd, $dbname);
+                $this->pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $passwd);
+                $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                 $this->dbname = $dbname;
             } else {
                 JsonResponse::sendResponse(['message' => "File $filename not found."], HTTPStatusCodes::InternalServerError);
@@ -89,10 +104,13 @@ sql
      * @param string $sql
      * @param array $params
      * @return false|mysqli_result|array
+     * @deprecated Use prepare2
      */
     function prepare(string $sql, array $params = [])
     {
         try {
+            System::query_log(self::interpolate_query($sql, $params, true));
+
             if (empty($params)) {
                 return $this->query($sql);
             }
@@ -115,7 +133,6 @@ sql
             $stmt->free_result();
             $stmt->close();
             return $mysqli_result ?: [];
-
         } catch (mysqli_sql_exception $exception) {
             $code = $exception->getCode();
             $message = $exception->getMessage();
@@ -130,6 +147,31 @@ sql
                     $message = 'A Foreign Key constraint fails.';
                     JsonResponse::sendResponse(compact('message'));
                     break;
+                default:
+                    $trace = $exception->getTrace();
+                    JsonResponse::sendResponse(compact('code', 'message', 'trace'), HTTPStatusCodes::InternalServerError);
+                    break;
+            }
+        }
+    }
+
+    public function prepare2(string $sql, array $params = [])
+    {
+        try {
+            System::query_log(self::interpolate_query($sql, $params, false));
+
+            $stmt = $this->pdo->prepare($sql);
+            foreach ($params as $key => &$val) {
+                $stmt->bindParam($key, $val);
+            }
+            $stmt->execute();
+            $this->stmt = $stmt;
+            return $this;
+        } catch (PDOException $exception) {
+            $code = $exception->getCode();
+            $message = $exception->getMessage();
+            System::query_log('#' . $message);
+            switch ($code) {
                 default:
                     $trace = $exception->getTrace();
                     JsonResponse::sendResponse(compact('code', 'message', 'trace'), HTTPStatusCodes::InternalServerError);
@@ -179,6 +221,7 @@ sql
      * @param bool $index
      * @param int $type
      * @return mixed
+     * @deprecated
      */
     function fetch_all($mysqli_result, $index = false, $type = MYSQLI_ASSOC)
     {
@@ -209,6 +252,7 @@ sql
      * @param mysqli_result $mysqli_result
      * @param int $type
      * @return mixed
+     * @deprecated
      */
     public function fetch_single($mysqli_result, $type = MYSQLI_ASSOC)
     {
@@ -271,9 +315,21 @@ sql;
         return true;
     }
 
+    /**
+     * @return mixed
+     * @deprecated
+     */
     public function insertID()
     {
         return $this->mysqli->insert_id;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function lastInsertId()
+    {
+        return $this->pdo->lastInsertId();
     }
 
     public function escape_string($string)
@@ -312,7 +368,7 @@ sql;
 
     public function from_file($filename)
     {
-        $path = __DIR__ . "/../Model/Data/$filename.sql";
+        $path = DIR . "/Model/Data/$filename.sql";
         $sql = file_get_contents($path);
         return $sql;
     }
@@ -341,6 +397,63 @@ sql;
             $decrypted_data[$data_key] = openssl_decrypt($decrypted, 'aes-256-cbc', $key, 0, $iv);
         }
         return $decrypted_data;
+    }
+
+    private static function interpolate_query($query, $params, $splice = false)
+    {
+        if ($splice) {
+            $params = array_splice($params, 1);
+        }
+
+        $keys = array();
+        $values = $params;
+
+        # build a regular expression for each parameter
+        foreach ($params as $key => $value) {
+            if (is_string($key)) {
+                $keys[] = '/' . $key . '/';
+            } else {
+                $keys[] = '/[?]/';
+            }
+
+            if (is_array($value)) {
+                $value = $value[0];
+            }
+
+            if (is_string($value))
+                $values[$key] = "'" . $value . "'";
+
+            if (is_array($value))
+                $values[$key] = "'" . implode("','", $value) . "'";
+
+            if (is_null($value))
+                $values[$key] = 'NULL';
+
+            if (is_bool($value))
+                $values[$key] = $value ? "true" : "false";
+        }
+
+        $query = @preg_replace($keys, $values, $query);
+
+        return $query;
+    }
+
+    public function fetch()
+    {
+        return $this->stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function fetchAll()
+    {
+        return $this->stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function convertEncoding(string $table, string $field)
+    {
+        $sql = <<<sql
+UPDATE $table SET $field = CONVERT(CAST(CONVERT($field USING latin1) AS BINARY) USING utf8mb4);
+sql;
+        $this->prepare2($sql);
     }
 }
 
@@ -387,4 +500,5 @@ abstract class ColumnTypes
     const BIT = 'bit';
     const DECIMAL = 'decimal';
     const LONGBLOB = 'longblob';
+    const JSON = 'json';
 }

@@ -1,5 +1,9 @@
 /.idea/
 /vendor/
 /Config/database.prod.json
-*.log
+/Config/database.dev.json
+/Logs/**/*.log
+/Logs/**/*.sql
+/public/**/*.png
 /offline
+.phpunit.result.cache
