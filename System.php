@@ -19,17 +19,15 @@ class System
      */
     private $dom;
 
-    private const SEED = 'crypt0w4113t';
-
     static function decrypt(string $value_encrypted)
     {
         $value_encrypted = html_entity_decode($value_encrypted);
-        return openssl_decrypt($value_encrypted, "AES-256-CBC", System::SEED, 0, str_pad(System::SEED, 16, 'X', STR_PAD_LEFT));
+        return openssl_decrypt($value_encrypted, "AES-256-CBC", CONFIG['seed'], 0, str_pad(CONFIG['seed'], 16, 'X', STR_PAD_LEFT));
     }
 
     public static function encrypt(string $value)
     {
-        return openssl_encrypt($value, "AES-256-CBC", System::SEED, 0, str_pad(System::SEED, 16, 'X', STR_PAD_LEFT));
+        return openssl_encrypt($value, "AES-256-CBC", CONFIG['seed'], 0, str_pad(CONFIG['seed'], 16, 'X', STR_PAD_LEFT));
     }
 
     public static function query_log(string $sql)
