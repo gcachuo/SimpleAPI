@@ -21,6 +21,13 @@ class System
 
     private const SEED = 'crypt0w4113t';
 
+    static function sessionCheck(string $name) {
+        session_start();
+        $_SESSION['user'] = $this->decode_token($_SESSION[$name]);
+        session_write_close();
+        return !empty($_SESSION['user']);
+    }
+
     static function decrypt(string $value_encrypted)
     {
         $value_encrypted = html_entity_decode($value_encrypted);
