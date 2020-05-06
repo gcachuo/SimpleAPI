@@ -19,7 +19,16 @@ class System
      */
     private $dom;
 
-    private const SEED = 'crypt0w4113t';
+    static function getRealIP()
+    {
+        if (!empty($_SERVER['HTTP_CLIENT_IP']))
+            return $_SERVER['HTTP_CLIENT_IP'];
+
+        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR']))
+            return $_SERVER['HTTP_X_FORWARDED_FOR'];
+
+        return $_SERVER['REMOTE_ADDR'];
+    }
 
     static function sessionCheck(string $name) {
         session_start();
@@ -31,18 +40,18 @@ class System
     static function decrypt(string $value_encrypted)
     {
         $value_encrypted = html_entity_decode($value_encrypted);
-        return openssl_decrypt($value_encrypted, "AES-256-CBC", System::SEED, 0, str_pad(System::SEED, 16, 'X', STR_PAD_LEFT));
+        return openssl_decrypt($value_encrypted, "AES-256-CBC", CONFIG['seed'], 0, str_pad(CONFIG['seed'], 16, 'X', STR_PAD_LEFT));
     }
 
     public static function encrypt(string $value)
     {
-        return openssl_encrypt($value, "AES-256-CBC", System::SEED, 0, str_pad(System::SEED, 16, 'X', STR_PAD_LEFT));
+        return openssl_encrypt($value, "AES-256-CBC", CONFIG['seed'], 0, str_pad(CONFIG['seed'], 16, 'X', STR_PAD_LEFT));
     }
 
     public static function query_log(string $sql)
     {
         $date = date('Y-m-d H:i:s');
-        $request = trim(stristr($_SERVER['REQUEST_URI'], 'api'), '/');
+        $request = ($_SERVER['REQUEST_URI'] ?? NULL) ? trim(stristr($_SERVER['REQUEST_URI'], 'api'), '/') : '';
         if (defined('CONFIG')) {
             $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/';
         } else {
@@ -557,14 +566,14 @@ sql
             define('BASENAME', dirname($_SERVER['SCRIPT_NAME']));
         }
 
-        $project = getenv('PROJECT');
+        $project = defined('PROJECT') ? PROJECT : getenv('PROJECT');
         if (empty($project)) {
             $project_config = file_exists(DIR . '/Config/default.json')
                 ? file_get_contents(DIR . '/Config/default.json')
                 : null;
             if ($project_config) {
                 $project_config = json_decode($project_config, true);
-                apache_setenv('PROJECT', $project_config['project']['code']);
+                define('PROJECT', $project_config['project']['code']);
                 self::define_constants($config);
             } else {
                 $project_config = [
@@ -675,17 +684,17 @@ sql
         if (class_exists($namespace)) {
             /** @var $class Controller */
             $class = new $namespace();
-            $response = $class->$action($id);
-            if (!is_array($response)) {
-                $message = $response;
+            $response = $class->call($action, $id);
+
+            $message = 'Completed.';
+            if (!$response) {
+                JsonResponse::sendResponse(compact('message'), HTTPStatusCodes::OK);
+            } else if (is_scalar($response)) {
+                JsonResponse::sendResponse(['message' => $response], HTTPStatusCodes::OK);
             } else {
-                $message = 'Completed.';
-                if ($response) {
-                    $data = $response;
-                    JsonResponse::sendResponse(compact('message', 'data'), HTTPStatusCodes::OK);
-                }
+                $data = $response;
+                JsonResponse::sendResponse(compact('message', 'data'), HTTPStatusCodes::OK);
             }
-            JsonResponse::sendResponse(compact('message'), HTTPStatusCodes::OK);
         }
         if ($controller == 'api') {
             switch ($action) {
@@ -786,7 +795,7 @@ sql
         }
         if ($_FILES) {
             foreach ($_FILES as $files) {
-                if (is_array($files)) {
+                if (is_array($files['name'])) {
                     $data .= ' ' . implode(',', $files['name']);
                 } else {
                     $data .= ' ' . $files['name'];
@@ -921,7 +930,7 @@ sql
                 $module_file = implode('/', $module_file_intersect);
             }
 
-            $file = $module_list[array_search(strstr($module_file, '/', true) ?: $module_file, array_column($module_list, 'href'))]['file'] ?? $entry;
+            $file = $module_list[$module_file]['file'] ?? $entry;
 
             if (!file_exists($dir . $file)) {
                 die($dir . $file . ' does not exist');
@@ -963,6 +972,11 @@ sql
             if ($this->dom->getElementById('project-title')) {
                 $this->dom->getElementById('project-title')->nodeValue = $project;
             }
+            if ($this->dom->getElementById('project-user')) {
+                session_start();
+                $this->dom->getElementById('project-user')->nodeValue = $_SESSION['user']['nombre'] ?? null;
+                session_write_close();
+            }
 
             if ($this->dom->getElementById('favicon')) {
                 $favicon = $this->dom->getElementById('favicon');
@@ -979,7 +993,7 @@ sql
             if ($file != $entry) {
                 $fragment = $this->dom->createDocumentFragment();
                 $fragment->appendXML(<<<html
-<script src="assets/js/signin.js"></script>
+<script src="assets/js/$module_file.js"></script>
 html
                 );
 
@@ -1131,7 +1145,18 @@ class Controller
         $this->allowed_methods($methods);
     }
 
-    public function __call($action, $arguments)
+    public function call($action, $arguments)
+    {
+        $name = System::isset_get($this->_methods[REQUEST_METHOD][$action]);
+        if ($name) {
+            return $this->$name(...($arguments ?: []));
+        } else {
+            $name = $action;
+        }
+        JsonResponse::sendResponse(['message' => "Endpoint not found. [$name]"], HTTPStatusCodes::NotFound);
+    }
+
+    /*public function __call($action, $arguments)
     {
         if (ENVIRONMENT == 'web') {
             $name = System::isset_get($this->_methods[REQUEST_METHOD][$action]);
@@ -1141,7 +1166,7 @@ class Controller
             JsonResponse::sendResponse(['message' => "Endpoint not found. [$name]"], HTTPStatusCodes::NotFound);
         }
         return $this->$action(...$arguments);
-    }
+    }*/
 
     private function allowed_methods(array $methods)
     {
