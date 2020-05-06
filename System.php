@@ -30,9 +30,10 @@ class System
         return $_SERVER['REMOTE_ADDR'];
     }
 
-    static function sessionCheck(string $name) {
+    static function sessionCheck(string $name)
+    {
         session_start();
-        $_SESSION['user'] = $this->decode_token($_SESSION[$name]);
+        $_SESSION['user'] = self::decode_token($_SESSION[$name]);
         session_write_close();
         return !empty($_SESSION['user']);
     }
@@ -894,6 +895,8 @@ sql
         try {
             define('WEBDIR', $constants['WEBDIR']);
             define('ENVIRONMENT', 'www');
+            if (!defined('JWT_KEY'))
+                define('JWT_KEY', file_exists(WEBDIR . '/../api/Config/.jwt_key') ? file_get_contents(WEBDIR . '/../api/Config/.jwt_key') : null);
 
             if (!file_exists(WEBDIR . '/config.json')) {
                 die('config.json does not exist');
@@ -914,6 +917,8 @@ sql
             }
 
             self::load_php_functions();
+            require WEBDIR . "/core/vendor/autoload.php";
+
             $this->dom = new DOMDocument();
             libxml_use_internal_errors(true);
 
