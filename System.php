@@ -687,7 +687,7 @@ sql
         if (class_exists($namespace)) {
             /** @var $class Controller */
             $class = new $namespace();
-            $response = $class->call($action, $id);
+            $response = $class->call($action, [$id]);
 
             $message = 'Completed.';
             if (!$response) {
@@ -1154,7 +1154,7 @@ class Controller
         $this->allowed_methods($methods);
     }
 
-    public function call($action, $arguments)
+    public function call(string $action, array $arguments)
     {
         $name = System::isset_get($this->_methods[REQUEST_METHOD][$action]);
         if ($name) {
