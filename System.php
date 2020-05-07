@@ -411,16 +411,18 @@ sql
 
     private static function load_composer()
     {
-        $pathLib = DIR . "/Lib/vendor/autoload.php";
-        $path = DIR . "/vendor/autoload.php";
-        if (!file_exists($pathLib)) {
-            JsonResponse::sendResponse(['message' => 'Composer is not installed on Lib.'], HTTPStatusCodes::InternalServerError);
+        if (ENVIRONMENT !== 'www') {
+            $pathLib = DIR . "/Lib/vendor/autoload.php";
+            $path = DIR . "/vendor/autoload.php";
+            if (!file_exists($pathLib)) {
+                JsonResponse::sendResponse(['message' => 'Composer is not installed on Lib.'], HTTPStatusCodes::InternalServerError);
+            }
+            if (!file_exists($path)) {
+                JsonResponse::sendResponse(['message' => 'Composer is not installed.'], HTTPStatusCodes::InternalServerError);
+            }
+            require_once($pathLib);
+            require_once($path);
         }
-        if (!file_exists($path)) {
-            JsonResponse::sendResponse(['message' => 'Composer is not installed.'], HTTPStatusCodes::InternalServerError);
-        }
-        require_once($pathLib);
-        require_once($path);
     }
 
     private static function load_php_functions($config = [])
@@ -565,49 +567,51 @@ sql
             define('BASENAME', dirname($_SERVER['SCRIPT_NAME']));
         }
 
-        $project = defined('PROJECT') ? PROJECT : getenv('PROJECT');
-        if (empty($project)) {
-            $project_config = file_exists(DIR . '/Config/default.json')
-                ? file_get_contents(DIR . '/Config/default.json')
-                : null;
-            if ($project_config) {
-                $project_config = json_decode($project_config, true);
-                define('PROJECT', $project_config['project']['code']);
-                self::define_constants($config);
-            } else {
-                $project_config = [
-                    "project" => [
-                        "name" => "default",
-                        "code" => "default"
-                    ],
-                    "database" => [
-                        "host" => "",
-                        "username" => "",
-                        "passwd" => "",
-                        "dbname" => ""
-                    ],
-                    'email' => [
-                        'username' => '',
-                        'password' => ''
-                    ]
-                ];
-                if (ENVIRONMENT == 'init') {
-                    return;
-                }
-                file_put_contents(DIR . '/Config/default.json', json_encode($project_config));
+        if (ENVIRONMENT !== 'www') {
+            $project = defined('PROJECT') ? PROJECT : getenv('PROJECT');
+            if (empty($project)) {
+                $project_config = file_exists(DIR . '/Config/default.json')
+                    ? file_get_contents(DIR . '/Config/default.json')
+                    : null;
+                if ($project_config) {
+                    $project_config = json_decode($project_config, true);
+                    define('PROJECT', $project_config['project']['code']);
+                    self::define_constants($config);
+                } else {
+                    $project_config = [
+                        "project" => [
+                            "name" => "default",
+                            "code" => "default"
+                        ],
+                        "database" => [
+                            "host" => "",
+                            "username" => "",
+                            "passwd" => "",
+                            "dbname" => ""
+                        ],
+                        'email' => [
+                            'username' => '',
+                            'password' => ''
+                        ]
+                    ];
+                    if (ENVIRONMENT == 'init') {
+                        return;
+                    }
+                    file_put_contents(DIR . '/Config/default.json', json_encode($project_config));
 
-                header('Content-Type: application/json');
-                JsonResponse::sendResponse(['message' => "default.json not found"], HTTPStatusCodes::InternalServerError);
-            }
-        } else {
-            $project_config = file_exists(DIR . '/Config/' . $project . '.json')
-                ? file_get_contents(DIR . '/Config/' . $project . '.json')
-                : null;
-            if ($project_config) {
-                define('CONFIG', json_decode($project_config, true));
+                    header('Content-Type: application/json');
+                    JsonResponse::sendResponse(['message' => "default.json not found"], HTTPStatusCodes::InternalServerError);
+                }
             } else {
-                header('Content-Type: application/json');
-                JsonResponse::sendResponse(['message' => "Config not found for project '$project'"], HTTPStatusCodes::InternalServerError);
+                $project_config = file_exists(DIR . '/Config/' . $project . '.json')
+                    ? file_get_contents(DIR . '/Config/' . $project . '.json')
+                    : null;
+                if ($project_config) {
+                    define('CONFIG', json_decode($project_config, true));
+                } else {
+                    header('Content-Type: application/json');
+                    JsonResponse::sendResponse(['message' => "Config not found for project '$project'"], HTTPStatusCodes::InternalServerError);
+                }
             }
         }
 
@@ -915,7 +919,9 @@ sql
             }
 
             self::load_php_functions();
-            require WEBDIR . "/core/vendor/autoload.php";
+            if(file_exists(__DIR__ . "/vendor/autoload.php")) {
+                require __DIR__ . "/vendor/autoload.php";
+            }
 
             $this->dom = new DOMDocument();
             libxml_use_internal_errors(true);
