@@ -280,7 +280,7 @@ sql
         return strftime($format, strtotime($value));
     }
 
-    public static function upload_file($file, string $destination)
+    public static function upload_file(array $file, string $destination)
     {
         if (empty($file['tmp_name'])) {
             JsonResponse::sendResponse(['message' => 'Filename cannot be empty.']);
