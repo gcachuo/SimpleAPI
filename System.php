@@ -33,11 +33,7 @@ class System
     static function sessionCheck(string $name)
     {
         session_start();
-        if($_SESSION[$name]??'') {
-            $_SESSION['user'] = self::decode_token($_SESSION[$name]);
-            session_write_close();
-        }
-        return !empty($_SESSION['user']);
+        return $_SESSION[$name];
     }
 
     static function decrypt(string $value_encrypted)
