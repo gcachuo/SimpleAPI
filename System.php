@@ -919,7 +919,7 @@ sql
             }
 
             self::load_php_functions();
-            if(file_exists(__DIR__ . "/vendor/autoload.php")) {
+            if (file_exists(__DIR__ . "/vendor/autoload.php")) {
                 require __DIR__ . "/vendor/autoload.php";
             }
 
@@ -976,8 +976,9 @@ sql
                 }
             }
 
-            $this->dom->getElementsByTagName('title')->item(0)->nodeValue = $project;
-
+            if ($this->dom->getElementsByTagName('title')->item(0)) {
+                $this->dom->getElementsByTagName('title')->item(0)->nodeValue = $project;
+            }
             if ($this->dom->getElementById('project-title')) {
                 $this->dom->getElementById('project-title')->nodeValue = $project;
             }

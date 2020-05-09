@@ -1,6 +1,6 @@
 {
   "project": "",
-  "theme": "themes/flatkit/html/",
+  "theme": "themes/default/",
   "entry": "index.html",
   "default": "dashboard",
   "basename": "/web/",
