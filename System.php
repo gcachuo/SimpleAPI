@@ -909,8 +909,11 @@ sql
                 'entry' => $entry,
                 'theme' => $dir,
                 'default' => $default,
-                'modules' => $module_list
+                'modules' => $module_list,
+                'breadcrumbs' => $breadcrumbs
             ] = json_decode(file_get_contents(WEBDIR . '/config.json'), true);
+
+            define('BREADCRUMBS', $breadcrumbs);
 
             if ($constants['BASENAME']) {
                 define('BASENAME', $constants['BASENAME']);
@@ -1112,10 +1115,13 @@ html;
         }
         $module = ucfirst(strtolower(MODULES[$href]['name'] ?? ''));
 
+        $breadcrumbs = BREADCRUMBS ? '' : 'd-none';
         $chunk = <<<html
 <div class="row justify-content-center">
     <div class="col-12" style="padding: 0 25px">
-        <p class="text-left breadcrumbs"><span class="text-muted">Usted se encuentra en:</span> <span>$module</span></p>
+        <p class="text-left breadcrumbs $breadcrumbs">
+            <span class="text-muted">Usted se encuentra en:</span> <span>$module</span>
+        </p>
         <div class="container-fluid">
             $contents
         </div>
