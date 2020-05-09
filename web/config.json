@@ -4,7 +4,11 @@
   "entry": "index.html",
   "default": "dashboard",
   "basename": "/web/",
-  "modules": [
-
-  ]
+  "modules": {
+    "dashboard": {
+      "name": "Dashboard",
+      "icon": "dashboard",
+      "href": "dashboard"
+    }
+  }
 }
