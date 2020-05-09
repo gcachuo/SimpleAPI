@@ -1024,8 +1024,8 @@ html
                         continue;
                     }
                     $fragment->appendXML(<<<html
-<li style="display: $hidden">
-    <a href="$href" class="$disabled" style="display: flex; align-items: center">
+<li class="nav-item" style="display: $hidden">
+    <a href="$href" class="$disabled nav-link" style="display: flex; align-items: center">
         <span class="nav-icon">
             <i class="material-icons">$icon</i>
         </span>
@@ -1044,6 +1044,7 @@ html
                 if ($nav) {
                     if ($nav->parentNode) {
                         $modules->setAttribute('id', $nav->getAttribute('id'));
+                        $modules->setAttribute('class', $nav->getAttribute('class'));
                         $nav->parentNode->replaceChild($modules, $nav);
                     }
                 }
