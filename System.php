@@ -1139,6 +1139,8 @@ html;
 
         if ($this->dom->getElementById('view')) {
             $view = $this->dom->getElementById('view');
+            $class = $view->getAttribute('class');
+            $module->setAttribute('class', $class);
             if ($view->parentNode) {
                 $view->parentNode->replaceChild($module, $view);
             }
