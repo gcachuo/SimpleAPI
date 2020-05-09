@@ -433,7 +433,7 @@ sql
             header('Content-Type: application/json');
             header('Access-Control-Allow-Origin: *');
             header('Access-Control-Allow-Methods: PUT, POST, GET, OPTIONS, PATCH, DELETE');
-            header('Access-Control-Allow-Headers: Content-Type, dataType, contenttype, processdata');
+            header('Access-Control-Allow-Headers: X-Requested-With, Content-Type, dataType, contenttype, processdata');
         }
         register_shutdown_function(function () {
             if (error_get_last()) {
