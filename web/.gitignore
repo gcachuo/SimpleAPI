@@ -1,0 +1,10 @@
+/.idea/
+/vendor/
+/Config/database.prod.json
+/Config/database.dev.json
+/Logs/**/*.log
+/Logs/**/*.sql
+/public/**/*.png
+/offline
+.phpunit.result.cache
+error.log
