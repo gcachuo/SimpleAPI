@@ -150,6 +150,50 @@ class System
         }
     }
 
+    public static function curl($options)
+    {
+        $path = __DIR__ . '/../settings.dev.json';
+        if (!file_exists($path)) {
+            $path = __DIR__ . '/../settings.json';
+        }
+        $settings = self::json_decode(file_get_contents($path), true);
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $settings['apiUrl'] . ($options['url'] ?? ''),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => $options['method'] ?? "GET",
+            CURLOPT_HTTPHEADER => array(
+                "Cookie: XDEBUG_SESSION=PHPSTORM"
+            ),
+        ));
+
+        $json = curl_exec($curl);
+        $error = curl_error($curl);
+        curl_close($curl);
+
+
+        if ($error) {
+            JsonResponse::sendResponse(['message' => $error], HTTPStatusCodes::InternalServerError);
+        } elseif (!self::isJson($json)) {
+            JsonResponse::sendResponse(['message' => $json], HTTPStatusCodes::InternalServerError);
+        }
+
+        $result = self::json_decode($json, true);
+
+        if ($result['code'] >= 400) {
+            JsonResponse::sendResponse(['message' => $result['response']['message']], $result['code']);
+        }
+
+        return $result['response']['data'];
+    }
+
     public static function redirect(string $path = '')
     {
         $path = ltrim($path, '/');
@@ -1295,6 +1339,8 @@ class JsonResponse
             if (defined('FILE')) unlink(FILE);
 
             System::log_error(compact('status', 'code', 'response', 'error'));
+
+            die($response['message']);
         }
 
         if (ENVIRONMENT == 'web') {
