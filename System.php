@@ -1339,8 +1339,10 @@ class JsonResponse
             if (defined('FILE')) unlink(FILE);
 
             System::log_error(compact('status', 'code', 'response', 'error'));
-
-            die($response['message'] ?? $response['error']);
+            
+            if (ENVIRONMENT == 'www') {
+                die($response['message'] ?? $response['error']);
+            }
         }
 
         if (ENVIRONMENT == 'web') {
