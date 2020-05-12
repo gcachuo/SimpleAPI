@@ -46,6 +46,10 @@ class MySQL
 
                 $this->mysqli = new mysqli($host, $username, $passwd, $dbname);
                 $this->pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $passwd);
+
+                $this->mysqli->query("set names 'utf8'");
+                $this->pdo->query("set names 'utf8'");
+
                 $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                 $this->dbname = $dbname;
             } else {
