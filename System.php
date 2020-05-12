@@ -1340,7 +1340,7 @@ class JsonResponse
 
             System::log_error(compact('status', 'code', 'response', 'error'));
 
-            die($response['message']);
+            die($response['message'] ?? $response['error']);
         }
 
         if (ENVIRONMENT == 'web') {
