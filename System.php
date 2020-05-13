@@ -1037,7 +1037,7 @@ sql
 
             if ($this->dom->getElementById('favicon')) {
                 $favicon = $this->dom->getElementById('favicon');
-                $favicon->setAttribute('href', 'logo.png');
+                $favicon->setAttribute('href', 'favicon.png');
             }
 
             if ($this->getElementsByClass($this->dom, 'img', 'project-img')) {
