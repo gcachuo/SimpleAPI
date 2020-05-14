@@ -33,7 +33,7 @@ class System
     static function sessionCheck(string $name)
     {
         session_start();
-        return $_SESSION[$name];
+        return $_SESSION[$name] ?? null;
     }
 
     static function decrypt(string $value_encrypted)
@@ -1339,7 +1339,7 @@ class JsonResponse
             if (defined('FILE')) unlink(FILE);
 
             System::log_error(compact('status', 'code', 'response', 'error'));
-            
+
             if (ENVIRONMENT == 'www') {
                 die($response['message'] ?? $response['error']);
             }
