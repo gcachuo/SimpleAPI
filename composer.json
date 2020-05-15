@@ -19,7 +19,6 @@
     "neitanod/forceutf8": "^2.0",
     "ext-dom": "*",
     "ext-libxml": "*",
-    "ext-xdebug": "*",
     "ext-openssl": "*",
     "ext-curl": "*"
   },
