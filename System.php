@@ -150,6 +150,11 @@ class System
         }
     }
 
+    /**
+     * @param $options
+     * @return mixed
+     * @throws Exception
+     */
     public static function curl($options)
     {
         $path = __DIR__ . '/../settings.dev.json';
@@ -1306,6 +1311,11 @@ class JsonResponse
     private $response, $error, $code;
     private static $alreadySent = false, $json;
 
+    /**
+     * @param array $response
+     * @param int $code
+     * @throws Exception
+     */
     static function sendResponse(array $response, $code = 400)
     {
         $jsonResponse = new JsonResponse();
@@ -1341,7 +1351,7 @@ class JsonResponse
             System::log_error(compact('status', 'code', 'response', 'error'));
 
             if (ENVIRONMENT == 'www') {
-                die($response['message'] ?? $response['error']);
+                throw new Exception($response['message'] ?? $response['error']);
             }
         }
 
