@@ -119,7 +119,7 @@ class System
 
             $mail->send();
         } catch (\PHPMailer\PHPMailer\Exception $exception) {
-            JsonResponse::sendResponse($exception->getMessage(), HTTPStatusCodes::ServiceUnavailable);
+            JsonResponse::sendResponse($exception->getMessage(), HTTPStatusCodes::ServiceUnavailable, $exception->getTrace());
         }
     }
 
@@ -745,7 +745,7 @@ class System
                 JsonResponse::sendResponse($response, HTTPStatusCodes::OK);
             } else {
                 $data = $response;
-                JsonResponse::sendResponse(compact('message', 'data'), HTTPStatusCodes::OK);
+                JsonResponse::sendResponse($message, HTTPStatusCodes::OK, $data);
             }
         }
         if ($controller == 'api') {
@@ -1343,7 +1343,7 @@ class JsonResponse
 
         System::log_error(compact('status', 'code', 'response', 'error'));
 
-        throw new CoreException($response['message'] ?? $response['error'], $code);
+        throw new CoreException($response['message'] ?? $response['error'], $code, $data);
     }
 
     private function send_response()
@@ -1438,5 +1438,11 @@ class HTTPStatusCodes
 
 class CoreException extends Exception
 {
+    public $data;
 
+    public function __construct($message = "", $code = 0, array $data = null)
+    {
+        $this->data = $data;
+        parent::__construct($message, $code);
+    }
 }
