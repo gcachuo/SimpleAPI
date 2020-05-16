@@ -77,6 +77,12 @@ class System
         file_put_contents($path . 'custom' . date('Y-m-d') . '.log', "#$date $request\n" . $message . "\n\n", FILE_APPEND);
     }
 
+    /**
+     * @param array $to
+     * @param string $body
+     * @param array $options
+     * @throws CoreException
+     */
     public static function sendEmail(array $to, string $body, array $options)
     {
         try {
@@ -466,7 +472,7 @@ class System
             $status = 'exception';
             $code = $exception->getCode() ?: 500;
             http_response_code($code);
-            $response = $exception->getMessage();
+            $response = ['message' => $exception->getMessage()];
             $error = null;
             if ($code >= 500) {
                 $error = $exception->getTrace();
@@ -706,7 +712,8 @@ class System
             }
         } else {
             $request = explode('/', trim(stristr($_SERVER['REQUEST_URI'], 'api/'), '/'));
-            [$controller, $action] = $request;
+            $controller = $request[0];
+            $action = $request[1] ?? null;
         }
     }
 
@@ -747,7 +754,7 @@ class System
                 case "version":
                     $name = CONFIG['project']['name'];
                     $version = VERSION;
-                    JsonResponse::sendResponse(compact('name', 'version'), HTTPStatusCodes::OK);
+                    JsonResponse::sendResponse('Completed.', HTTPStatusCodes::OK, compact('name', 'version'));
                     break;
                 case "logs":
                     $path = DIR . '/Logs/' . CONFIG['project']['code'] . '/' . date('Y-m-d', strtotime(System::isset_get($_GET['date'], date('Y-m-d')))) . '.log';
@@ -775,8 +782,9 @@ class System
                     JsonResponse::sendResponse(compact('log'), HTTPStatusCodes::OK);
                     break;
             }
+        } else {
+            JsonResponse::sendResponse("Endpoint not found.  [$namespace]", HTTPStatusCodes::NotFound);
         }
-        JsonResponse::sendResponse("Endpoint not found.  [$namespace]", HTTPStatusCodes::NotFound);
     }
 
     /**
@@ -1311,28 +1319,31 @@ class JsonResponse
     /**
      * @param string $message
      * @param int $code
-     * @throws Exception
+     * @param array $data
+     * @throws CoreException
      */
-    static function sendResponse(string $message, $code = 400)
+    static function sendResponse(string $message, $code = 400, array $data = [])
     {
-        if (!empty($code)) {
+        if ($code) {
             http_response_code($code);
         } else {
             $code = http_response_code();
         }
 
-        if ($code >= HTTPStatusCodes::BadRequest) {
-            $status = 'error';
-            $response = self::encode_items(['message' => $message]);
-            $error = error_get_last();
+        $response = self::encode_items(compact('message', 'data'));
 
-            if (defined('FILE')) unlink(FILE);
-
-            System::log_error(compact('status', 'code', 'response', 'error'));
-
-            throw new Exception($response['message'] ?? $response['error'], $code);
+        if ($code < HTTPStatusCodes::BadRequest) {
+            die(json_encode($response));
         }
 
+        $status = 'error';
+        $error = error_get_last();
+
+        if (defined('FILE')) unlink(FILE);
+
+        System::log_error(compact('status', 'code', 'response', 'error'));
+
+        throw new CoreException($response['message'] ?? $response['error'], $code);
     }
 
     private function send_response()
@@ -1423,4 +1434,9 @@ class HTTPStatusCodes
     const NotImplemented = 501;
     const ServiceUnavailable = 503;
     const Forbidden = 403;
+}
+
+class CoreException extends Exception
+{
+
 }
