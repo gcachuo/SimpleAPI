@@ -1323,7 +1323,7 @@ class JsonResponse
 
         if ($code >= HTTPStatusCodes::BadRequest) {
             $status = 'error';
-            $response = self::encode_items($message);
+            $response = self::encode_items(['message' => $message]);
             $error = error_get_last();
 
             if (defined('FILE')) unlink(FILE);
