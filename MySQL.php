@@ -53,7 +53,7 @@ class MySQL
                 $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                 $this->dbname = $dbname;
             } else {
-                JsonResponse::sendResponse(['message' => "File $filename not found."], HTTPStatusCodes::InternalServerError);
+                JsonResponse::sendResponse("File $filename not found.", HTTPStatusCodes::InternalServerError);
             }
         } catch (mysqli_sql_exception $exception) {
             $code = $exception->getCode();
@@ -100,7 +100,7 @@ sql
                 }
             }
         } catch (mysqli_sql_exception $exception) {
-            JsonResponse::sendResponse(['message' => $exception->getMessage(), 'code' => $exception->getCode()], HTTPStatusCodes::InternalServerError);
+            JsonResponse::sendResponse($exception->getMessage(), HTTPStatusCodes::InternalServerError);
         }
     }
 

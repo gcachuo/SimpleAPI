@@ -113,10 +113,7 @@ class System
 
             $mail->send();
         } catch (\PHPMailer\PHPMailer\Exception $exception) {
-            JsonResponse::sendResponse(['data' => [
-                'from' => CONFIG['email']['username'],
-                'to' => $to
-            ], 'message' => $exception->getMessage(), 'trace' => $exception->getTrace()], HTTPStatusCodes::InternalServerError);
+            JsonResponse::sendResponse($exception->getMessage(), HTTPStatusCodes::ServiceUnavailable);
         }
     }
 
@@ -146,7 +143,7 @@ class System
         // Save the PDF
         if (!$pdf->saveAs($output)) {
             $error = $pdf->getError();
-            JsonResponse::sendResponse(['message' => $error], HTTPStatusCodes::InternalServerError);
+            JsonResponse::sendResponse($error, HTTPStatusCodes::InternalServerError);
         }
     }
 
@@ -185,15 +182,15 @@ class System
 
 
         if ($error) {
-            JsonResponse::sendResponse(['message' => $error], HTTPStatusCodes::InternalServerError);
+            JsonResponse::sendResponse($error, HTTPStatusCodes::InternalServerError);
         } elseif (!self::isJson($json)) {
-            JsonResponse::sendResponse(['message' => $json], HTTPStatusCodes::InternalServerError);
+            JsonResponse::sendResponse($json, HTTPStatusCodes::InternalServerError);
         }
 
         $result = self::json_decode($json, true);
 
         if ($result['code'] >= 400) {
-            JsonResponse::sendResponse(['message' => $result['response']['message']], $result['code']);
+            JsonResponse::sendResponse($result['response']['message'], $result['code']);
         }
 
         return $result['response']['data'];
@@ -232,26 +229,6 @@ class System
         return $json;
     }
 
-    public static function admin_log(int $id_usuario, string $mensaje)
-    {
-        try {
-            $mysql = new MySQL();
-            $mysql->create_table('_admin_log', [
-                new TableColumn('id_admin_log', ColumnTypes::BIGINT, 20, true, null, true, true),
-                new TableColumn('id_usuario', ColumnTypes::BIGINT, 20, true),
-                new TableColumn('fecha', ColumnTypes::TIMESTAMP, 0, false, 'current_timestamp'),
-                new TableColumn('mensaje', ColumnTypes::LONGBLOB)
-            ]);
-            $mysql->prepare(<<<sql
-INSERT INTO _admin_log VALUES(NULL,?,current_timestamp,?);
-sql
-                , ['is', $id_usuario, $mensaje]);
-        } catch (Exception $ex) {
-            ob_clean();
-            die(print_r($ex, true));
-        }
-    }
-
     public static function cli_echo(string $string, string $color = null)
     {
         $color = [
@@ -272,7 +249,7 @@ sql
         if (!file_exists($ruta)) {
             $ruta = $path . "/config.$env.json";
             if (!file_exists($ruta)) {
-                JsonResponse::sendResponse(['message' => "No existe el archivo de configuración $ruta"], HTTPStatusCodes::InternalServerError);
+                JsonResponse::sendResponse("No existe el archivo de configuración $ruta", HTTPStatusCodes::InternalServerError);
             }
         }
         $json = file_get_contents($ruta);
@@ -332,20 +309,20 @@ sql
     public static function upload_file(array $file, string $destination)
     {
         if (empty($file['tmp_name'])) {
-            JsonResponse::sendResponse(['message' => 'Filename cannot be empty.']);
+            JsonResponse::sendResponse('Filename cannot be empty.');
         }
 
         if (!file_exists(dirname($destination))) {
             if (!mkdir(dirname($destination), 0777, true)) {
-                JsonResponse::sendResponse(['message' => 'Directory could not be created.'], HTTPStatusCodes::InternalServerError);
+                JsonResponse::sendResponse('Directory could not be created.', HTTPStatusCodes::InternalServerError);
             }
             if (!chmod(dirname($destination), 0777)) {
-                JsonResponse::sendResponse(['message' => 'Directory could not be changed permissions.'], HTTPStatusCodes::InternalServerError);
+                JsonResponse::sendResponse('Directory could not be changed permissions.', HTTPStatusCodes::InternalServerError);
             }
         }
 
         if (!copy($file['tmp_name'], $destination)) {
-            JsonResponse::sendResponse(['message' => 'File could not be moved.'], HTTPStatusCodes::InternalServerError);
+            JsonResponse::sendResponse('File could not be moved.', HTTPStatusCodes::InternalServerError);
         }
 
         define('FILE', $destination);
@@ -390,7 +367,7 @@ sql
 
             return JWT::encode($payload, $jwt_key);
         } catch (DomainException $ex) {
-            JsonResponse::sendResponse(['message' => $ex->getMessage(), 'request' => compact('payload')], HTTPStatusCodes::InternalServerError);
+            JsonResponse::sendResponse($ex->getMessage(), HTTPStatusCodes::InternalServerError);
         }
     }
 
@@ -398,9 +375,9 @@ sql
     {
         if (empty(JWT_KEY)) {
             if (!file_exists(DIR . '/Config/.jwt_key')) {
-                JsonResponse::sendResponse(['message' => 'Missing file .jwt_key'], HTTPStatusCodes::InternalServerError);
+                JsonResponse::sendResponse('Missing file .jwt_key', HTTPStatusCodes::InternalServerError);
             }
-            JsonResponse::sendResponse(['message' => 'JWT key is empty'], HTTPStatusCodes::InternalServerError);
+            JsonResponse::sendResponse('JWT key is empty', HTTPStatusCodes::InternalServerError);
         }
         return JWT_KEY;
     }
@@ -409,7 +386,7 @@ sql
     {
         try {
             if (empty($jwt)) {
-                JsonResponse::sendResponse(['message' => 'Empty token.']);
+                JsonResponse::sendResponse('Empty token.');
             }
 
             $jwt_key = self::get_jwt_key();
@@ -417,17 +394,17 @@ sql
             $time = time();
             $decoded = JWT::decode($jwt, $jwt_key, ['HS256']);
             if (!empty($decoded->exp) && $decoded->exp <= $time) {
-                JsonResponse::sendResponse(['message' => 'The token has expired.']);
+                JsonResponse::sendResponse('The token has expired.');
             }
             return json_decode(json_encode($decoded), true)['data'];
         } catch (Firebase\JWT\ExpiredException $ex) {
-            JsonResponse::sendResponse(['message' => $ex->getMessage()]);
+            JsonResponse::sendResponse($ex->getMessage());
         } catch (Firebase\JWT\SignatureInvalidException $ex) {
-            JsonResponse::sendResponse(['message' => $ex->getMessage()]);
+            JsonResponse::sendResponse($ex->getMessage());
         } catch (UnexpectedValueException $ex) {
-            JsonResponse::sendResponse(['message' => 'Invalid token.', 'error' => $ex->getMessage()]);
+            JsonResponse::sendResponse('Invalid token.');
         } catch (DomainException $ex) {
-            JsonResponse::sendResponse(['message' => 'Invalid token.', 'error' => $ex->getMessage()]);
+            JsonResponse::sendResponse('Invalid token.');
         }
     }
 
@@ -464,10 +441,10 @@ sql
             $pathLib = DIR . "/Lib/vendor/autoload.php";
             $path = DIR . "/vendor/autoload.php";
             if (!file_exists($pathLib)) {
-                JsonResponse::sendResponse(['message' => 'Composer is not installed on Lib.'], HTTPStatusCodes::InternalServerError);
+                JsonResponse::sendResponse('Composer is not installed on Lib.', HTTPStatusCodes::InternalServerError);
             }
             if (!file_exists($path)) {
-                JsonResponse::sendResponse(['message' => 'Composer is not installed.'], HTTPStatusCodes::InternalServerError);
+                JsonResponse::sendResponse('Composer is not installed.', HTTPStatusCodes::InternalServerError);
             }
             require_once($pathLib);
             require_once($path);
@@ -484,6 +461,18 @@ sql
             header('Access-Control-Allow-Methods: PUT, POST, GET, OPTIONS, PATCH, DELETE');
             header('Access-Control-Allow-Headers: X-Requested-With, Content-Type, dataType, contenttype, processdata');
         }
+        set_exception_handler(function ($exception) {
+            ob_clean();
+            $status = 'exception';
+            $code = $exception->getCode() ?: 500;
+            http_response_code($code);
+            $response = $exception->getMessage();
+            $error = null;
+            if ($code >= 500) {
+                $error = $exception->getTrace();
+            }
+            die(json_encode(compact('status', 'code', 'response', 'error')));
+        });
         register_shutdown_function(function () {
             if (error_get_last()) {
                 $error = error_get_last();
@@ -497,7 +486,11 @@ sql
                         case 8:
                             break;
                         default:
-                            JsonResponse::sendResponse(['message' => 'A fatal error ocurred.', 'error' => $error], HTTPStatusCodes::InternalServerError);
+                            ob_clean();
+                            $status = 'error';
+                            $code = HTTPStatusCodes::InternalServerError;
+                            $response = null;
+                            die(json_encode(compact('status', 'code', 'response', 'error')));
                             break;
                     }
                 }
@@ -531,7 +524,7 @@ sql
         }
 
         if (file_exists(__DIR__ . '/../offline')) {
-            JsonResponse::sendResponse(['message' => 'We are updating the app, please be patient.'], HTTPStatusCodes::ServiceUnavailable);
+            JsonResponse::sendResponse('We are updating the app, please be patient.', HTTPStatusCodes::ServiceUnavailable);
         }
     }
 
@@ -649,7 +642,7 @@ sql
                     file_put_contents(DIR . '/Config/default.json', json_encode($project_config));
 
                     header('Content-Type: application/json');
-                    JsonResponse::sendResponse(['message' => "default.json not found"], HTTPStatusCodes::InternalServerError);
+                    JsonResponse::sendResponse("default.json not found", HTTPStatusCodes::InternalServerError);
                 }
             } else {
                 $project_config = file_exists(DIR . '/Config/' . $project . '.json')
@@ -659,7 +652,7 @@ sql
                     define('CONFIG', json_decode($project_config, true));
                 } else {
                     header('Content-Type: application/json');
-                    JsonResponse::sendResponse(['message' => "Config not found for project '$project'"], HTTPStatusCodes::InternalServerError);
+                    JsonResponse::sendResponse("Config not found for project '$project'", HTTPStatusCodes::InternalServerError);
                 }
             }
         }
@@ -726,7 +719,7 @@ sql
             case 'PATCH':
                 global $_PATCH;
                 if (empty($id)) {
-                    JsonResponse::sendResponse(['message' => 'Request Method PATCH needs an ID to work'], HTTPStatusCodes::BadRequest);
+                    JsonResponse::sendResponse('Request Method PATCH needs an ID to work', HTTPStatusCodes::BadRequest);
                 }
                 break;
         }
@@ -742,7 +735,7 @@ sql
             if (!$response) {
                 JsonResponse::sendResponse(compact('message'), HTTPStatusCodes::OK);
             } else if (is_scalar($response)) {
-                JsonResponse::sendResponse(['message' => $response], HTTPStatusCodes::OK);
+                JsonResponse::sendResponse($response, HTTPStatusCodes::OK);
             } else {
                 $data = $response;
                 JsonResponse::sendResponse(compact('message', 'data'), HTTPStatusCodes::OK);
@@ -783,7 +776,7 @@ sql
                     break;
             }
         }
-        JsonResponse::sendResponse(['message' => "Endpoint not found.  [$namespace]"], HTTPStatusCodes::NotFound);
+        JsonResponse::sendResponse("Endpoint not found.  [$namespace]", HTTPStatusCodes::NotFound);
     }
 
     /**
@@ -804,7 +797,7 @@ sql
         }
         $empty_values = trim($empty_values, ', ');
         if (!empty($empty_values)) {
-            JsonResponse::sendResponse(['message' => $message . ' ' . "[$empty_values]"], HTTPStatusCodes::BadRequest);
+            JsonResponse::sendResponse($message . ' ' . "[$empty_values]", HTTPStatusCodes::BadRequest);
         }
 
         foreach ($intersect as $key => $value) {
@@ -815,7 +808,7 @@ sql
         }
         $empty_values = trim($empty_values, ', ');
         if (!empty($empty_values)) {
-            JsonResponse::sendResponse(['message' => $message . ' ' . "[$empty_values]"], HTTPStatusCodes::BadRequest);
+            JsonResponse::sendResponse($message . ' ' . "[$empty_values]", HTTPStatusCodes::BadRequest);
         }
     }
 
@@ -1225,7 +1218,7 @@ class Controller
         } else {
             $name = $action;
         }
-        JsonResponse::sendResponse(['message' => "Endpoint not found. [$name]"], HTTPStatusCodes::NotFound);
+        JsonResponse::sendResponse("Endpoint not found. [$name]", HTTPStatusCodes::NotFound);
     }
 
     /*public function __call($action, $arguments)
@@ -1235,7 +1228,7 @@ class Controller
             if ($name) {
                 return $this->$name(...$arguments);
             }
-            JsonResponse::sendResponse(['message' => "Endpoint not found. [$name]"], HTTPStatusCodes::NotFound);
+            JsonResponse::sendResponse("Endpoint not found. [$name]", HTTPStatusCodes::NotFound);
         }
         return $this->$action(...$arguments);
     }*/
@@ -1244,7 +1237,7 @@ class Controller
     {
         if (ENVIRONMENT == 'web') {
             if (!isset($methods[REQUEST_METHOD])) {
-                JsonResponse::sendResponse(['message' => 'Method Not Allowed'], HTTPStatusCodes::MethodNotAllowed);
+                JsonResponse::sendResponse('Method Not Allowed', HTTPStatusCodes::MethodNotAllowed);
             }
         }
     }
@@ -1316,75 +1309,62 @@ class JsonResponse
     private static $alreadySent = false, $json;
 
     /**
-     * @param array $response
+     * @param string $message
      * @param int $code
      * @throws Exception
      */
-    static function sendResponse(array $response, $code = 400)
+    static function sendResponse(string $message, $code = 400)
     {
-        $jsonResponse = new JsonResponse();
-
-        if (self::$alreadySent and $code !== HTTPStatusCodes::OK) {
-            $jsonResponse->send_response();
-            exit;
-        }
         if (!empty($code)) {
             http_response_code($code);
-            $jsonResponse->code = $code;
         } else {
-            $jsonResponse->code = http_response_code();
+            $code = http_response_code();
         }
 
-        $jsonResponse->response = $response;
-        $jsonResponse->error = error_get_last();
-        $jsonResponse->json_encode();
-        $jsonResponse->send_response();
-    }
-
-    private function send_response()
-    {
-        //Log error in file
-        if ($this->code >= HTTPStatusCodes::BadRequest) {
-            $code = $this->code;
+        if ($code >= HTTPStatusCodes::BadRequest) {
             $status = 'error';
-            $response = $this->encode_items($this->response);
+            $response = self::encode_items($message);
             $error = error_get_last();
 
             if (defined('FILE')) unlink(FILE);
 
             System::log_error(compact('status', 'code', 'response', 'error'));
 
-            if (ENVIRONMENT == 'www') {
-                throw new Exception($response['message'] ?? $response['error']);
-            }
+            throw new Exception($response['message'] ?? $response['error'], $code);
         }
 
-        if (ENVIRONMENT == 'web') {
-            ob_clean();
-            die(self::$json);
-        } else if (ENVIRONMENT == 'www') {
-            ob_clean();
-//            var_dump(json_decode(self::$json, true));
-//            exit;
-            header('Content-Type: application/json');
-            die(self::$json);
-        }
-        $exception = json_decode(self::$json, true);
+    }
 
-        if ($exception['code'] !== HTTPStatusCodes::OK) {
-            $error = '';
-            if (is_array($exception['error'])) {
-                $error = $exception['error']['message'];
-            } elseif (System::isset_get($exception['response']['message'])) {
-                $error = $exception['response']['message'];
-            } elseif (System::isset_get($exception['response']['error'])) {
-                $error = '[' . $exception['response']['type'] . '] ' . $exception['response']['error'];
-            }
+    private function send_response()
+    {
+        //Log error in file
 
-            throw new Exception($error, $exception['code']);
-        } else {
-            die($exception['status']);
-        }
+        /* if (ENVIRONMENT == 'web') {
+             ob_clean();
+             die(self::$json);
+         } else if (ENVIRONMENT == 'www') {
+             ob_clean();
+ //            var_dump(json_decode(self::$json, true));
+ //            exit;
+             header('Content-Type: application/json');
+             die(self::$json);
+         }
+         $exception = json_decode(self::$json, true);
+
+         if ($exception['code'] !== HTTPStatusCodes::OK) {
+             $error = '';
+             if (is_array($exception['error'])) {
+                 $error = $exception['error']['message'];
+             } elseif (System::isset_get($exception['response']['message'])) {
+                 $error = $exception['response']['message'];
+             } elseif (System::isset_get($exception['response']['error'])) {
+                 $error = '[' . $exception['response']['type'] . '] ' . $exception['response']['error'];
+             }
+
+             throw new Exception($error, $exception['code']);
+         } else {
+             die($exception['status']);
+         }*/
     }
 
     private function json_encode()
@@ -1410,11 +1390,11 @@ class JsonResponse
         }
     }
 
-    private function encode_items($array)
+    private static function encode_items($array)
     {
         foreach ($array as $key => $value) {
             if (is_array($value)) {
-                $array[$key] = $this->encode_items($value);
+                $array[$key] = self::encode_items($value);
             } elseif (is_object($value)) {
 
             } else {
