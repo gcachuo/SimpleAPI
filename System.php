@@ -1005,7 +1005,11 @@ sql
                 if (strpos($old_link, 'http') !== false) {
                     continue;
                 }
-                $link->setAttribute('href', BASENAME . $dir . $old_link);
+                if ($old_link === 'manifest.json') {
+                    $link->setAttribute('href', BASENAME . $old_link);
+                } else {
+                    $link->setAttribute('href', BASENAME . $dir . $old_link);
+                }
             }
             foreach ($this->dom->getElementsByTagName('div') as $link) {
                 $old_link = $link->getAttribute("ui-include");
