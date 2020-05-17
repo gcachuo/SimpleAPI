@@ -315,7 +315,7 @@ class System
         return strftime($format, strtotime($value));
     }
 
-    public static function upload_file(array $file, string $destination)
+    public static function upload_file(array $file, string $destination): bool
     {
         if (empty($file['tmp_name'])) {
             JsonResponse::sendResponse('Filename cannot be empty.');
