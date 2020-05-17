@@ -168,7 +168,7 @@ class System
 
         $curl = curl_init();
 
-        curl_setopt_array($curl, array(
+        curl_setopt_array($curl, [
             CURLOPT_URL => $settings['apiUrl'] . ($options['url'] ?? ''),
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => "",
@@ -177,10 +177,13 @@ class System
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => $options['method'] ?? "GET",
-            CURLOPT_HTTPHEADER => array(
+            CURLOPT_HTTPHEADER => [
                 "Cookie: XDEBUG_SESSION=PHPSTORM"
-            ),
-        ));
+            ],
+        ]);
+        if ($options['data']) {
+            curl_setopt($curl, CURLOPT_POSTFIELDS, $options['data']);
+        }
 
         $json = curl_exec($curl);
         $error = curl_error($curl);
@@ -1041,7 +1044,12 @@ class System
             }
             if ($this->dom->getElementById('project-user')) {
                 session_start();
-                $this->dom->getElementById('project-user')->nodeValue = $_SESSION['user']['nombre'] ?? null;
+                try {
+                    $user = System::curl(['url' => 'decodeToken', 'method' => 'POST', 'data' => ['token' => $_SESSION['user_token']]])['data'];
+                    $this->dom->getElementById('project-user')->nodeValue = $user['name'] ?? 'User not logged in';
+                } catch (CoreException $exception) {
+                    //do nothing
+                }
                 session_write_close();
             }
 
