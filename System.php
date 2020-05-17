@@ -168,6 +168,15 @@ class System
 
         $curl = curl_init();
 
+        $headers = [
+            "Cookie: XDEBUG_SESSION=PHPSTORM"
+        ];
+        if ($options['method']) {
+            if ($options['method'] !== 'GET' && $options['method'] !== 'POST') {
+                $headers[] = "Content-Type: application/json";
+            }
+        }
+
         curl_setopt_array($curl, [
             CURLOPT_URL => $settings['apiUrl'] . ($options['url'] ?? ''),
             CURLOPT_RETURNTRANSFER => true,
@@ -177,9 +186,7 @@ class System
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => $options['method'] ?? "GET",
-            CURLOPT_HTTPHEADER => [
-                "Cookie: XDEBUG_SESSION=PHPSTORM"
-            ],
+            CURLOPT_HTTPHEADER => $headers,
         ]);
         if ($options['data'] ?? null) {
             curl_setopt($curl, CURLOPT_POSTFIELDS, $options['data']);
