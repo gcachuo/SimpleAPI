@@ -743,7 +743,7 @@ class System
 
             $message = 'Completed.';
             if (!$response) {
-                JsonResponse::sendResponse(compact('message'), HTTPStatusCodes::OK);
+                JsonResponse::sendResponse($message, HTTPStatusCodes::OK);
             } else if (is_scalar($response)) {
                 JsonResponse::sendResponse($response, HTTPStatusCodes::OK);
             } else {
