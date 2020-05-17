@@ -784,6 +784,14 @@ class System
                     $log = array_values(array_filter($log));
                     JsonResponse::sendResponse(compact('log'), HTTPStatusCodes::OK);
                     break;
+                case "decodeToken":
+                    if (REQUEST_METHOD === 'POST' && $_POST['token']) {
+                        $data = System::decode_token($_POST['token']);
+                        JsonResponse::sendResponse('Completed.', HTTPStatusCodes::OK, compact('data'));
+                    } else {
+                        JsonResponse::sendResponse("Endpoint not found.  [$namespace]", HTTPStatusCodes::NotFound);
+                    }
+                    break;
             }
         } else {
             JsonResponse::sendResponse("Endpoint not found.  [$namespace]", HTTPStatusCodes::NotFound);
@@ -1338,7 +1346,8 @@ class JsonResponse
             $code = http_response_code();
         }
 
-        $response = self::encode_items(compact('message', 'data', 'code'));
+        $response = compact('data');
+        $response = self::encode_items(compact('message', 'data', 'code', 'response'));
 
         if ($code < HTTPStatusCodes::BadRequest) {
             ob_clean();
