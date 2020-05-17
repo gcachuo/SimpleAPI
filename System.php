@@ -199,7 +199,7 @@ class System
             JsonResponse::sendResponse($result['response']['message'], $result['code']);
         }
 
-        return $result['response']['data'];
+        return $result['data'];
     }
 
     public static function redirect(string $path = '')
