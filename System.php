@@ -1333,6 +1333,7 @@ class JsonResponse
         $response = self::encode_items(compact('message', 'data'));
 
         if ($code < HTTPStatusCodes::BadRequest) {
+            ob_clean();
             die(json_encode($response));
         }
 
