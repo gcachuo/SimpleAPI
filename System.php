@@ -171,7 +171,7 @@ class System
         $headers = [
             "Cookie: XDEBUG_SESSION=PHPSTORM"
         ];
-        if ($options['method']) {
+        if ($options['method'] ?? null) {
             if ($options['method'] !== 'GET' && $options['method'] !== 'POST') {
                 $headers[] = "Content-Type: application/json";
             }
