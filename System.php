@@ -181,7 +181,7 @@ class System
                 "Cookie: XDEBUG_SESSION=PHPSTORM"
             ],
         ]);
-        if ($options['data']) {
+        if ($options['data'] ?? null) {
             curl_setopt($curl, CURLOPT_POSTFIELDS, $options['data']);
         }
 
