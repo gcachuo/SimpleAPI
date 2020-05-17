@@ -178,7 +178,7 @@ sql
             switch ($code) {
                 default:
                     $trace = $exception->getTrace();
-                    JsonResponse::sendResponse(compact('code', 'message', 'trace'), HTTPStatusCodes::InternalServerError);
+                    JsonResponse::sendResponse($message, HTTPStatusCodes::InternalServerError, compact('code', 'message', 'trace'));
                     break;
             }
         }
