@@ -731,7 +731,7 @@ class System
     {
         switch (REQUEST_METHOD) {
             case 'OPTIONS':
-                JsonResponse::sendResponse([], HTTPStatusCodes::OK);
+                JsonResponse::sendResponse('Completed.', HTTPStatusCodes::OK);
                 break;
             case 'PATCH':
                 global $_PATCH;
