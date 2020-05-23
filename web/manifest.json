@@ -4,17 +4,17 @@
   "display": "standalone",
   "icons": [
     {
-      "src": "favicon48x48.png",
+      "src": "favicon-48x48.png",
       "type": "image/png",
       "sizes": "48x48"
     },
     {
-      "src": "favicon96x96.png",
+      "src": "favicon-96x96.png",
       "type": "image/png",
       "sizes": "96x96"
     },
     {
-      "src": "favicon192x192.png",
+      "src": "favicon-192x192.png",
       "type": "image/png",
       "sizes": "192x192"
     }
