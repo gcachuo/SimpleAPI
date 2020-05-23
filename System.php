@@ -1060,8 +1060,10 @@ class System
             if ($this->dom->getElementById('project-user')) {
                 session_start();
                 try {
-                    $user = System::curl(['url' => 'decodeToken', 'method' => 'POST', 'data' => ['token' => $_SESSION['user_token']]])['data'];
-                    $this->dom->getElementById('project-user')->nodeValue = $user['name'] ?? 'User not logged in';
+                    if ($_SESSION['user_token'] ?? null) {
+                        $user = System::curl(['url' => 'decodeToken', 'method' => 'POST', 'data' => ['token' => $_SESSION['user_token']]])['data'];
+                        $this->dom->getElementById('project-user')->nodeValue = $user['name'] ?? 'User not logged in';
+                    }
                 } catch (CoreException $exception) {
                     //do nothing
                 }
