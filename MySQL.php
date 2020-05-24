@@ -68,11 +68,11 @@ sql
                     );
 
                     $error = "Database $dbname didn't exists and was created. try again";
-                    JsonResponse::sendResponse(compact('error', 'code'), HTTPStatusCodes::NotImplemented);
+                    JsonResponse::sendResponse($error, HTTPStatusCodes::NotImplemented, compact('error', 'code'));
                     break;
                 default:
                     $type = 'MySQL';
-                    JsonResponse::sendResponse(compact('error', 'code', 'type'), HTTPStatusCodes::InternalServerError);
+                    JsonResponse::sendResponse($error, HTTPStatusCodes::InternalServerError, compact('error', 'code', 'type'));
                     break;
             }
         }

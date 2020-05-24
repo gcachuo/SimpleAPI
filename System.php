@@ -189,7 +189,7 @@ class System
             CURLOPT_HTTPHEADER => $headers,
         ]);
         if ($options['data'] ?? null) {
-            curl_setopt($curl, CURLOPT_POSTFIELDS, $options['data']);
+            curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($options['data']));
         }
 
         $json = curl_exec($curl);
