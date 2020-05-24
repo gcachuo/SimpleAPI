@@ -1090,6 +1090,11 @@ class System
                 }
             }
 
+            if ($this->dom->getElementById('btnSignUp') && !($module_list['signup'] ?? null)) {
+                $btnSignUp = $this->dom->getElementById('btnSignUp');
+                $btnSignUp->parentNode->removeChild($btnSignUp);
+            }
+
             if ($file != $entry) {
                 $fragment = $this->dom->createDocumentFragment();
                 $fragment->appendXML(<<<html
