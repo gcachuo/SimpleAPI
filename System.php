@@ -156,7 +156,7 @@ class System
     /**
      * @param $options
      * @return mixed
-     * @throws Exception
+     * @throws CoreException
      */
     public static function curl($options)
     {
