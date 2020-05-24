@@ -33,7 +33,12 @@ class System
     static function sessionCheck(string $name)
     {
         session_start();
-        return $_SESSION[$name] ?? null;
+        $check = $_SESSION[$name] ?? null;
+
+        $module = $_GET['module'];
+        if (!$check && ($module !== 'login' && $module !== 'signup')) {
+            System::redirect('login');
+        }
     }
 
     static function decrypt(string $value_encrypted)
@@ -214,8 +219,11 @@ class System
 
     public static function redirect(string $path = '')
     {
-        $path = ltrim($path, '/');
-        header('Location: ' . rtrim(BASENAME, '/') . '/' . $path);
+        $pathinfo = pathinfo($_SERVER['REQUEST_URI']);
+        if ($pathinfo['basename'] !== $path && !($pathinfo['extension'] ?? null)) {
+            $path = ltrim($path, '/');
+            header('Location: ' . rtrim(BASENAME, '/') . '/' . $path);
+        }
     }
 
     /**
