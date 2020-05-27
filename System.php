@@ -1111,7 +1111,11 @@ html
                 define('MODULES', $module_list);
 
                 foreach ($module_list as $module) {
-                    ['name' => $name, 'icon' => $icon, 'href' => $href] = $module;
+                    ['href' => $href] = $module;
+
+                    $name = $module['name'] ?? null;
+                    $icon = $module['icon'] ?? null;
+
                     $disabled = System::isset_get($module['disabled']) ? 'disabled' : '';
                     $hidden = System::isset_get($module['hidden']) ? 'none' : 'unset';
                     $file = System::isset_get($module['file'], $entry);
