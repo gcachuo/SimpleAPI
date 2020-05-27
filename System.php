@@ -1070,7 +1070,12 @@ class System
                 try {
                     if ($_SESSION['user_token'] ?? null) {
                         $user = System::curl(['url' => 'decodeToken', 'method' => 'POST', 'data' => ['token' => $_SESSION['user_token']]])['data'];
-                        $this->dom->getElementById('project-user')->nodeValue = $user['name'] ?? 'User not logged in';
+                        if ($user) {
+                            $user_name = $user['name'] ?? 'No Name';
+                        } else {
+                            System::redirect('login');
+                        }
+                        $this->dom->getElementById('project-user')->nodeValue = $user_name;
                     }
                 } catch (CoreException $exception) {
                     //do nothing
