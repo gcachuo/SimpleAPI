@@ -432,6 +432,11 @@ class System
         }
     }
 
+    public static function curlDecodeToken($token)
+    {
+        return System::curl(['url' => 'decodeToken', 'method' => 'POST', 'data' => ['token' => $token]])['data'];
+    }
+
     public static function init($config)
     {
         self::define_constants($config);
