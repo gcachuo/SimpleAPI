@@ -914,7 +914,7 @@ class System
                 $error = [
                     'message' => "Error creating dir [$dir]"
                 ];
-                JsonResponse::sendResponse(compact('status', 'code', 'response', 'error'), $code);
+                JsonResponse::sendResponse("Error creating dir [$dir]", $code, compact('status', 'code', 'response', 'error'));
             }
             @chmod($dir, 0777);
         }
