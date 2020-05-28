@@ -434,7 +434,16 @@ class System
 
     public static function curlDecodeToken($token)
     {
-        return System::curl(['url' => 'decodeToken', 'method' => 'POST', 'data' => ['token' => $token]])['data'];
+        try {
+            return System::curl([
+                'url' => 'decodeToken',
+                'method' => 'POST',
+                'data' => ['token' => $token]
+            ])['data'];
+        } catch (CoreException $exception) {
+            unset($_SESSION['user_token']);
+            return [];
+        }
     }
 
     public static function init($config)
@@ -1076,18 +1085,16 @@ class System
             }
             if ($this->dom->getElementById('project-user')) {
                 session_start();
-                try {
-                    if ($_SESSION['user_token'] ?? null) {
-                        $user = System::curl(['url' => 'decodeToken', 'method' => 'POST', 'data' => ['token' => $_SESSION['user_token']]])['data'];
-                        if ($user) {
-                            $user_name = $user['name'] ?? 'No Name';
-                        } else {
-                            System::redirect('login');
-                        }
+                if ($_SESSION['user_token'] ?? null) {
+                    $user = System::curlDecodeToken($_SESSION['user_token']);
+                    if ($user) {
+                        $user_name = $user['name'] ?? 'No Name';
                         $this->dom->getElementById('project-user')->nodeValue = $user_name;
+                    } else {
+                        System::redirect('login');
                     }
-                } catch (CoreException $exception) {
-                    //do nothing
+                } else {
+                    System::redirect('login');
                 }
                 session_write_close();
             }
