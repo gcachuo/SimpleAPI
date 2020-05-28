@@ -805,9 +805,13 @@ class System
                     JsonResponse::sendResponse(compact('log'), HTTPStatusCodes::OK);
                     break;
                 case "decodeToken":
-                    if (REQUEST_METHOD === 'POST' && $_POST['token']) {
-                        $data = System::decode_token($_POST['token']);
-                        JsonResponse::sendResponse('Completed.', HTTPStatusCodes::OK, compact('data'));
+                    if (REQUEST_METHOD === 'POST') {
+                        if ($_POST['token']) {
+                            $data = System::decode_token($_POST['token']);
+                            JsonResponse::sendResponse('Completed.', HTTPStatusCodes::OK, compact('data'));
+                        } else {
+                            JsonResponse::sendResponse("Missing token");
+                        }
                     } else {
                         JsonResponse::sendResponse("Endpoint not found.  [$namespace]", HTTPStatusCodes::NotFound);
                     }
