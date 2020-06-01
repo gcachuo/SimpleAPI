@@ -144,16 +144,16 @@ sql
                 case 1062:
                     //Duplicate Entry
                     $message = 'Duplicate entry.';
-                    JsonResponse::sendResponse(compact('message'));
+                    JsonResponse::sendResponse($message, 400, compact('message'));
                     break;
                 case 1452:
                     //Foreign Key
                     $message = 'A Foreign Key constraint fails.';
-                    JsonResponse::sendResponse(compact('message'));
+                    JsonResponse::sendResponse($message, 400, compact('message'));
                     break;
                 default:
                     $trace = $exception->getTrace();
-                    JsonResponse::sendResponse(compact('code', 'message', 'trace'), HTTPStatusCodes::InternalServerError);
+                    JsonResponse::sendResponse($message, HTTPStatusCodes::InternalServerError, compact('code', 'message', 'trace'));
                     break;
             }
         }

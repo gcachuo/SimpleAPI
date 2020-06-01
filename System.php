@@ -808,7 +808,7 @@ class System
                         $entry = array_values(array_filter($entry));
                     });
                     $log = array_values(array_filter($log));
-                    JsonResponse::sendResponse(compact('log'), HTTPStatusCodes::OK);
+                    JsonResponse::sendResponse('Logs', HTTPStatusCodes::OK, compact('log'));
                     break;
                 case "decodeToken":
                     if (REQUEST_METHOD === 'POST') {
