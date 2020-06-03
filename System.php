@@ -1473,7 +1473,11 @@ class JsonResponse
             } else {
                 if (!mb_detect_encoding($value, 'UTF-8', true)) {
                     $array[$key] = utf8_encode($value);
-                } else {
+                } elseif (gettype($value) == 'boolean') {
+                    $array[$key] = (boolean)$value;
+                } elseif (is_numeric($value)) {
+                    $array[$key] = +$value;
+                } elseif (gettype($value) == 'string') {
                     $array[$key] = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
                 }
             }
