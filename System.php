@@ -1390,8 +1390,8 @@ class JsonResponse
             $code = http_response_code();
         }
 
-        $response = compact('data');
-        $response = self::encode_items(compact('message', 'data', 'code', 'response'));
+        $response = self::encode_items2(compact('data'));
+        $response = compact('message', 'data', 'code', 'response');
 
         if ($code < HTTPStatusCodes::BadRequest) {
             ob_clean();
@@ -1478,6 +1478,32 @@ class JsonResponse
                 } elseif (is_numeric($value)) {
                     $array[$key] = +$value;
                 } elseif (gettype($value) == 'string') {
+                    $array[$key] = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+                }
+            }
+        }
+
+        return $array;
+    }
+
+    /**
+     * @param $array
+     * @return mixed
+     * @deprecated
+     */
+    private static function encode_items2($array)
+    {
+        foreach ($array as $key => $value) {
+            if (is_array($value)) {
+                $array[$key] = self::encode_items2($value);
+            } elseif (is_object($value)) {
+
+            } else {
+                if (!mb_detect_encoding($value, 'UTF-8', true)) {
+                    $array[$key] = utf8_encode($value);
+                } elseif (gettype($value) == 'boolean') {
+                    $array[$key] = $value ? 'true' : 'false';
+                } else {
                     $array[$key] = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
                 }
             }
