@@ -667,8 +667,11 @@ class System
                             "dbname" => ""
                         ],
                         'email' => [
+                            'name' => '',
                             'username' => '',
-                            'password' => ''
+                            'password' => '',
+                            'host' => 'smtp.gmail.com',
+                            'port' => '465',
                         ]
                     ];
                     if (ENVIRONMENT == 'init') {
