@@ -155,6 +155,16 @@ class System
         }
     }
 
+    public static function getSettings()
+    {
+        $path = __DIR__ . '/../settings.dev.json';
+        if (!file_exists($path)) {
+            $path = __DIR__ . '/../settings.json';
+        }
+
+        return self::json_decode(file_get_contents($path), true);
+    }
+
     /**
      * @param $options
      * @return mixed
@@ -162,11 +172,7 @@ class System
      */
     public static function curl($options)
     {
-        $path = __DIR__ . '/../settings.dev.json';
-        if (!file_exists($path)) {
-            $path = __DIR__ . '/../settings.json';
-        }
-        $settings = self::json_decode(file_get_contents($path), true);
+        $settings = self::getSettings();
 
         $curl = curl_init();
 
