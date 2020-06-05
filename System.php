@@ -155,6 +155,16 @@ class System
         }
     }
 
+    public static function getTemplate(string $filename)
+    {
+        ob_start();
+        include __DIR__ . '/../templates/' . $filename . '.php';
+        $contents = ob_get_contents();
+        ob_end_clean();
+
+        return $contents;
+    }
+
     public static function getSettings()
     {
         $path = __DIR__ . '/../settings.dev.json';
@@ -451,6 +461,19 @@ class System
 
     public static function init($config)
     {
+        set_exception_handler(function ($exception) {
+            ob_clean();
+            $status = 'exception';
+            $code = $exception->getCode() ?: 500;
+            http_response_code($code);
+            $response = ['message' => $exception->getMessage()];
+            $error = null;
+            if ($code >= 500) {
+                $error = $exception->getTrace();
+            }
+            die(json_encode(compact('status', 'code', 'response', 'error')));
+        });
+
         self::define_constants($config);
 
         self::load_php_functions($config);
@@ -502,18 +525,6 @@ class System
             header('Access-Control-Allow-Methods: PUT, POST, GET, OPTIONS, PATCH, DELETE');
             header('Access-Control-Allow-Headers: X-Requested-With, Content-Type, dataType, contenttype, processdata');
         }
-        set_exception_handler(function ($exception) {
-            ob_clean();
-            $status = 'exception';
-            $code = $exception->getCode() ?: 500;
-            http_response_code($code);
-            $response = ['message' => $exception->getMessage()];
-            $error = null;
-            if ($code >= 500) {
-                $error = $exception->getTrace();
-            }
-            die(json_encode(compact('status', 'code', 'response', 'error')));
-        });
         register_shutdown_function(function () {
             if (error_get_last()) {
                 $error = error_get_last();
