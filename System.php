@@ -155,7 +155,7 @@ class System
         }
     }
 
-    public static function getTemplate(string $filename)
+    public static function getTemplate(string $filename, $data)
     {
         ob_start();
         include __DIR__ . '/../templates/' . $filename . '.php';

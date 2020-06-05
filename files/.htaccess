@@ -7,6 +7,7 @@ php_value error_log error.log
 
 RewriteCond %{REQUEST_URI} !doc
 RewriteCond %{REQUEST_URI} !public
+RewriteCond %{REQUEST_URI} !templates
 RewriteRule ^(.*)$ index.php [QSA]
 
 AddHandler application/x-httpd-php73 .php
