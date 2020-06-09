@@ -14,7 +14,7 @@ class System
     /**
      * @var DOMDocument
      */
-    private $dom;
+    private static $dom;
 
     static function getRealIP()
     {
@@ -1003,7 +1003,7 @@ class System
      * @param array $constants
      * @return void
      */
-    public function init_web(array $constants)
+    public static function init_web(array $constants)
     {
         try {
             define('WEBDIR', $constants['WEBDIR']);
@@ -1037,7 +1037,7 @@ class System
                 require __DIR__ . "/vendor/autoload.php";
             }
 
-            $this->dom = new DOMDocument();
+            self::$dom = new DOMDocument();
             libxml_use_internal_errors(true);
 
             $module_file = System::isset_get($_GET['module'], $default) . (System::isset_get($_GET['action']) ? '/' . $_GET['action'] : '');
@@ -1059,10 +1059,10 @@ class System
                 die($dir . $file . ' does not exist');
             }
 
-            $this->dom->loadHTMLFile($dir . $file);
+            self::$dom->loadHTMLFile($dir . $file);
 
             /** @var DOMElement $link */
-            foreach ($this->dom->getElementsByTagName('link') as $link) {
+            foreach (self::$dom->getElementsByTagName('link') as $link) {
                 $old_link = $link->getAttribute("href");
                 if (strpos($old_link, 'http') !== false) {
                     continue;
@@ -1073,18 +1073,18 @@ class System
                     $link->setAttribute('href', BASENAME . $dir . $old_link);
                 }
             }
-            foreach ($this->dom->getElementsByTagName('div') as $link) {
+            foreach (self::$dom->getElementsByTagName('div') as $link) {
                 $old_link = $link->getAttribute("ui-include");
                 if ($old_link) {
                     $old_link = str_replace("'", '', $old_link);
                     $link->setAttribute('ui-include', "'" . BASENAME . $dir . $old_link . "'");
                 }
             }
-            foreach ($this->dom->getElementsByTagName('img') as $link) {
+            foreach (self::$dom->getElementsByTagName('img') as $link) {
                 $old_link = $link->getAttribute("src");
                 $link->setAttribute('src', BASENAME . $dir . $old_link);
             }
-            foreach ($this->dom->getElementsByTagName('script') as $link) {
+            foreach (self::$dom->getElementsByTagName('script') as $link) {
                 $old_link = $link->getAttribute("src");
                 if ($old_link) {
                     if (strpos($old_link, 'http') !== false) {
@@ -1094,56 +1094,54 @@ class System
                 }
             }
 
-            if ($this->dom->getElementsByTagName('title')->item(0)) {
-                $this->dom->getElementsByTagName('title')->item(0)->nodeValue = $project;
+            if (self::$dom->getElementsByTagName('title')->item(0)) {
+                self::$dom->getElementsByTagName('title')->item(0)->nodeValue = $project;
             }
-            if ($this->dom->getElementById('project-title')) {
-                $this->dom->getElementById('project-title')->nodeValue = $project;
+            if (self::$dom->getElementById('project-title')) {
+                self::$dom->getElementById('project-title')->nodeValue = $project;
             }
-            if ($this->dom->getElementById('project-user')) {
+            if (self::$dom->getElementById('project-user')) {
                 session_start();
                 if ($_SESSION['user_token'] ?? null) {
                     $user = System::curlDecodeToken($_SESSION['user_token']);
                     if ($user) {
                         $user_name = $user['name'] ?? 'No Name';
-                        $this->dom->getElementById('project-user')->nodeValue = $user_name;
+                        self::$dom->getElementById('project-user')->nodeValue = $user_name;
                     } else {
                         System::redirect('login');
                     }
-                } else {
-                    System::redirect('login');
                 }
                 session_write_close();
             }
 
-            if ($this->dom->getElementById('favicon')) {
-                $favicon = $this->dom->getElementById('favicon');
+            if (self::$dom->getElementById('favicon')) {
+                $favicon = self::$dom->getElementById('favicon');
                 $favicon->setAttribute('href', 'favicon.png');
             }
 
-            if ($this->getElementsByClass($this->dom, 'img', 'project-img')) {
-                $imgs = ($this->getElementsByClass($this->dom, 'img', 'project-img'));
+            if (self::getElementsByClass(self::$dom, 'img', 'project-img')) {
+                $imgs = (self::getElementsByClass(self::$dom, 'img', 'project-img'));
                 foreach ($imgs as $img) {
                     $img->setAttribute('src', BASENAME . 'logo.png');
                 }
             }
 
-            if ($this->dom->getElementById('btnSignUp') && !($module_list['signup'] ?? null)) {
-                $btnSignUp = $this->dom->getElementById('btnSignUp');
+            if (self::$dom->getElementById('btnSignUp') && !($module_list['signup'] ?? null)) {
+                $btnSignUp = self::$dom->getElementById('btnSignUp');
                 $btnSignUp->parentNode->removeChild($btnSignUp);
             }
 
             if ($file != $entry) {
-                $fragment = $this->dom->createDocumentFragment();
+                $fragment = self::$dom->createDocumentFragment();
                 $fragment->appendXML(<<<html
 <script src="assets/js/$module_file.js"></script>
 html
                 );
 
-                $body = $this->dom->getElementsByTagName('body');
+                $body = self::$dom->getElementsByTagName('body');
                 $body->item(0)->appendChild($fragment);
             } else {
-                $fragment = $this->dom->createDocumentFragment();
+                $fragment = self::$dom->createDocumentFragment();
 
                 $module_list = $module_list ?: [['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard', 'disabled' => '']];
                 define('MODULES', $module_list);
@@ -1172,12 +1170,12 @@ html
 html
                     );
                 }
-                $modules = $this->dom->createElement('ul');
+                $modules = self::$dom->createElement('ul');
                 $modules->setAttribute('class', 'nav');
                 $modules->appendChild($fragment);
 
                 /** @var DOMElement $nav */
-                $nav = $this->dom->getElementsByTagName('nav')[0];
+                $nav = self::$dom->getElementsByTagName('nav')[0];
                 if ($nav) {
                     if ($nav->parentNode) {
                         $modules->setAttribute('id', $nav->getAttribute('id'));
@@ -1186,11 +1184,11 @@ html
                     }
                 }
 
-                $this->load_module($module_file);
+                self::load_module($module_file);
             }
 
             libxml_clear_errors();
-            $this->print_page();
+            self::print_page();
         } catch (DOMException $exception) {
             $message = $exception->getMessage();
             echo <<<html
@@ -1201,7 +1199,7 @@ html;
         }
     }
 
-    function getElementsByClass(&$parentNode, $tagName, $className)
+    static function getElementsByClass(&$parentNode, $tagName, $className)
     {
         $nodes = array();
 
@@ -1216,7 +1214,7 @@ html;
         return $nodes;
     }
 
-    public function load_module($file)
+    public static function load_module($file)
     {
         $pathinfo = pathinfo($file);//['extension'];
         if (!($pathinfo['extension'] ?? null)) {
@@ -1266,13 +1264,13 @@ html;
         $fragment = new DOMDocument();
         $fragment->loadHTML(mb_convert_encoding($chunk, 'HTML-ENTITIES', 'UTF-8'), 8192 | 4);
 
-        $module = $this->dom->createElement('div');
+        $module = self::$dom->createElement('div');
         $module->setAttribute('id', 'view');
         $module->setAttribute('class', 'app-body');
-        $module->appendChild($this->dom->importNode($fragment->documentElement, true));
+        $module->appendChild(self::$dom->importNode($fragment->documentElement, true));
 
-        if ($this->dom->getElementById('view')) {
-            $view = $this->dom->getElementById('view');
+        if (self::$dom->getElementById('view')) {
+            $view = self::$dom->getElementById('view');
             $class = $view->getAttribute('class');
             $module->setAttribute('class', $class);
             if ($view->parentNode) {
@@ -1281,9 +1279,9 @@ html;
         }
     }
 
-    public function print_page()
+    public static function print_page()
     {
-        echo $this->dom->saveHTML();
+        echo self::$dom->saveHTML();
     }
 }
 
