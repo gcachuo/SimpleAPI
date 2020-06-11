@@ -236,6 +236,7 @@ class System
         if ($pathinfo['basename'] !== $path && !($pathinfo['extension'] ?? null)) {
             $path = ltrim($path, '/');
             header('Location: ' . rtrim(BASENAME, '/') . '/' . $path);
+            exit;
         }
     }
 
