@@ -96,7 +96,7 @@ class System
             $mail->Port = CONFIG['email']['port'] ?? 465;
 
             $mail->SMTPDebug = 1;
-            $mail->SMTPSecure = 'ssl';
+            $mail->SMTPSecure = CONFIG['email']['protocol'] ?? 'ssl';
             $mail->IsSMTP(); // use SMTP
             $mail->SMTPAuth = true;
             $mail->CharSet = 'UTF-8';
