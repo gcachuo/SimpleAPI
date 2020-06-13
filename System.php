@@ -108,6 +108,11 @@ class System
                 if (strpos($_SERVER['HTTP_USER_AGENT'], 'Postman') !== false) {
                     $item['email'] = CONFIG['email']['username'];
                 }
+
+                if (!$item['email']) {
+                    JsonResponse::sendResponse('Invalid email format: ' . "'$item[email]'");
+                }
+
                 $mail->addAddress($item['email'], $item['name'] ?? null);
             }
 
