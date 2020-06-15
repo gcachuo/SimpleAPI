@@ -1044,7 +1044,7 @@ class System
             self::log_error(compact('status', 'code', 'response', 'error'));
 
             self::$error_code = $code;
-            self::$error_message = WEBCONFIG['error']['message'];
+            self::$error_message = WEBCONFIG['error']['messages'][$code];
             self::$error_button = WEBCONFIG['error']['button'];
             self::formatDocument(WEBCONFIG['error']['file']);
             exit;
@@ -1303,7 +1303,7 @@ html;
                 'message' => "File not found [$module_path]"
             ];
             System::log_error(compact('status', 'code', 'response'));
-            throw new CoreException('Not found');
+            throw new CoreException('Not found', 404);
             if ($_SERVER['REQUEST_URI'] != BASENAME) {
                 System::redirect('/');
             }
