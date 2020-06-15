@@ -1326,11 +1326,11 @@ html;
         }
         $module = ucfirst(strtolower(MODULES[$href]['name'] ?? ''));
 
-        $breadcrumbs = BREADCRUMBS ? '' : 'd-none';
+        $breadcrumbs = BREADCRUMBS ? 'unset' : 'none';
         $chunk = <<<html
 <div class="row justify-content-center">
     <div class="col-12" style="padding: 0 25px">
-        <p class="text-left breadcrumbs $breadcrumbs">
+        <p class="text-left breadcrumbs $breadcrumbs" style="display: $breadcrumbs">
             <span class="text-muted">Usted se encuentra en:</span> <span>$module</span>
         </p>
         <div class="container-fluid">
