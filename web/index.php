@@ -1,7 +1,7 @@
 <?php
 include __DIR__ . "/core/System.php";
-$system = new System();
-$system->init_web(['WEBDIR' => __DIR__]);
+
+System::init_web(['WEBDIR' => __DIR__]);
 if (!System::sessionCheck("user_token")) {
     $pathinfo = pathinfo($_SERVER['REQUEST_URI']);
     if ($pathinfo['basename'] !== 'login' && !($pathinfo['extension'] ?? null)) {
