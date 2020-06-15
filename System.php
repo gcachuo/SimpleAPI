@@ -1212,7 +1212,7 @@ html
                 }
 
                 $body = self::$dom->getElementsByTagName('body');
-                if ($body->length > 0) {
+                if ($body->length > 0 && $fragment->textContent) {
                     $body->item(0)->appendChild($fragment);
                 }
             } elseif ($module_file ?? null) {

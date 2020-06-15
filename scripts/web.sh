@@ -8,6 +8,7 @@ mkdir -p ../../Logs;
 
 mkdir -p ../../themes/default;
 touch ../../themes/default/index.html
+touch ../../themes/default/error.html
 
 cp ../web/index.php ../../
 cp ../web/config.json ../../
