@@ -2,12 +2,7 @@
 include __DIR__ . "/core/System.php";
 
 System::init_web(['WEBDIR' => __DIR__]);
-if (!System::sessionCheck("user_token")) {
-    $pathinfo = pathinfo($_SERVER['REQUEST_URI']);
-    if ($pathinfo['basename'] !== 'login' && !($pathinfo['extension'] ?? null)) {
-        System::redirect('login');
-    }
-}
+System::sessionCheck("user_token");
 ?>
 <script>
     if ('serviceWorker' in navigator) {

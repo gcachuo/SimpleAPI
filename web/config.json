@@ -1,9 +1,17 @@
 {
+  "code": "",
   "project": "",
   "theme": "themes/default/",
   "entry": "index.html",
   "default": "dashboard",
   "basename": "/web/",
+  "error": {
+    "file": "",
+    "button": "",
+    "messages": {
+      "404": ""
+    }
+  },
   "modules": {
     "dashboard": {
       "name": "Dashboard",

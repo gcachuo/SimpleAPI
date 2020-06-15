@@ -1208,7 +1208,9 @@ html
                 }
 
                 $body = self::$dom->getElementsByTagName('body');
-                $body->item(0)->appendChild($fragment);
+                if ($body->length > 0) {
+                    $body->item(0)->appendChild($fragment);
+                }
             } elseif ($module_file ?? null) {
                 $fragment = self::$dom->createDocumentFragment();
 
