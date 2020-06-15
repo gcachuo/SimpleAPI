@@ -15,6 +15,15 @@ class System
      * @var DOMDocument
      */
     private static $dom;
+    /**
+     * @var int
+     */
+    private static $error_code;
+    private static $error_message;
+    /**
+     * @var mixed
+     */
+    private static $error_button;
 
     static function getRealIP()
     {
@@ -467,6 +476,12 @@ class System
 
     public static function init($config)
     {
+        if (ENVIRONMENT === 'www') {
+            throw new CoreException('Not allowed', HTTPStatusCodes::InternalServerError);
+        }
+
+        self::define_constants($config);
+
         set_exception_handler(function ($exception) {
             ob_clean();
             $status = 'exception';
@@ -480,7 +495,6 @@ class System
             die(json_encode(compact('status', 'code', 'response', 'error')));
         });
 
-        self::define_constants($config);
 
         self::load_php_functions($config);
 
@@ -979,9 +993,14 @@ class System
                 'PUT' => $_PUT,
                 'PATCH' => $_PATCH,
             ][REQUEST_METHOD] ?? ENVIRONMENT);
+        if ($response['error']) {
+            $data .= '[' . json_encode($response['error']) . '] ';
+        }
 
         if (defined('CONFIG')) {
             $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/' . date('Y-m-d') . '.log';
+        } elseif (defined('WEBCONFIG')) {
+            $path = __DIR__ . '/../Logs/' . WEBCONFIG['code'] . '/' . date('Y-m-d') . '.log';
         } else {
             $path = __DIR__ . '/../Logs/' . date('Y-m-d') . '.log';
         }
@@ -1011,60 +1030,92 @@ class System
      */
     public static function init_web(array $constants)
     {
-        try {
-            define('WEBDIR', $constants['WEBDIR']);
-            define('ENVIRONMENT', 'www');
-            if (!defined('JWT_KEY'))
-                define('JWT_KEY', file_exists(WEBDIR . '/../api/Config/.jwt_key') ? file_get_contents(WEBDIR . '/../api/Config/.jwt_key') : null);
-
-            if (!file_exists(WEBDIR . '/config.json')) {
-                die('config.json does not exist');
+        set_exception_handler(function ($exception) {
+            ob_clean();
+            $status = 'exception';
+            $code = $exception->getCode() ?: 500;
+            http_response_code($code);
+            $response = ['message' => $exception->getMessage()];
+            $error = null;
+            if ($code >= 500) {
+                $error = $exception->getTrace();
             }
 
+            self::log_error(compact('status', 'code', 'response', 'error'));
+
+            self::$error_code = $code;
+            self::$error_message = WEBCONFIG['error']['message'];
+            self::$error_button = WEBCONFIG['error']['button'];
+            self::formatDocument(WEBCONFIG['error']['file']);
+            exit;
+        });
+
+        define('WEBDIR', $constants['WEBDIR']);
+        define('ENVIRONMENT', 'www');
+        if (!defined('JWT_KEY'))
+            define('JWT_KEY', file_exists(WEBDIR . '/../api/Config/.jwt_key') ? file_get_contents(WEBDIR . '/../api/Config/.jwt_key') : null);
+
+        if (!file_exists(WEBDIR . '/config.json')) {
+            die('config.json does not exist');
+        }
+
+        define('WEBCONFIG', json_decode(file_get_contents(WEBDIR . '/config.json'), true));
+
+        [
+            'entry' => $entry,
+            'default' => $default,
+            'modules' => $module_list,
+            'breadcrumbs' => $breadcrumbs
+        ] = WEBCONFIG;
+
+        define('BREADCRUMBS', $breadcrumbs);
+
+        if ($constants['BASENAME']) {
+            define('BASENAME', $constants['BASENAME']);
+        } else {
+            define('BASENAME', '/' . (trim(dirname($_SERVER['SCRIPT_NAME']), '/') ?: '.') . '/');
+        }
+
+        self::load_php_functions();
+        if (file_exists(__DIR__ . "/vendor/autoload.php")) {
+            require __DIR__ . "/vendor/autoload.php";
+        }
+
+        $module_file = System::isset_get($_GET['module'], $default) . (System::isset_get($_GET['action']) ? '/' . $_GET['action'] : '');
+        if (strpos($module_file, '/')) {
+            $module_file_array = explode('/', $module_file);
+
+            $basename = explode('/', BASENAME);
+            $basename = array_values(array_filter($basename));
+
+            $module_file_intersect = array_diff($module_file_array, $basename);
+            $module_file_intersect = array_values($module_file_intersect);
+
+            $module_file = implode('/', $module_file_intersect);
+        }
+
+        $file = $module_list[$module_file]['file'] ?? $entry;
+
+        self::formatDocument($file, $module_file);
+    }
+
+    static function formatDocument($file, $module_file = null)
+    {
+        try {
             [
                 'project' => $project,
                 'entry' => $entry,
+                'error' => $error_file,
                 'theme' => $dir,
-                'default' => $default,
                 'modules' => $module_list,
-                'breadcrumbs' => $breadcrumbs
-            ] = json_decode(file_get_contents(WEBDIR . '/config.json'), true);
-
-            define('BREADCRUMBS', $breadcrumbs);
-
-            if ($constants['BASENAME']) {
-                define('BASENAME', $constants['BASENAME']);
-            } else {
-                define('BASENAME', '/' . (trim(dirname($_SERVER['SCRIPT_NAME']), '/') ?: '.') . '/');
-            }
-
-            self::load_php_functions();
-            if (file_exists(__DIR__ . "/vendor/autoload.php")) {
-                require __DIR__ . "/vendor/autoload.php";
-            }
-
-            self::$dom = new DOMDocument();
-            libxml_use_internal_errors(true);
-
-            $module_file = System::isset_get($_GET['module'], $default) . (System::isset_get($_GET['action']) ? '/' . $_GET['action'] : '');
-            if (strpos($module_file, '/')) {
-                $module_file_array = explode('/', $module_file);
-
-                $basename = explode('/', BASENAME);
-                $basename = array_values(array_filter($basename));
-
-                $module_file_intersect = array_diff($module_file_array, $basename);
-                $module_file_intersect = array_values($module_file_intersect);
-
-                $module_file = implode('/', $module_file_intersect);
-            }
-
-            $file = $module_list[$module_file]['file'] ?? $entry;
+            ] = WEBCONFIG;
 
             if (!file_exists($dir . $file)) {
                 die($dir . $file . ' does not exist');
             }
 
+            self::$dom = new DOMDocument();
+            libxml_use_internal_errors(true);
             self::$dom->loadHTMLFile($dir . $file);
 
             /** @var DOMElement $link */
@@ -1106,6 +1157,15 @@ class System
             if (self::$dom->getElementById('project-title')) {
                 self::$dom->getElementById('project-title')->nodeValue = $project;
             }
+            if (self::$dom->getElementById('project-error-code')) {
+                self::$dom->getElementById('project-error-code')->nodeValue = self::$error_code;
+            }
+            if (self::$dom->getElementById('project-error-message')) {
+                self::$dom->getElementById('project-error-message')->nodeValue = self::$error_message;
+            }
+            if (self::$dom->getElementById('project-error-button')) {
+                self::$dom->getElementById('project-error-button')->nodeValue = self::$error_button;
+            }
             if (self::$dom->getElementById('project-user')) {
                 session_start();
                 if ($_SESSION['user_token'] ?? null) {
@@ -1139,14 +1199,17 @@ class System
 
             if ($file != $entry) {
                 $fragment = self::$dom->createDocumentFragment();
-                $fragment->appendXML(<<<html
+
+                if ($module_file ?? null) {
+                    $fragment->appendXML(<<<html
 <script src="assets/js/$module_file.js"></script>
 html
-                );
+                    );
+                }
 
                 $body = self::$dom->getElementsByTagName('body');
                 $body->item(0)->appendChild($fragment);
-            } else {
+            } elseif ($module_file ?? null) {
                 $fragment = self::$dom->createDocumentFragment();
 
                 $module_list = $module_list ?: [['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard', 'disabled' => '']];
@@ -1191,6 +1254,9 @@ html
                 }
 
                 self::load_module($module_file);
+            } else {
+                self::formatDocument($error_file);
+                return;
             }
 
             libxml_clear_errors();
@@ -1237,6 +1303,7 @@ html;
                 'message' => "File not found [$module_path]"
             ];
             System::log_error(compact('status', 'code', 'response'));
+            throw new CoreException('Not found');
             if ($_SERVER['REQUEST_URI'] != BASENAME) {
                 System::redirect('/');
             }
