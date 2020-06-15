@@ -1141,6 +1141,10 @@ class System
                 $old_link = $link->getAttribute("src");
                 $link->setAttribute('src', BASENAME . $dir . $old_link);
             }
+            foreach (self::$dom->getElementsByTagName('source') as $link) {
+                $old_link = $link->getAttribute("src");
+                $link->setAttribute('src', BASENAME . $dir . $old_link);
+            }
             foreach (self::$dom->getElementsByTagName('script') as $link) {
                 $old_link = $link->getAttribute("src");
                 if ($old_link) {
