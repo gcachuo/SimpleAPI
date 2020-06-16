@@ -1034,8 +1034,9 @@ class System
             ob_clean();
             $status = 'exception';
             $code = $exception->getCode() ?: 500;
+            $message=$exception->getMessage();
             http_response_code($code);
-            $response = ['message' => $exception->getMessage()];
+            $response = ['message' => $message];
             $error = null;
             if ($code >= 500) {
                 $error = $exception->getTrace();
@@ -1044,7 +1045,7 @@ class System
             self::log_error(compact('status', 'code', 'response', 'error'));
 
             self::$error_code = $code;
-            self::$error_message = WEBCONFIG['error']['messages'][$code];
+            self::$error_message = WEBCONFIG['error']['messages'][$code]." [$message]";
             self::$error_button = WEBCONFIG['error']['button'];
             self::formatDocument(WEBCONFIG['error']['file']);
             exit;
