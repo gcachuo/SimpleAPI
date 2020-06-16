@@ -3,6 +3,7 @@
 use Firebase\JWT\JWT;
 use ForceUTF8\Encoding;
 use mikehaertl\wkhtmlto\Pdf;
+use Model\MySQL;
 use PHPMailer\PHPMailer\PHPMailer;
 
 class System
@@ -25,7 +26,7 @@ class System
      */
     private static $error_button;
 
-    static function getRealIP()
+    public static function getRealIP()
     {
         if (!empty($_SERVER['HTTP_CLIENT_IP']))
             return $_SERVER['HTTP_CLIENT_IP'];
@@ -36,7 +37,7 @@ class System
         return $_SERVER['REMOTE_ADDR'];
     }
 
-    static function sessionCheck(string $name)
+    public static function sessionCheck(string $name)
     {
         session_start();
         $check = $_SESSION[$name] ?? null;
@@ -47,7 +48,7 @@ class System
         }
     }
 
-    static function decrypt(string $value_encrypted)
+    public static function decrypt(string $value_encrypted)
     {
         $value_encrypted = html_entity_decode($value_encrypted);
         return openssl_decrypt($value_encrypted, "AES-256-CBC", CONFIG['seed'], 0, str_pad(CONFIG['seed'], 16, 'X', STR_PAD_LEFT));
@@ -259,7 +260,7 @@ class System
      * @param bool $assoc
      * @return object|array
      */
-    static function json_decode($json, $assoc)
+    public static function json_decode($json, $assoc)
     {
         $json = json_decode($json, $assoc);
         $error = json_last_error();
@@ -860,6 +861,11 @@ class System
                         JsonResponse::sendResponse("Endpoint not found.  [$namespace]", HTTPStatusCodes::NotFound);
                     }
                     break;
+                case "backup":
+                    $mysql = new MySQL();
+                    $data = $mysql->backupDB();
+                    JsonResponse::sendResponse('Completed.', HTTPStatusCodes::OK, compact('data'));
+                    break;
             }
         } else {
             JsonResponse::sendResponse("Endpoint not found.  [$namespace]", HTTPStatusCodes::NotFound);
@@ -1032,7 +1038,7 @@ class System
             ob_clean();
             $status = 'exception';
             $code = $exception->getCode() ?: 500;
-            $message=$exception->getMessage();
+            $message = $exception->getMessage();
             http_response_code($code);
             $response = ['message' => $message];
             $error = null;
@@ -1043,7 +1049,7 @@ class System
             self::log_error(compact('status', 'code', 'response', 'error'));
 
             self::$error_code = $code;
-            self::$error_message = WEBCONFIG['error']['messages'][$code]." [$message]";
+            self::$error_message = WEBCONFIG['error']['messages'][$code] . " [$message]";
             self::$error_button = WEBCONFIG['error']['button'];
             self::formatDocument(WEBCONFIG['error']['file']);
             exit;
@@ -1098,7 +1104,7 @@ class System
         self::formatDocument($file, $module_file);
     }
 
-    static function formatDocument($file, $module_file = null)
+    public static function formatDocument($file, $module_file = null)
     {
         try {
             [
@@ -1276,7 +1282,7 @@ html;
         }
     }
 
-    static function getElementsByClass(&$parentNode, $tagName, $className)
+    public static function getElementsByClass(&$parentNode, $tagName, $className)
     {
         $nodes = array();
 
@@ -1420,20 +1426,20 @@ class Stopwatch
     private static $_Instance;
     private $total;
 
-    function start()
+    public function start()
     {
         $this->begin = microtime(true);
         $this->lap_start = $this->begin;
     }
 
-    function lap_end($name)
+    public function lap_end($name)
     {
         $time = microtime(true) - $this->lap_start;
         $this->measure_points[$name] = $time;
         $this->lap_start = microtime(true);
     }
 
-    function end($name)
+    public function end($name)
     {
         $time = microtime(true) - $this->lap_start;
         $this->measure_points[$name] = $time;
@@ -1447,7 +1453,7 @@ class Stopwatch
         self::$_Instance[$name] = $this;
     }
 
-    static function report($name = null)
+    public static function report($name = null)
     {
         if (ENVIRONMENT !== 'cli') {
             return null;
@@ -1478,7 +1484,7 @@ class JsonResponse
      * @param array $data
      * @throws CoreException
      */
-    static function sendResponse(string $message, $code = 400, array $data = [])
+    public static function sendResponse(string $message, $code = 400, array $data = [])
     {
         if ($code) {
             http_response_code($code);
@@ -1611,17 +1617,17 @@ class JsonResponse
 
 class HTTPStatusCodes
 {
-    const __default = self::OK;
+    public const __default = self::OK;
 
-    const OK = 200;
-    const BadRequest = 400;
-    const Unauthorized = 401;
-    const NotFound = 404;
-    const MethodNotAllowed = 405;
-    const InternalServerError = 500;
-    const NotImplemented = 501;
-    const ServiceUnavailable = 503;
-    const Forbidden = 403;
+    public const OK = 200;
+    public const BadRequest = 400;
+    public const Unauthorized = 401;
+    public const NotFound = 404;
+    public const MethodNotAllowed = 405;
+    public const InternalServerError = 500;
+    public const NotImplemented = 501;
+    public const ServiceUnavailable = 503;
+    public const Forbidden = 403;
 }
 
 class CoreException extends Exception

@@ -21,7 +21,7 @@ class MySQL
     /** @var PDO */
     private $pdo;
     /** @var string */
-    private $dbname;
+    private $dbname, $username, $passwd, $host;
     /** @var PDOStatement */
     private $stmt;
 
@@ -51,7 +51,11 @@ class MySQL
                 $this->pdo->query("set names 'utf8'");
 
                 $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+                $this->host = $host;
                 $this->dbname = $dbname;
+                $this->username = $username;
+                $this->passwd = $passwd;
             } else {
                 JsonResponse::sendResponse("File $filename not found.", HTTPStatusCodes::InternalServerError);
             }
@@ -458,6 +462,20 @@ sql;
 UPDATE $table SET $field = CONVERT(CAST(CONVERT($field USING latin1) AS BINARY) USING utf8mb4);
 sql;
         $this->prepare2($sql);
+    }
+
+    /**
+     * @return string
+     */
+    public function backupDB()
+    {
+        $result_file = __DIR__ . '/../Backup/' . time() . '.' . $this->dbname . '.sql';
+        $command = /** @lang bash */
+            <<<bash
+mysqldump $this->dbname --column-statistics=0 --result-file="$result_file" --skip-lock-tables --complete-insert --skip-add-locks --disable-keys -u$this->username -p$this->passwd -h$this->host
+bash;
+        exec($command . ' 2>&1', $output);
+        return $output;
     }
 }
 
