@@ -852,11 +852,9 @@ class System
                     break;
                 case "decodeToken":
                     if (REQUEST_METHOD === 'POST') {
-                        if ($_POST['token']) {
+                        if ($_POST['token'] ?? null) {
                             $data = System::decode_token($_POST['token']);
                             JsonResponse::sendResponse('Completed.', HTTPStatusCodes::OK, compact('data'));
-                        } else {
-                            JsonResponse::sendResponse("Missing token");
                         }
                     } else {
                         JsonResponse::sendResponse("Endpoint not found.  [$namespace]", HTTPStatusCodes::NotFound);
