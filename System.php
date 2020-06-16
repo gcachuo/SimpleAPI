@@ -864,7 +864,7 @@ class System
                 case "backup":
                     $mysql = new MySQL();
                     $data = $mysql->backupDB();
-                    JsonResponse::sendResponse('Completed.', HTTPStatusCodes::OK, compact('data'));
+                    JsonResponse::sendResponse('Completed.', HTTPStatusCodes::OK, $data);
                     break;
             }
         } else {
