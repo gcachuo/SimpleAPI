@@ -333,7 +333,7 @@ class System
         return $base64;*/
         $base64 = base64_decode($id);
         $end_decoded = strstr($base64, '=');
-        if (!empty($base64) && strlen($end_decoded > 1)) {
+        if (!empty($base64) && (strlen($end_decoded) > 1)) {
             $end_decoded = trim($end_decoded, '=');
             if (!empty($end_decoded)) {
                 if (!is_nan($end_decoded)) {
