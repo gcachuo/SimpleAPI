@@ -435,11 +435,16 @@ class System
         return JWT_KEY;
     }
 
-    public static function decode_token($jwt)
+    /**
+     * @param string $jwt
+     * @return mixed
+     * @throws CoreException
+     */
+    public static function decode_token(string $jwt)
     {
         try {
             if (empty($jwt)) {
-                JsonResponse::sendResponse('Empty token.');
+                JsonResponse::sendResponse('The token sent is empty.');
             }
 
             $jwt_key = self::get_jwt_key();
@@ -876,8 +881,10 @@ class System
      * @param array $array
      * @param array $required
      * @param string $message
+     * @param int $code
+     * @throws CoreException
      */
-    public static function check_value_empty($array, $required, $message)
+    public static function check_value_empty($array, $required, $message, $code = 400)
     {
         $required = array_flip($required);
         $intersect = array_intersect_key($array ?: $required, $required);
@@ -890,7 +897,7 @@ class System
         }
         $empty_values = trim($empty_values, ', ');
         if (!empty($empty_values)) {
-            JsonResponse::sendResponse($message . ' ' . "[$empty_values]", HTTPStatusCodes::BadRequest);
+            JsonResponse::sendResponse($message . ' ' . "[$empty_values]", $code);
         }
 
         foreach ($intersect as $key => $value) {
@@ -901,7 +908,7 @@ class System
         }
         $empty_values = trim($empty_values, ', ');
         if (!empty($empty_values)) {
-            JsonResponse::sendResponse($message . ' ' . "[$empty_values]", HTTPStatusCodes::BadRequest);
+            JsonResponse::sendResponse($message . ' ' . "[$empty_values]", $code);
         }
     }
 

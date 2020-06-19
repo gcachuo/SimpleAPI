@@ -16,14 +16,17 @@ use System;
 class MySQL
 {
     const PARAM_INT = PDO::PARAM_INT;
-    /** @var mysqli */
-    private $mysqli;
     /** @var PDO */
     private $pdo;
     /** @var string */
     private $dbname, $username, $passwd, $host;
     /** @var PDOStatement */
     private $stmt;
+    /**
+     * @deprecated
+     * @var mysqli
+     */
+    private $mysqli;
 
     public function __construct($dbname = null)
     {
@@ -44,10 +47,11 @@ class MySQL
                 $passwd = $config['passwd'];
                 $dbname = $dbname ?: (getenv('DATABASE') ?: $config['dbname']);
 
+                System::check_value_empty($config, ['host', 'username', 'passwd'], 'Missing data in config file.', HTTPStatusCodes::InternalServerError);
+
                 $this->mysqli = new mysqli($host, $username, $passwd, $dbname);
                 $this->pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $passwd);
 
-                $this->mysqli->query("set names 'utf8'");
                 $this->pdo->query("set names 'utf8'");
 
                 $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -180,6 +184,10 @@ sql
             $message = $exception->getMessage();
             System::query_log('#' . $message);
             switch ($code) {
+                case 23000:
+                    // Duplicate entry
+                    throw new PDOException('Duplicate entry', +$code);
+                    break;
                 default:
                     $trace = $exception->getTrace();
                     JsonResponse::sendResponse($message, HTTPStatusCodes::InternalServerError, compact('code', 'message', 'trace'));
@@ -281,7 +289,7 @@ sql
      */
     function create_table($table, $columns, $extra_sql = '')
     {
-        $result = System::isset_get($this->fetch_all($this->query("show tables;"), 0, MYSQLI_NUM)[$table]);
+        $result = array_flip(array_column($this->prepare2("show tables;")->fetchAll(PDO::FETCH_NUM), 0))[$table];
 
         if (!$result) {
             $sql_columns = "";
@@ -313,11 +321,11 @@ ENGINE = InnoDB
 CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 sql;
             try {
-                $this->mysqli->query("DESCRIBE `$table`");
-            } catch (mysqli_sql_exception $exception) {
+                $this->pdo->query("DESCRIBE `$table`");
+            } catch (PDOException $exception) {
                 $sql .= $extra_sql;
             }
-            $result = $this->query($sql, true);
+            $result = $this->prepare2($sql);
             return false;
         }
         return true;
@@ -451,9 +459,9 @@ sql;
         return $this->stmt->fetch(PDO::FETCH_ASSOC) ?: [];
     }
 
-    public function fetchAll()
+    public function fetchAll($fetch_style = null)
     {
-        return $this->stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $this->stmt->fetchAll($fetch_style ?: PDO::FETCH_ASSOC);
     }
 
     public function convertEncoding(string $table, string $field)
