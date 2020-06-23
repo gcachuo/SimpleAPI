@@ -1236,12 +1236,12 @@ html
                 $fragment = self::$dom->createDocumentFragment();
 
                 $module_list = $module_list ?: [['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard', 'disabled' => '']];
+                define('MODULES', $module_list);
 
                 $module_list = $_SESSION['modules'] + array_filter($module_list, function ($module) {
                         return ($module['permissions'] ?? true) === false;
                     });
 
-                define('MODULES', $module_list);
 
                 foreach ($module_list as $module) {
                     ['href' => $href] = $module;
