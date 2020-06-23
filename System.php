@@ -1021,6 +1021,10 @@ class System
             $path = __DIR__ . '/../Logs/' . date('Y-m-d') . '.log';
         }
 
+        if (!file_exists($path)) {
+            chmod(__DIR__ . '/../', 0755);
+            mkdir(dirname($path), 0755, true);
+        }
         if (!file_put_contents($path, $data . "\n", FILE_APPEND)) {
             if (file_exists($path)) {
                 if (!unlink($path)) {
@@ -1238,7 +1242,7 @@ html
                 $module_list = $module_list ?: [['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard', 'disabled' => '']];
                 define('MODULES', $module_list);
 
-                $module_list = $_SESSION['modules'] + array_filter($module_list, function ($module) {
+                $module_list = ($_SESSION['modules'] ?? []) + array_filter($module_list, function ($module) {
                         return ($module['permissions'] ?? true) === false;
                     });
 
