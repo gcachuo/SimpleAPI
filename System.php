@@ -48,7 +48,7 @@ class System
         }
 
         $user = System::curlDecodeToken($check);
-        $user['permissions'] = System::json_decode($user['permissions'], true);
+        $user['permissions'] = System::json_decode($user['permissions']??'[]', true);
 
         $_SESSION['modules'] = array_intersect_key(MODULES, array_flip($user['permissions']));
     }
@@ -1242,7 +1242,7 @@ html
                 $module_list = $module_list ?: [['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard', 'disabled' => '']];
                 define('MODULES', $module_list);
 
-                $module_list = ($_SESSION['modules'] ?? []) + array_filter($module_list, function ($module) {
+                $module_list = ($_SESSION['modules'] ?? MODULES) + array_filter($module_list, function ($module) {
                         return ($module['permissions'] ?? true) === false;
                     });
 
