@@ -46,6 +46,11 @@ class System
         if (!$check && ($module !== 'login' && $module !== 'signup')) {
             System::redirect('login');
         }
+
+        $user = System::curlDecodeToken($check);
+        $user['permissions'] = System::json_decode($user['permissions'], true);
+
+        $_SESSION['modules'] = array_intersect_key(MODULES, array_flip($user['permissions']));
     }
 
     public static function decrypt(string $value_encrypted)
@@ -1231,6 +1236,11 @@ html
                 $fragment = self::$dom->createDocumentFragment();
 
                 $module_list = $module_list ?: [['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard', 'disabled' => '']];
+
+                $module_list = $_SESSION['modules'] + array_filter($module_list, function ($module) {
+                        return ($module['permissions'] ?? true) === false;
+                    });
+
                 define('MODULES', $module_list);
 
                 foreach ($module_list as $module) {
