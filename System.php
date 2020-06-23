@@ -1091,7 +1091,7 @@ class System
 
         define('BREADCRUMBS', $breadcrumbs);
 
-        if ($constants['BASENAME']) {
+        if ($constants['BASENAME'] ?? null) {
             define('BASENAME', $constants['BASENAME']);
         } else {
             define('BASENAME', '/' . (trim(dirname($_SERVER['SCRIPT_NAME']), '/') ?: '.') . '/');
