@@ -48,7 +48,7 @@ class System
         }
 
         $user = System::curlDecodeToken($check);
-        $user['permissions'] = System::json_decode($user['permissions']??'[]', true);
+        $user['permissions'] = System::json_decode($user['permissions'] ?? '[]', true);
 
         $_SESSION['modules'] = array_intersect_key(MODULES, array_flip($user['permissions']));
     }
@@ -1191,19 +1191,6 @@ class System
             if (self::$dom->getElementById('project-error-button')) {
                 self::$dom->getElementById('project-error-button')->nodeValue = self::$error_button;
             }
-            if (self::$dom->getElementById('project-user')) {
-                session_start();
-                if ($_SESSION['user_token'] ?? null) {
-                    $user = System::curlDecodeToken($_SESSION['user_token']);
-                    if ($user) {
-                        $user_name = $user['name'] ?? 'No Name';
-                        self::$dom->getElementById('project-user')->nodeValue = $user_name;
-                    } else {
-                        System::redirect('login');
-                    }
-                }
-                session_write_close();
-            }
 
             if (self::$dom->getElementById('favicon')) {
                 $favicon = self::$dom->getElementById('favicon');
@@ -1220,6 +1207,20 @@ class System
             if (self::$dom->getElementById('btnSignUp') && !($module_list['signup'] ?? null)) {
                 $btnSignUp = self::$dom->getElementById('btnSignUp');
                 $btnSignUp->parentNode->removeChild($btnSignUp);
+            }
+
+            if (self::$dom->getElementById('project-user')) {
+                session_start();
+                if ($_SESSION['user_token'] ?? null) {
+                    $user = System::curlDecodeToken($_SESSION['user_token']);
+                    if ($user) {
+                        $user_name = $user['name'] ?? 'No Name';
+                        self::$dom->getElementById('project-user')->nodeValue = $user_name;
+                    } else {
+                        System::redirect('login');
+                    }
+                }
+                session_write_close();
             }
 
             if ($file != $entry) {
@@ -1242,10 +1243,13 @@ html
                 $module_list = $module_list ?: [['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard', 'disabled' => '']];
                 define('MODULES', $module_list);
 
-                $module_list = ($_SESSION['modules'] ?? MODULES) + array_filter($module_list, function ($module) {
-                        return ($module['permissions'] ?? true) === false;
-                    });
+                if (defined('SESSIONCHECK') && $user['name'] !== 'admin') {
+                    System::sessionCheck("user_token");
 
+                    $module_list = ($_SESSION['modules'] ?? []) + array_filter(MODULES, function ($module) {
+                            return ($module['permissions'] ?? true) === false;
+                        });
+                }
 
                 foreach ($module_list as $module) {
                     ['href' => $href] = $module;
