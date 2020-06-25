@@ -185,8 +185,7 @@ sql
             System::query_log('#' . $message);
             switch ($code) {
                 case 23000:
-                    // Duplicate entry
-                    throw new PDOException('Duplicate entry', +$code);
+                    throw new PDOException($message, +$code);
                     break;
                 default:
                     $trace = $exception->getTrace();
