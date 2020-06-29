@@ -1243,7 +1243,7 @@ html
                 $module_list = $module_list ?: [['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard', 'disabled' => '']];
                 define('MODULES', $module_list);
 
-                if (defined('SESSIONCHECK') && $user['name'] !== 'admin') {
+                if (defined('SESSIONCHECK') && $user['username'] !== 'admin') {
                     System::sessionCheck("user_token");
 
                     $module_list = ($_SESSION['modules'] ?? []) + array_filter(MODULES, function ($module) {
