@@ -1223,15 +1223,11 @@ class System
                 session_write_close();
             }
 
+            $module_list = $module_list ?: [['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard', 'disabled' => '']];
+            define('MODULES', $module_list);
+
             if ($file != $entry) {
                 $fragment = self::$dom->createDocumentFragment();
-
-                if ($module_file ?? null) {
-                    $fragment->appendXML(<<<html
-<script src="assets/js/$module_file.js"></script>
-html
-                    );
-                }
 
                 $body = self::$dom->getElementsByTagName('body');
                 if ($body->length > 0 && $fragment->textContent) {
@@ -1239,9 +1235,6 @@ html
                 }
             } elseif ($module_file ?? null) {
                 $fragment = self::$dom->createDocumentFragment();
-
-                $module_list = $module_list ?: [['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard', 'disabled' => '']];
-                define('MODULES', $module_list);
 
                 if (defined('SESSIONCHECK') && $user['username'] !== 'admin') {
                     System::sessionCheck("user_token");
