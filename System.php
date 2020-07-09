@@ -475,7 +475,7 @@ class System
     {
         try {
             return System::curl([
-                'url' => 'decodeToken',
+                'url' => 'api/decodeToken',
                 'method' => 'POST',
                 'data' => ['token' => $token]
             ])['data'];
