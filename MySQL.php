@@ -47,7 +47,7 @@ class MySQL
                 $passwd = $config['passwd'];
                 $dbname = $dbname ?: (getenv('DATABASE') ?: $config['dbname']);
 
-                System::check_value_empty($config, ['host', 'username', 'passwd'], 'Missing data in config file.', HTTPStatusCodes::InternalServerError);
+                System::check_value_empty($config, ['host', 'username', 'passwd', 'dbname'], 'Missing data in config file.', HTTPStatusCodes::InternalServerError);
 
                 $this->mysqli = new mysqli($host, $username, $passwd, $dbname);
                 $this->pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $passwd);
