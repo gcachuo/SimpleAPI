@@ -1224,7 +1224,9 @@ class System
             }
 
             $module_list = $module_list ?: [['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard', 'disabled' => '']];
-            define('MODULES', $module_list);
+            if(!defined('MODULES')) {
+                define('MODULES', $module_list);
+            }
 
             if ($file != $entry) {
                 $fragment = self::$dom->createDocumentFragment();
