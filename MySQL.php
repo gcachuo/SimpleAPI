@@ -174,7 +174,25 @@ sql
 
             $stmt = $this->pdo->prepare($sql);
             foreach ($params as $key => &$val) {
-                $stmt->bindParam($key, $val);
+                switch (gettype($val)) {
+                    case 'boolean':
+                        $type = PDO::PARAM_BOOL;
+                        break;
+                    case 'integer':
+                        $type = PDO::PARAM_INT;
+                        break;
+                    case 'NULL':
+                        $type = PDO::PARAM_NULL;
+                        break;
+                    case 'array':
+                        $val = json_encode($val);
+                        $type = PDO::PARAM_STR;
+                        break;
+                    default:
+                        $type = PDO::PARAM_STR;
+                        break;
+                }
+                $stmt->bindParam($key, $val, $type);
             }
             $stmt->execute();
             $this->stmt = $stmt;
