@@ -791,7 +791,18 @@ class System
                 $id = System::decode_id($id);
             }
         } else {
-            $request = explode('/', trim(stristr($_SERVER['REQUEST_URI'], 'api/'), '/'));
+            $request = $_SERVER['REQUEST_URI'];
+            if (BASENAME !== '/') {
+                $request = str_replace(BASENAME, '', $request);
+            }
+            $request = trim($request, '/');
+            if (strpos($request, 'api/') !== false) {
+                $request = stristr($request, 'api/');
+            } elseif (strpos($request, '/') === false) {
+                $request = 'api' . $request;
+            }
+            $request = explode('/', $request);
+
             $controller = $request[0];
             $action = $request[1] ?? null;
         }
@@ -1224,7 +1235,7 @@ class System
             }
 
             $module_list = $module_list ?: [['name' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'dashboard', 'disabled' => '']];
-            if(!defined('MODULES')) {
+            if (!defined('MODULES')) {
                 define('MODULES', $module_list);
             }
 
