@@ -799,7 +799,7 @@ class System
             if (strpos($request, 'api/') !== false) {
                 $request = stristr($request, 'api/');
             } elseif (strpos($request, '/') === false) {
-                $request = 'api' . $request;
+                $request = 'api/' . $request;
             }
             $request = explode('/', $request);
 
