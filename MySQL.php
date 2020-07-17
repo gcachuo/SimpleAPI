@@ -501,7 +501,7 @@ sql;
         $result_file = __DIR__ . '/../Backup/' . $filename;
         $command = /** @lang bash */
             <<<bash
-mysqldump $this->dbname --column-statistics=0 --result-file="$result_file" --skip-lock-tables --complete-insert --skip-add-locks --disable-keys -u$this->username -p$this->passwd -h$this->host
+mysqldump $this->dbname --result-file="$result_file" --skip-lock-tables --complete-insert --skip-add-locks --disable-keys -u$this->username -p$this->passwd -h$this->host
 bash;
         exec($command . ' 2>&1', $output);
 
