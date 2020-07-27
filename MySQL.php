@@ -497,8 +497,14 @@ sql;
      */
     public function backupDB(): array
     {
+
         $filename = time() . '.' . $this->dbname . '.sql';
         $result_file = __DIR__ . '/../Backup/' . $filename;
+        if (!is_dir(dirname($result_file))) {
+            if (!mkdir(dirname($result_file))) {
+                JsonResponse::sendResponse('Error creating dir: ' . dirname($result_file));
+            }
+        }
         $command = /** @lang bash */
             <<<bash
 mysqldump $this->dbname --result-file="$result_file" --skip-lock-tables --complete-insert --skip-add-locks --disable-keys -u$this->username -p$this->passwd -h$this->host
