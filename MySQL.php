@@ -174,7 +174,7 @@ sql
 
             $stmt = $this->pdo->prepare($sql);
             foreach ($params as $key => &$val) {
-                if ($val == '') {
+                if ($val === '') {
                     $val = null;
                 }
                 switch (gettype($val)) {
