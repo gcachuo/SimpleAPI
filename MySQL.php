@@ -170,12 +170,12 @@ sql
     public function prepare2(string $sql, array $params = [])
     {
         try {
-            System::query_log(self::interpolate_query($sql, $params, false));
-
             $stmt = $this->pdo->prepare($sql);
             foreach ($params as $key => &$val) {
                 if ($val === '') {
                     $val = null;
+                } elseif (intval($val)) {
+                    $val = intval($val);
                 }
                 switch (gettype($val)) {
                     case 'boolean':
@@ -197,6 +197,9 @@ sql
                 }
                 $stmt->bindParam($key, $val, $type);
             }
+
+            System::query_log(self::interpolate_query($sql, $params, false));
+
             $stmt->execute();
             $this->stmt = $stmt;
             return $this;
@@ -481,7 +484,8 @@ sql;
 
     public function fetchAll($fetch_style = null)
     {
-        return $this->stmt->fetchAll($fetch_style ?: PDO::FETCH_ASSOC);
+        $test = $this->stmt->fetchAll($fetch_style ?: PDO::FETCH_ASSOC);
+        return $test;
     }
 
     public function convertEncoding(string $table, string $field)
