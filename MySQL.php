@@ -170,6 +170,8 @@ sql
     public function prepare2(string $sql, array $params = [])
     {
         try {
+            System::query_log(self::interpolate_query($sql, $params, false));
+
             $stmt = $this->pdo->prepare($sql);
             foreach ($params as $key => &$val) {
                 if ($val === '') {
@@ -181,8 +183,6 @@ sql
                 }
                 $stmt->bindParam($key, $val);
             }
-
-            System::query_log(self::interpolate_query($sql, $params, false));
 
             $stmt->execute();
             $this->stmt = $stmt;
