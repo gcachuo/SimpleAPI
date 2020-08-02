@@ -176,26 +176,10 @@ sql
                     $val = null;
                 } elseif (intval($val)) {
                     $val = intval($val);
+                } elseif (is_array($val)) {
+                    $val = json_encode($val);
                 }
-                switch (gettype($val)) {
-                    case 'boolean':
-                        $type = PDO::PARAM_BOOL;
-                        break;
-                    case 'integer':
-                        $type = PDO::PARAM_INT;
-                        break;
-                    case 'NULL':
-                        $type = PDO::PARAM_NULL;
-                        break;
-                    case 'array':
-                        $val = json_encode($val);
-                        $type = PDO::PARAM_STR;
-                        break;
-                    default:
-                        $type = PDO::PARAM_STR;
-                        break;
-                }
-                $stmt->bindParam($key, $val, $type);
+                $stmt->bindParam($key, $val);
             }
 
             System::query_log(self::interpolate_query($sql, $params, false));
@@ -484,8 +468,7 @@ sql;
 
     public function fetchAll($fetch_style = null)
     {
-        $test = $this->stmt->fetchAll($fetch_style ?: PDO::FETCH_ASSOC);
-        return $test;
+        return $this->stmt->fetchAll($fetch_style ?: PDO::FETCH_ASSOC);
     }
 
     public function convertEncoding(string $table, string $field)
