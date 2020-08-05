@@ -176,7 +176,7 @@ sql
             foreach ($params as $key => &$val) {
                 if ($val === '') {
                     $val = null;
-                } elseif (intval($val)) {
+                } elseif (is_int($val)) {
                     $val = intval($val);
                 } elseif (is_array($val)) {
                     $val = json_encode($val);
