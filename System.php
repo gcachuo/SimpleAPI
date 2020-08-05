@@ -26,6 +26,12 @@ class System
      */
     private static $error_button;
 
+    public static function is_email($email): bool
+    {
+        preg_match('/^([\w-]+(?:\.[+\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i', $email, $matches);
+        return !!($matches);
+    }
+
     public static function getRealIP()
     {
         if (!empty($_SERVER['HTTP_CLIENT_IP']))
@@ -778,11 +784,14 @@ class System
 
     private static function convert_endpoint(&$controller, &$action, &$id)
     {
-        $request = trim(stristr($_SERVER['REQUEST_URI'], 'api'), '/');
+        $request = trim($_SERVER['REQUEST_URI'], '/');
+        if (BASENAME !== '/') {
+            $request = str_replace(trim(BASENAME, '/'), '', $request);
+        }
         if (strpos($request, '?') !== false) {
             $request = stristr($request, '?', true);
         }
-        preg_match_all('/\/\b([a-z-]+?)\/+([a-z-]+)(?:\W+(.+))?/i', $request, $request, PREG_SET_ORDER, 0);
+        preg_match_all('/\/?\b([a-z-]+?)\/+([a-z-]+)(?:\W+(.+))?/i', $request, $request, PREG_SET_ORDER, 0);
         if (!empty($request)) {
             $request = array_splice($request[0], 1);
             [$controller, $action] = $request;
@@ -791,10 +800,6 @@ class System
                 $id = System::decode_id($id);
             }
         } else {
-            $request = $_SERVER['REQUEST_URI'];
-            if (BASENAME !== '/') {
-                $request = str_replace(BASENAME, '', $request);
-            }
             $request = trim($request, '/');
             if (strpos($request, 'api/') !== false) {
                 $request = stristr($request, 'api/');
