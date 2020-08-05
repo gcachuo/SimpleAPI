@@ -238,13 +238,20 @@ class System
 
         $json = curl_exec($curl);
         $error = curl_error($curl);
+        $info = curl_getinfo($curl);
         curl_close($curl);
 
 
         if ($error) {
             JsonResponse::sendResponse($error, HTTPStatusCodes::InternalServerError);
         } elseif (!self::isJson($json)) {
-            JsonResponse::sendResponse($json, HTTPStatusCodes::InternalServerError);
+            if ($info['http_code'] >= 500) {
+                JsonResponse::sendResponse('', $info['http_code']);
+            } elseif ($info['http_code'] >= 400) {
+                JsonResponse::sendResponse('', $info['http_code']);
+            } else {
+                throw new CoreException('', $info['http_code'], ['data' => $json]);
+            }
         }
 
         $result = self::json_decode($json, true);
@@ -1081,7 +1088,7 @@ class System
             self::log_error(compact('status', 'code', 'response', 'error'));
 
             self::$error_code = $code;
-            self::$error_message = WEBCONFIG['error']['messages'][$code] . " [$message]";
+            self::$error_message = WEBCONFIG['error']['messages'][$code] . ($message ? " [$message]" : '');
             self::$error_button = WEBCONFIG['error']['button'];
             self::formatDocument(WEBCONFIG['error']['file']);
             exit;
