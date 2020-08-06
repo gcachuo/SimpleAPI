@@ -261,7 +261,7 @@ class System
                 }
             }
         } else {
-            JsonResponse::sendResponse('Empty response: ' . $settings['apiUrl'] . $options['url'], HTTPStatusCodes::ServiceUnavailable);
+            JsonResponse::sendResponse('Empty response: ' . $options['url'], HTTPStatusCodes::ServiceUnavailable);
         }
 
         return $result['data'];
