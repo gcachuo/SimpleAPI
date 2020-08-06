@@ -813,6 +813,7 @@ class System
                 $id = System::decode_id($id);
             }
         } else {
+            $request = trim($_SERVER['REQUEST_URI'], '/');
             $request = trim($request, '/');
             if (strpos($request, 'api/') !== false) {
                 $request = stristr($request, 'api/');
