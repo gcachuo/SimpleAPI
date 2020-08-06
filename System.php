@@ -500,8 +500,10 @@ class System
 
     public static function init($config)
     {
-        if (ENVIRONMENT === 'www') {
-            throw new CoreException('Not allowed', HTTPStatusCodes::InternalServerError);
+        if (defined('ENVIRONMENT')) {
+            if (ENVIRONMENT === 'www') {
+                throw new CoreException('Not allowed', HTTPStatusCodes::InternalServerError);
+            }
         }
 
         self::define_constants($config);
