@@ -241,23 +241,27 @@ class System
         $info = curl_getinfo($curl);
         curl_close($curl);
 
+        $result = ['data' => []];
 
         if ($error) {
             JsonResponse::sendResponse($error, HTTPStatusCodes::InternalServerError);
-        } elseif ($json && !self::isJson($json)) {
-            if ($info['http_code'] >= 500) {
-                JsonResponse::sendResponse('', $info['http_code']);
-            } elseif ($info['http_code'] >= 400) {
-                JsonResponse::sendResponse('', $info['http_code']);
+        } elseif ($json) {
+            if (!self::isJson($json)) {
+                if ($info['http_code'] >= 500) {
+                    JsonResponse::sendResponse('', $info['http_code']);
+                } elseif ($info['http_code'] >= 400) {
+                    JsonResponse::sendResponse('', $info['http_code']);
+                } else {
+                    throw new CoreException('', $info['http_code'], ['data' => $json]);
+                }
             } else {
-                throw new CoreException('', $info['http_code'], ['data' => $json]);
+                $result = self::json_decode($json, true);
+                if ($result['code'] >= 400) {
+                    JsonResponse::sendResponse($result['response']['message'], $result['code']);
+                }
             }
-        }
-
-        $result = self::json_decode($json, true);
-
-        if ($result['code'] >= 400) {
-            JsonResponse::sendResponse($result['response']['message'], $result['code']);
+        } else {
+            JsonResponse::sendResponse('Empty response: ' . $settings['apiUrl'] . $options['url'], HTTPStatusCodes::ServiceUnavailable);
         }
 
         return $result['data'];
