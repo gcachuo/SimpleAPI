@@ -976,6 +976,7 @@ class System
             }
         }
 
+        mkdir( __DIR__ . '/../Logs/', 0777, true);
         if (defined('CONFIG')) {
             $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/' . date('Y-m-d') . '.log';
         } else {
@@ -1036,6 +1037,7 @@ class System
             $data .= '[' . json_encode($response['error']) . '] ';
         }
 
+        mkdir( __DIR__ . '/../Logs/', 0777, true);
         if (defined('CONFIG')) {
             $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/' . date('Y-m-d') . '.log';
         } elseif (defined('WEBCONFIG')) {
