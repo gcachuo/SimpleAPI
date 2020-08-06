@@ -244,7 +244,7 @@ class System
 
         if ($error) {
             JsonResponse::sendResponse($error, HTTPStatusCodes::InternalServerError);
-        } elseif (!self::isJson($json)) {
+        } elseif ($json && !self::isJson($json)) {
             if ($info['http_code'] >= 500) {
                 JsonResponse::sendResponse('', $info['http_code']);
             } elseif ($info['http_code'] >= 400) {
