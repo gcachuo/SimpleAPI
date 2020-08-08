@@ -490,14 +490,18 @@ class System
 
     public static function curlDecodeToken($token)
     {
-        try {
-            return System::curl([
-                'url' => 'api/decodeToken',
-                'method' => 'POST',
-                'data' => ['token' => $token]
-            ])['data'];
-        } catch (CoreException $exception) {
-            unset($_SESSION['user_token']);
+        if ($token) {
+            try {
+                return System::curl([
+                    'url' => 'api/decodeToken',
+                    'method' => 'POST',
+                    'data' => ['token' => $token]
+                ])['data'];
+            } catch (CoreException $exception) {
+                unset($_SESSION['user_token']);
+                return [];
+            }
+        } else {
             return [];
         }
     }
