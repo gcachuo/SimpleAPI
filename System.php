@@ -800,6 +800,9 @@ class System
         $request = trim($_SERVER['REQUEST_URI'], '/');
         if (BASENAME !== '/') {
             $request = str_replace(trim(BASENAME, '/'), '', $request);
+            if (empty($request)) {
+                $request = 'api/version';
+            }
         }
         if (strpos($request, '?') !== false) {
             $request = stristr($request, '?', true);
