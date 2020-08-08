@@ -170,9 +170,8 @@ sql
     public function prepare2(string $sql, array $params = [])
     {
         try {
-            System::query_log(self::interpolate_query($sql, $params, false));
-
             $stmt = $this->pdo->prepare($sql);
+
             foreach ($params as $key => &$val) {
                 if ($val === '') {
                     $val = null;
@@ -186,6 +185,9 @@ sql
 
             $stmt->execute();
             $this->stmt = $stmt;
+
+            System::query_log(self::interpolate_query($sql, $params, false));
+
             return $this;
         } catch (PDOException $exception) {
             $code = $exception->getCode();
