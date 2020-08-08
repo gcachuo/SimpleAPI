@@ -1317,7 +1317,7 @@ html
                 }
                 $modules = self::$dom->createElement('ul');
                 $modules->setAttribute('class', 'nav');
-                if ($fragment->nodeValue) {
+                if ($fragment->textContent) {
                     $modules->appendChild($fragment);
                 }
 
