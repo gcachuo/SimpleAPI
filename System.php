@@ -1277,12 +1277,14 @@ class System
             } elseif ($module_file ?? null) {
                 $fragment = self::$dom->createDocumentFragment();
 
-                if (defined('SESSIONCHECK') && $user['username'] !== 'admin') {
-                    System::sessionCheck("user_token");
+                if (defined('SESSIONCHECK')) {
+                    if (($user['username'] ?? null) !== 'admin') {
+                        System::sessionCheck("user_token");
 
-                    $module_list = ($_SESSION['modules'] ?? []) + array_filter(MODULES, function ($module) {
-                            return ($module['permissions'] ?? true) === false;
-                        });
+                        $module_list = ($_SESSION['modules'] ?? []) + array_filter(MODULES, function ($module) {
+                                return ($module['permissions'] ?? true) === false;
+                            });
+                    }
                 }
 
                 foreach ($module_list as $module) {
@@ -1311,7 +1313,9 @@ html
                 }
                 $modules = self::$dom->createElement('ul');
                 $modules->setAttribute('class', 'nav');
-                $modules->appendChild($fragment);
+                if ($fragment->nodeValue) {
+                    $modules->appendChild($fragment);
+                }
 
                 /** @var DOMElement $nav */
                 $nav = self::$dom->getElementsByTagName('nav')[0];
