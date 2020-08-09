@@ -195,7 +195,7 @@ sql
             System::query_log('#' . $message);
             switch ($code) {
                 case 23000:
-                    throw new PDOException($message, +$code);
+                    throw new PDOException($message, HTTPStatusCodes::InternalServerError);
                     break;
                 default:
                     $trace = $exception->getTrace();
