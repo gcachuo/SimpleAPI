@@ -915,7 +915,7 @@ class System
                     break;
                 case "endpoints":
                     $files = glob(__DIR__ . '/../Controller/*.{php}', GLOB_BRACE);
-                    $endpoints = [];
+                    $paths = [];
                     foreach ($files as $file) {
                         $basename = basename($file, '.php');
                         $class = 'Controller\\' . $basename;
@@ -923,14 +923,17 @@ class System
                         $methods = $controller->getMethods();
                         foreach ($methods as $method => $functions) {
                             $functions = array_values(array_flip($functions));
-                            array_walk($functions, function (&$endpoint) use ($controller) {
-                                $controller = strtolower(str_replace('Controller' . '\\', '', get_class($controller)));
-                                $endpoint = $controller . '/' . $endpoint;
-                            });
-                            $endpoints[$basename][$method] = $functions;
+                            foreach ($functions as $endpoint) {
+                                $lower = strtolower(str_replace('Controller' . '\\', '', get_class($controller)));
+                                $endpoint = $lower . '/' . $endpoint;
+                                $paths['/' . $endpoint][strtolower($method)] = [
+                                    'produces' => ['application/json'],
+                                    'responses' => [200 => ['description' => 'Success']]
+                                ];
+                            }
                         }
                     }
-                    JsonResponse::sendResponse('Endpoints', HTTPStatusCodes::OK, compact('endpoints'));
+                    JsonResponse::sendResponse('Endpoints', HTTPStatusCodes::OK, compact('paths'));
                     break;
             }
         } else {
@@ -1587,38 +1590,6 @@ class JsonResponse
         System::log_error(compact('status', 'code', 'response', 'error'));
 
         throw new CoreException($response['message'] ?? $response['error'], $code, $data);
-    }
-
-    private function send_response()
-    {
-        //Log error in file
-
-        /* if (ENVIRONMENT == 'web') {
-             ob_clean();
-             die(self::$json);
-         } else if (ENVIRONMENT == 'www') {
-             ob_clean();
- //            var_dump(json_decode(self::$json, true));
- //            exit;
-             header('Content-Type: application/json');
-             die(self::$json);
-         }
-         $exception = json_decode(self::$json, true);
-
-         if ($exception['code'] !== HTTPStatusCodes::OK) {
-             $error = '';
-             if (is_array($exception['error'])) {
-                 $error = $exception['error']['message'];
-             } elseif (System::isset_get($exception['response']['message'])) {
-                 $error = $exception['response']['message'];
-             } elseif (System::isset_get($exception['response']['error'])) {
-                 $error = '[' . $exception['response']['type'] . '] ' . $exception['response']['error'];
-             }
-
-             throw new Exception($error, $exception['code']);
-         } else {
-             die($exception['status']);
-         }*/
     }
 
     private function json_encode()
