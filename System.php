@@ -621,7 +621,6 @@ class System
             if (file_exists($path)) {
                 include $path;
             }
-//            die($path);
         });
         if (function_exists('xdebug_disable')) {
             //Disables stack traces
@@ -832,6 +831,7 @@ class System
             $controller = $request[0];
             $action = $request[1] ?? null;
         }
+        define('ENDPOINT', $request[0] . '/' . $request[1]);
     }
 
     private static function call_action($controller, $action, $id)
@@ -912,6 +912,25 @@ class System
                     $mysql = new MySQL();
                     $data = $mysql->backupDB();
                     JsonResponse::sendResponse('Completed.', HTTPStatusCodes::OK, $data);
+                    break;
+                case "endpoints":
+                    $files = glob(__DIR__ . '/../Controller/*.{php}', GLOB_BRACE);
+                    $endpoints = [];
+                    foreach ($files as $file) {
+                        $basename = basename($file, '.php');
+                        $class = 'Controller\\' . $basename;
+                        $controller = new $class();
+                        $methods = $controller->getMethods();
+                        foreach ($methods as $method => $functions) {
+                            $functions = array_values(array_flip($functions));
+                            array_walk($functions, function (&$endpoint) use ($controller) {
+                                $controller = strtolower(str_replace('Controller' . '\\', '', get_class($controller)));
+                                $endpoint = $controller . '/' . $endpoint;
+                            });
+                            $endpoints[$basename][$method] = $functions;
+                        }
+                    }
+                    JsonResponse::sendResponse('Endpoints', HTTPStatusCodes::OK, compact('endpoints'));
                     break;
             }
         } else {
@@ -1441,6 +1460,11 @@ class Controller
     private $_methods;
     private static $_response;
 
+    public function getMethods()
+    {
+        return $this->_methods;
+    }
+
     public function __construct($methods)
     {
         $this->_methods = $methods;
@@ -1458,30 +1482,18 @@ class Controller
         JsonResponse::sendResponse("Endpoint not found. [$name]", HTTPStatusCodes::NotFound);
     }
 
-    /*public function __call($action, $arguments)
+    public function method_exists(Controller $class, $action)
     {
-        if (ENVIRONMENT == 'web') {
-            $name = System::isset_get($this->_methods[REQUEST_METHOD][$action]);
-            if ($name) {
-                return $this->$name(...$arguments);
-            }
-            JsonResponse::sendResponse("Endpoint not found. [$name]", HTTPStatusCodes::NotFound);
-        }
-        return $this->$action(...$arguments);
-    }*/
+        return method_exists($class, $this->_methods[REQUEST_METHOD][$action]);
+    }
 
     private function allowed_methods(array $methods)
     {
-        if (ENVIRONMENT == 'web') {
+        if (ENVIRONMENT == 'web' && ENDPOINT !== 'api/endpoints') {
             if (!isset($methods[REQUEST_METHOD])) {
                 JsonResponse::sendResponse('Method Not Allowed', HTTPStatusCodes::MethodNotAllowed);
             }
         }
-    }
-
-    public function method_exists(Controller $class, $action)
-    {
-        return method_exists($class, $this->_methods[REQUEST_METHOD][$action]);
     }
 }
 
