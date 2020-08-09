@@ -933,7 +933,15 @@ class System
                             }
                         }
                     }
-                    JsonResponse::sendResponse('Endpoints', HTTPStatusCodes::OK, compact('paths'));
+                    $swagger = '2.0';
+                    $info = [
+                        'description' => ucfirst(PROJECT),
+                        'version' => VERSION,
+                        'title' => ucfirst(PROJECT),
+                    ];
+                    $host = $_SERVER['SERVER_NAME'];
+                    $basePath = BASENAME;
+                    JsonResponse::sendResponse('Endpoints', HTTPStatusCodes::OK, compact('swagger', 'info', 'host', 'basePath', 'paths'));
                     break;
             }
         } else {
