@@ -1571,12 +1571,12 @@ class JsonResponse
             $code = http_response_code();
         }
 
-        $response = self::encode_items2(compact('data'));
+        $response = self::encode_items(compact('data'));
         $response = compact('message', 'data', 'code', 'response');
 
         if ($code < HTTPStatusCodes::BadRequest) {
             ob_clean();
-            die(json_encode($response));
+            die(json_encode($response, JSON_UNESCAPED_SLASHES));
         }
 
         $status = 'error';
