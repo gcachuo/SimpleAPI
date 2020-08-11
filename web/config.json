@@ -5,6 +5,7 @@
   "entry": "index.html",
   "default": "dashboard",
   "basename": "/web/",
+  "breadcrumbs": true,
   "error": {
     "file": "",
     "button": "",

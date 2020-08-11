@@ -1079,7 +1079,7 @@ class System
                 'PUT' => $_PUT,
                 'PATCH' => $_PATCH,
             ][REQUEST_METHOD] ?? ENVIRONMENT);
-        if ($response['error']) {
+        if ($response['error'] ?? null) {
             $data .= '[' . json_encode($response['error']) . '] ';
         }
 
