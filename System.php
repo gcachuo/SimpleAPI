@@ -1138,7 +1138,16 @@ class System
             self::log_error(compact('status', 'code', 'response', 'error'));
 
             self::$error_code = $code;
-            self::$error_message = WEBCONFIG['error']['messages'][$code] . ($message ? " [$message]" : '');
+
+            self::$error_message = WEBCONFIG['error']['messages'][$code];
+            switch ($code) {
+                case 404:
+                    break;
+                default:
+                    self::$error_message .= ($message ? " [$message]" : '');
+                    break;
+            }
+
             self::$error_button = WEBCONFIG['error']['button'];
             self::formatDocument(WEBCONFIG['error']['file']);
             exit;
