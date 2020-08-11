@@ -969,7 +969,7 @@ class System
         }
         $empty_values = trim($empty_values, ', ');
         if (!empty($empty_values)) {
-            JsonResponse::sendResponse($message . ' ' . "[$empty_values]", $code);
+            throw new CoreException($message . ' ' . "[$empty_values]", $code);
         }
 
         foreach ($intersect as $key => $value) {
