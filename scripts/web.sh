@@ -15,6 +15,7 @@ cp ../web/config.json ../../
 cp ../web/service-worker.js ../../
 cp ../web/.htaccess ../../
 cp ../web/.gitignore ../../
+cp ../web/settings.json ../../
 cp -avr ../web/modules/* ../../modules/
 
 wget -O ../../logo.png https://picsum.photos/300/300
