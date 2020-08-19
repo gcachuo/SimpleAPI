@@ -944,6 +944,14 @@ class System
                     $basePath = BASENAME;
                     JsonResponse::sendResponse('Endpoints', HTTPStatusCodes::OK, compact('swagger', 'info', 'host', 'basePath', 'paths'));
                     break;
+                case "webhook":
+                    if (REQUEST_METHOD === 'POST') {
+                        throw new CoreException('Webhook');
+                    } else {
+                        $method = REQUEST_METHOD;
+                        throw new CoreException("Endpoint not found.  [$controller/$action]", 404, compact('method', 'controller', 'action'));
+                    }
+                    break;
             }
         } else {
             JsonResponse::sendResponse("Endpoint not found.  [$namespace]", HTTPStatusCodes::NotFound);
