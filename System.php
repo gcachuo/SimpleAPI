@@ -523,10 +523,11 @@ class System
             http_response_code($code);
             $response = ['message' => $exception->getMessage()];
             $error = null;
+            $data = $exception->data ?: [];
             if ($code >= 500) {
                 $error = $exception->getTrace();
             }
-            die(json_encode(compact('status', 'code', 'response', 'error')));
+            die(json_encode(compact('status', 'code', 'response', 'error', 'data')));
         });
 
 
