@@ -946,7 +946,7 @@ class System
                     break;
                 case "webhook":
                     if (REQUEST_METHOD === 'POST') {
-                        throw new CoreException('Webhook');
+                        JsonResponse::sendResponse('Webhook', 200, $_POST);
                     } else {
                         $method = REQUEST_METHOD;
                         throw new CoreException("Endpoint not found.  [$controller/$action]", 404, compact('method', 'controller', 'action'));
