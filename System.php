@@ -269,8 +269,9 @@ class System
 
     public static function redirect(string $path = '')
     {
-        $pathinfo = pathinfo($_SERVER['REQUEST_URI']);
-        if ($pathinfo['basename'] !== $path && !($pathinfo['extension'] ?? null)) {
+        $request_uri = str_replace(BASENAME, '', $_SERVER['REQUEST_URI']);
+        $pathinfo = pathinfo($request_uri);
+        if ($pathinfo['dirname'] !== $path && !($pathinfo['extension'] ?? null)) {
             $path = ltrim($path, '/');
             header('Location: ' . rtrim(BASENAME, '/') . '/' . $path);
             exit;
