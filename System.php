@@ -528,7 +528,7 @@ class System
             }
             $response = ['message' => $exception->getMessage()];
             $error = null;
-            $data = $exception->data ?: [];
+            $data = $exception->data ?? [];
             if ($code >= 500) {
                 $error = $exception->getTrace();
             }
