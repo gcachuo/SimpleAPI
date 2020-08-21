@@ -521,7 +521,11 @@ class System
             ob_clean();
             $status = 'exception';
             $code = $exception->getCode() ?: 500;
-            http_response_code($code);
+            if (!is_int($code)) {
+                $code = 500;
+            } else {
+                http_response_code($code);
+            }
             $response = ['message' => $exception->getMessage()];
             $error = null;
             $data = $exception->data ?: [];
