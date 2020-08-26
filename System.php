@@ -532,7 +532,7 @@ class System
             if ($code >= 500) {
                 $error = $exception->getTrace();
             }
-            die(json_encode(compact('status', 'code', 'response', 'error', 'data')));
+            throw new CoreException($exception->getMessage(), $code, $data);
         });
 
 
@@ -959,6 +959,9 @@ class System
                         $method = REQUEST_METHOD;
                         throw new CoreException("Endpoint not found.  [$controller/$action]", 404, compact('method', 'controller', 'action'));
                     }
+                    break;
+                case "socket":
+                    new Socket();
                     break;
             }
         } else {
