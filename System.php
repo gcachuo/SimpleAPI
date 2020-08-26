@@ -692,7 +692,7 @@ class System
 
         shell_exec('cd .. && composer install && cd .. && composer install');
 
-        JsonResponse::sendResponse([], HTTPStatusCodes::OK);
+        JsonResponse::sendResponse('', HTTPStatusCodes::OK);
     }
 
     private static function define_constants($config)
