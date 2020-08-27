@@ -1,8 +1,9 @@
 <?php
 
 use Controller\Notifications;
+use Ratchet\ConnectionInterface;
 
-class Socket
+abstract class Socket
 {
     public function __construct()
     {
@@ -21,7 +22,7 @@ class Socket
     {
         try {
             $app = new Ratchet\App('localhost', 8080);
-            $app->route('/notifications', new Notifications, array('*'));
+            $app->route('/notifications', new Notifications, ['*']);
 
             return $app;
         } catch (RuntimeException $exception) {

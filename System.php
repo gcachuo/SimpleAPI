@@ -598,7 +598,7 @@ class System
                         case 8:
                             break;
                         default:
-                            ob_clean();
+                            if(ob_get_contents()) ob_clean();
                             $status = 'error';
                             $code = HTTPStatusCodes::InternalServerError;
                             $response = null;
@@ -962,7 +962,7 @@ class System
                     }
                     break;
                 case "socket":
-                    new Socket();
+                    new \Controller\Notifications();
                     break;
             }
         } else {
