@@ -767,7 +767,8 @@ class System
                     define('CONFIG', json_decode($project_config, true));
                 } else {
                     header('Content-Type: application/json');
-                    JsonResponse::sendResponse("Config not found for project '$project'", HTTPStatusCodes::InternalServerError);
+                    http_response_code(500);
+                    die(json_encode(['message' => "Config not found for project '$project'"]));
                 }
             }
         }
