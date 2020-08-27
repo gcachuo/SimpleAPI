@@ -518,7 +518,7 @@ class System
         self::define_constants($config);
 
         set_exception_handler(function ($exception) {
-            ob_clean();
+            if (ob_get_contents()) ob_end_clean();
             $status = 'exception';
             $code = $exception->getCode() ?: 500;
             if (!is_int($code)) {
@@ -1086,9 +1086,9 @@ class System
             define('REQUEST_METHOD', $_SERVER['REQUEST_METHOD']);
 
         $data = '[' . date('Y-m-d H:i:s') . '] ';
-        $data .= '[' . $_SERVER['REQUEST_METHOD'] . '] ';
+        $data .= '[' . ($_SERVER['REQUEST_METHOD'] ?? 'SHELL') . '] ';
         if (ENVIRONMENT == 'web') {
-            $data .= '[' . strstr($_SERVER['REQUEST_URI'], 'api/') . '] ';
+            $data .= '[' . strstr(($_SERVER['REQUEST_URI']), 'api/') . '] ';
         } elseif (ENVIRONMENT == 'cli') {
             $data .= '[' . System::isset_get($_SERVER['argv'][5]) . '] ';
         }

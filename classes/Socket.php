@@ -1,8 +1,6 @@
 <?php
 
-use React\EventLoop\Factory;
-use React\Socket\ConnectionInterface;
-use React\Socket\Server;
+use Controller\Notifications;
 
 class Socket
 {
@@ -22,22 +20,12 @@ class Socket
     public static function open()
     {
         try {
-            $loop = Factory::create();
-            $server = new Server(8080, $loop);
-            $server->on('connection', function (ConnectionInterface $connection) {
-                self::on_connection($connection);
-            });
+            $app = new Ratchet\App('localhost', 8080);
+            $app->route('/notifications', new Notifications, array('*'));
 
-            echo 'Listening on ' . $server->getAddress() . PHP_EOL;
-
-            return $loop;
+            return $app;
         } catch (RuntimeException $exception) {
             throw new CoreException($exception->getMessage(), 500, compact('exception'));
         }
-    }
-
-    public static function on_connection(ConnectionInterface $connection)
-    {
-        echo 'new connection: ' . $connection->getRemoteAddress() . PHP_EOL;
     }
 }
