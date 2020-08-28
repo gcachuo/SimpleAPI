@@ -532,7 +532,11 @@ class System
             if ($code >= 500) {
                 $error = $exception->getTrace();
             }
-            throw new CoreException($exception->getMessage(), $code, $data);
+            if (ENVIRONMENT === 'web') {
+                die(json_encode(compact('status', 'code', 'response', 'error'), JSON_UNESCAPED_SLASHES));
+            } else {
+                throw new CoreException($exception->getMessage(), $code, $data);
+            }
         });
 
 
@@ -598,7 +602,7 @@ class System
                         case 8:
                             break;
                         default:
-                            if(ob_get_contents()) ob_clean();
+                            if (ob_get_contents()) ob_clean();
                             $status = 'error';
                             $code = HTTPStatusCodes::InternalServerError;
                             $response = null;

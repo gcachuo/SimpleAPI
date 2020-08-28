@@ -2,6 +2,8 @@
 
 use Controller\Notifications;
 use Ratchet\ConnectionInterface;
+use WebSocket\BadUriException;
+use WebSocket\Client;
 
 abstract class Socket
 {
@@ -22,7 +24,18 @@ abstract class Socket
         throw new CoreException('This is not a websocket connection', 500, compact('server'));*/
     }
 
-    function onMessage(ConnectionInterface $from, $msg)
+    public static function send_message($event_name, $data_object)
+    {
+        try {
+            $client = new Client(CONFIG['websockets']['url'] ?? '');
+            $client->send(json_encode([$event_name, $data_object]));
+            $client->close();
+        } catch (BadUriException $exception) {
+            throw new CoreException('Invalid URL', 500, ['config' => CONFIG['websockets']]);
+        }
+    }
+
+public function onMessage(ConnectionInterface $from, $msg)
     {
         echo $msg . PHP_EOL;
         /** @var ConnectionInterface $client */
@@ -43,12 +56,12 @@ abstract class Socket
         $conn->send(json_encode(['message', ['message' => 'Welcome!']]));
     }
 
-    function onClose(ConnectionInterface $conn)
+public function onClose(ConnectionInterface $conn)
     {
         self::$connections->detach($conn);
     }
 
-    function onError(ConnectionInterface $conn, Exception $e)
+public function onError(ConnectionInterface $conn, Exception $e)
     {
         // TODO: Implement onError() method.
     }
@@ -57,7 +70,7 @@ abstract class Socket
     {
         try {
             $app = new Ratchet\App('localhost', 8080);
-            $app->route('/notifications', new Notifications, ['*']);
+            $app->route('/notifications', new Notifications(), ['*']);
 
             return $app;
         } catch (RuntimeException $exception) {
