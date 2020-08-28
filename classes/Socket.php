@@ -61,7 +61,7 @@ abstract class Socket
         [$event_name, $data_object] = json_decode($msg, true);
 
         $payload = str_replace(["\r", "\n"], '', preg_replace("/\s+/m", ' ', (print_r($data_object, true))));
-        echo "\033[32m" . $event_name . ":\033[0m " . $payload;
+        echo "\033[32m" . $event_name . ":\033[0m " . $payload . PHP_EOL;
 
         /** @var ConnectionInterface $client */
         foreach (self::$connections as $client) {
