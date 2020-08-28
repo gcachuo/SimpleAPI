@@ -1,13 +1,16 @@
 <?php
 
+use GuzzleHttp\Psr7\Uri;
+use Ratchet\App;
 use Ratchet\ConnectionInterface;
 use WebSocket\BadUriException;
 use WebSocket\Client;
+use WebSocket\ConnectionException;
 
 abstract class Socket
 {
     protected static $connections;
-    /** @var \Ratchet\App */
+    /** @var App */
     private static $app;
 
     public function __construct()
@@ -42,11 +45,14 @@ abstract class Socket
     {
         try {
             $url = CONFIG['websocket']['url'] ?? '';
+
             $client = new Client($url . '/' . $uri);
             $client->send(json_encode([$event_name, $data_object]));
             $client->close();
         } catch (BadUriException $exception) {
             throw new CoreException('Invalid URL', 500, ['config' => CONFIG['websockets']]);
+        } catch (ConnectionException $exception) {
+            throw new CoreException('Cannot connect to websocket.', 500, ['config' => CONFIG['websockets']]);
         }
     }
 
@@ -63,7 +69,7 @@ abstract class Socket
     {
         [$event_name, $data_object] = json_decode($msg, true);
 
-        /** @var \GuzzleHttp\Psr7\Uri $route */
+        /** @var Uri $route */
         $route = $from->httpRequest->getUri()->getPath();
 
         $payload = str_replace(["\r", "\n"], '', preg_replace("/\s+/m", ' ', (print_r($data_object, true))));
@@ -85,7 +91,7 @@ abstract class Socket
     {
         self::$connections->attach($conn);
 
-        /** @var \GuzzleHttp\Psr7\Uri $route */
+        /** @var Uri $route */
         $route = $conn->httpRequest->getUri()->getPath();
         $address = $conn->remoteAddress;
 
