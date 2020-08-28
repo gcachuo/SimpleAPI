@@ -3,6 +3,7 @@
 use GuzzleHttp\Psr7\Uri;
 use Ratchet\App;
 use Ratchet\ConnectionInterface;
+use WebSocket\BadOpcodeException;
 use WebSocket\BadUriException;
 use WebSocket\Client;
 use WebSocket\ConnectionException;
@@ -41,6 +42,13 @@ abstract class Socket
         }
     }
 
+    /**
+     * @param $uri
+     * @param $event_name
+     * @param $data_object
+     * @throws CoreException
+     * @throws BadOpcodeException
+     */
     protected function send_message($uri, $event_name, $data_object)
     {
         try {
