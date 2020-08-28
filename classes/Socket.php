@@ -41,7 +41,7 @@ abstract class Socket
     protected function send_message($uri, $event_name, $data_object)
     {
         try {
-            $url = CONFIG['websockets']['url'] ?? '';
+            $url = CONFIG['websocket']['url'] ?? '';
             $client = new Client($url . '/' . $uri);
             $client->send(json_encode([$event_name, $data_object]));
             $client->close();
@@ -52,16 +52,22 @@ abstract class Socket
 
     private static function mapRoutes()
     {
-        self::$app->route('/notifications', new Socket\Notifications(), ['*']);
-        self::$app->route('/order', new Socket\Order(), ['*']);
+        $routes = CONFIG['websocket']['routes'];
+        foreach ($routes as $route) {
+            $class = "Socket\\" . ucfirst($route);
+            self::$app->route('/' . $route, new $class(), ['*']);
+        }
     }
 
     public function onMessage(ConnectionInterface $from, $msg)
     {
         [$event_name, $data_object] = json_decode($msg, true);
 
+        /** @var \GuzzleHttp\Psr7\Uri $route */
+        $route = $from->httpRequest->getUri()->getPath();
+
         $payload = str_replace(["\r", "\n"], '', preg_replace("/\s+/m", ' ', (print_r($data_object, true))));
-        echo "\033[32m" . $event_name . ":\033[0m " . $payload . PHP_EOL;
+        echo "\033[34m[$route] \033[32m" . $event_name . ":\033[0m " . $payload . PHP_EOL;
 
         /** @var ConnectionInterface $client */
         foreach (self::$connections as $client) {
@@ -79,7 +85,11 @@ abstract class Socket
     {
         self::$connections->attach($conn);
 
-        echo "\033[32mNew Connection:\033[0m " . $conn->remoteAddress . PHP_EOL;
+        /** @var \GuzzleHttp\Psr7\Uri $route */
+        $route = $conn->httpRequest->getUri()->getPath();
+        $address = $conn->remoteAddress;
+
+        echo "\033[34m[$route] \033[32mNew Connection:\033[0m " . $address . PHP_EOL;
         $conn->send(json_encode(['message', ['message' => 'Welcome!']]));
     }
 
