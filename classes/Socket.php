@@ -1,6 +1,5 @@
 <?php
 
-use Controller\Notifications;
 use Ratchet\ConnectionInterface;
 use WebSocket\BadUriException;
 use WebSocket\Client;
@@ -8,6 +7,8 @@ use WebSocket\Client;
 abstract class Socket
 {
     protected static $connections;
+    /** @var \Ratchet\App */
+    private static $app;
 
     public function __construct()
     {
@@ -24,10 +25,24 @@ abstract class Socket
         throw new CoreException('This is not a websocket connection', 500, compact('server'));*/
     }
 
-    public static function send_message($event_name, $data_object)
+    public static function start()
     {
         try {
-            $client = new Client(CONFIG['websockets']['url'] ?? '');
+            self::$app = new Ratchet\App('localhost', 8080);
+
+            self::mapRoutes();
+
+            return self::$app;
+        } catch (RuntimeException $exception) {
+            throw new CoreException($exception->getMessage(), 500, compact('exception'));
+        }
+    }
+
+    protected function send_message($uri, $event_name, $data_object)
+    {
+        try {
+            $url = CONFIG['websockets']['url'] ?? '';
+            $client = new Client($url . '/' . $uri);
             $client->send(json_encode([$event_name, $data_object]));
             $client->close();
         } catch (BadUriException $exception) {
@@ -35,46 +50,46 @@ abstract class Socket
         }
     }
 
-public function onMessage(ConnectionInterface $from, $msg)
+    private static function mapRoutes()
     {
-        echo $msg . PHP_EOL;
+        self::$app->route('/notifications', new Socket\Notifications(), ['*']);
+        self::$app->route('/order', new Socket\Order(), ['*']);
+    }
+
+    public function onMessage(ConnectionInterface $from, $msg)
+    {
+        [$event_name, $data_object] = json_decode($msg, true);
+
+        $payload = str_replace(["\r", "\n"], '', preg_replace("/\s+/m", ' ', (print_r($data_object, true))));
+        echo "\033[32m" . $event_name . ":\033[0m " . $payload;
+
         /** @var ConnectionInterface $client */
         foreach (self::$connections as $client) {
             if ($from !== $client) {
                 // The sender is not the receiver, send to each client connected
-                [$event_name, $data_object] = json_decode($msg, true);
                 $client->send(json_encode([$event_name, $data_object]));
             }
         }
     }
 
+    /**
+     * @param ConnectionInterface $conn
+     */
     public function onOpen(ConnectionInterface $conn)
     {
         self::$connections->attach($conn);
 
-        echo 'new connection' . PHP_EOL;
+        echo "\033[32mNew Connection:\033[0m " . $conn->remoteAddress . PHP_EOL;
         $conn->send(json_encode(['message', ['message' => 'Welcome!']]));
     }
 
-public function onClose(ConnectionInterface $conn)
+    public function onClose(ConnectionInterface $conn)
     {
         self::$connections->detach($conn);
     }
 
-public function onError(ConnectionInterface $conn, Exception $e)
+    public function onError(ConnectionInterface $conn, Exception $e)
     {
-        // TODO: Implement onError() method.
-    }
-
-    public static function open()
-    {
-        try {
-            $app = new Ratchet\App('localhost', 8080);
-            $app->route('/notifications', new Notifications(), ['*']);
-
-            return $app;
-        } catch (RuntimeException $exception) {
-            throw new CoreException($exception->getMessage(), 500, compact('exception'));
-        }
+        throw new CoreException($e->getMessage(), 500, compact('conn'));
     }
 }

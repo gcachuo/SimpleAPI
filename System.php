@@ -518,7 +518,6 @@ class System
         self::define_constants($config);
 
         set_exception_handler(function ($exception) {
-            if (ob_get_contents()) ob_end_clean();
             $status = 'exception';
             $code = $exception->getCode() ?: 500;
             if (!is_int($code)) {
@@ -533,9 +532,10 @@ class System
                 $error = $exception->getTrace();
             }
             if (ENVIRONMENT === 'web') {
+                if (ob_get_contents()) ob_end_clean();
                 die(json_encode(compact('status', 'code', 'response', 'error'), JSON_UNESCAPED_SLASHES));
             } else {
-                throw new CoreException($exception->getMessage(), $code, $data);
+                die("\033[31m" . $exception->getMessage() . "\033");
             }
         });
 
