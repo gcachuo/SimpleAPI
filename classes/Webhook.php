@@ -13,11 +13,24 @@ class Webhook
         if (empty($action)) {
             throw new CoreException('Empty Action', 500, $events[$_POST[$key]]);
         }
+        if ($controller == 'webhook') {
+            $this->call($action, [$_POST]);
+        } else {
+            $controller = 'Controller\\' . $controller;
 
-        $controller = 'Controller\\' . $controller;
+            /** @var Controller $class */
+            $class = new $controller();
+            $class->call($action, [$_POST]);
+        }
+    }
 
-        /** @var Controller $class */
-        $class = new $controller();
-        $class->call($action, [$_POST]);
+    private function call($action, array $arguments)
+    {
+        return $this->$action(...($arguments ?: [null]));
+    }
+
+    private function ping($data)
+    {
+        JsonResponse::sendResponse('Completed.', HTTPStatusCodes::OK, $data);
     }
 }
