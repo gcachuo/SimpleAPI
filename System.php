@@ -893,7 +893,10 @@ class System
                     $log = explode("\n", file_get_contents($path));
                     rsort($log);
                     $log = array_filter($log);
-                    array_walk($log, function (&$entry) {
+
+                    $errors = !!$_GET['errors'];
+
+                    array_walk($log, function (&$entry) use ($errors) {
                         $entry = preg_split('/\] \[|] |^\[/m', $entry);
                         $entry = array_values(array_filter($entry));
                         array_walk($entry, function (&$value) use ($entry) {
@@ -906,6 +909,13 @@ class System
                             }
                         });
                         $entry = array_values(array_filter($entry));
+
+                        $error_code = $entry[3];
+                        if (!is_int($error_code) && $errors) {
+                            $entry = null;
+                        } elseif (is_int($error_code) && !$errors) {
+                            $entry = null;
+                        }
                     });
                     $log = array_values(array_filter($log));
                     JsonResponse::sendResponse('Logs', HTTPStatusCodes::OK, compact('log'));
@@ -956,9 +966,9 @@ class System
                     JsonResponse::sendResponse('Endpoints', HTTPStatusCodes::OK, compact('swagger', 'info', 'host', 'basePath', 'paths'));
                     break;
                 case "webhook":
-                    if (REQUEST_METHOD === 'POST') {
+                    if (REQUEST_METHOD === 'POST' && $_GET['platform']) {
                         include __DIR__ . '/Webhook.php';
-                        new Webhook();
+                        new Webhook($_GET['platform']);
                         JsonResponse::sendResponse('Webhook', 200, $_POST);
                     } else {
                         $method = REQUEST_METHOD;
@@ -1029,12 +1039,10 @@ class System
         $data = '[' . date('Y-m-d H:i:s') . '] ';
         $data .= '[' . $_SERVER['HTTP_HOST'] . '] ';
         $data .= '[' . $_SERVER['REQUEST_METHOD'] . '] ';
-        $data .= '[' . strstr($_SERVER['REQUEST_URI'], 'api/') . ']';
+        $data .= '[' . strstr($_SERVER['REQUEST_URI'], 'api/') . '] ';
 
-        $data .= ' ' . preg_replace('/\s/', '', file_get_contents('php://input'));
-        if ($_POST) {
-            $data .= ' ' . preg_replace('/\s/', '', json_encode($_POST));
-        }
+        $data .= '[' . preg_replace('/\s/', '', file_get_contents('php://input')) . ']';
+
         if ($_FILES) {
             foreach ($_FILES as $files) {
                 if (is_array($files['name'])) {
@@ -1098,15 +1106,15 @@ class System
         }
         $data .= '[' . $response['code'] . '] ';
         $data .= '[' . json_encode($response['response']) . '] ';
-        $data .= json_encode([
-                'GET' => $_GET,
-                'POST' => $_POST,
-                'PUT' => $_PUT,
-                'PATCH' => $_PATCH,
-            ][REQUEST_METHOD] ?? ENVIRONMENT);
-        if ($response['error'] ?? null) {
-            $data .= '[' . json_encode($response['error']) . '] ';
-        }
+        $data .= '[' . json_encode([
+                    'GET' => $_GET,
+                    'POST' => $_POST,
+                    'PUT' => $_PUT,
+                    'PATCH' => $_PATCH,
+                ][REQUEST_METHOD] ?? ENVIRONMENT) . '] ';
+        /* if ($response['error'] ?? null) {
+             $data .= '[' . json_encode($response['error']) . '] ';
+         }*/
 
         if (!is_dir(__DIR__ . '/../Logs/')) {
             mkdir(__DIR__ . '/../Logs/', 0777, true);
