@@ -525,17 +525,17 @@ class System
             } else {
                 http_response_code($code);
             }
-            $response = ['message' => $exception->getMessage()];
-            $error = null;
+            $message = $exception->getMessage();
             $data = $exception->data ?? [];
+            $error = null;
             if ($code >= 500) {
                 $error = $exception->getTrace();
             }
             if (ENVIRONMENT === 'web') {
                 if (ob_get_contents()) ob_end_clean();
-                die(json_encode(compact('status', 'code', 'response', 'error'), JSON_UNESCAPED_SLASHES));
+                die(json_encode(compact('code', 'message', 'data', 'error'), JSON_UNESCAPED_SLASHES));
             } else {
-                die("\033[31m" . $exception->getMessage() . "\033");
+                die("\033[31m" . $message . "\033");
             }
         });
 
