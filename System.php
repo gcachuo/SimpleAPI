@@ -257,7 +257,7 @@ class System
             } else {
                 $result = self::json_decode($json, true);
                 if ($result['code'] >= 400) {
-                    JsonResponse::sendResponse($result['response']['message'], $result['code']);
+                    JsonResponse::sendResponse($result['message'], $result['code']);
                 }
             }
         } else {
@@ -1468,38 +1468,71 @@ html;
         if (strpos($href, '/') !== false) {
             $href = strstr($href, '/', true);
         }
-        $module = ucfirst(strtolower(MODULES[$href]['name'] ?? ''));
+        $o_module = MODULES[$href] ?? '';
+        $module_name = ucfirst(strtolower($o_module['name']));
 
         $breadcrumbs = BREADCRUMBS ? 'unset' : 'none';
-        $chunk = <<<html
+
+        $module = self::createElement('div', <<<html
 <div class="row justify-content-center">
     <div class="col-12" style="padding: 0 25px">
         <p class="text-left breadcrumbs $breadcrumbs" style="display: $breadcrumbs">
-            <span class="text-muted">Usted se encuentra en:</span> <span>$module</span>
+            <span class="text-muted">Usted se encuentra en:</span> <span>$module_name</span>
         </p>
         <div class="container-fluid">
             $contents
         </div>
     </div>
 </div>
-html;
-
-        $fragment = new DOMDocument();
-        $fragment->loadHTML(mb_convert_encoding($chunk, 'HTML-ENTITIES', 'UTF-8'), 8192 | 4);
-
-        $module = self::$dom->createElement('div');
-        $module->setAttribute('id', 'view');
-        $module->setAttribute('class', 'app-body');
-        $module->appendChild(self::$dom->importNode($fragment->documentElement, true));
+html
+        );
 
         if (self::$dom->getElementById('view')) {
             $view = self::$dom->getElementById('view');
+
             $class = $view->getAttribute('class');
             $module->setAttribute('class', $class);
+
             if ($view->parentNode) {
                 $view->parentNode->replaceChild($module, $view);
             }
+
+            if ($o_module['action'] ?? null) {
+                $o_action = $o_module['action'];
+                if (self::$dom->getElementById('project-action')) {
+                    $action = self::$dom->getElementById('project-action');
+
+                    $icon = $o_action['icon'] ?? 'add_circle';
+                    $module = self::createElement('li', <<<html
+<a href="?action=$o_action[href]" class="nav-link">
+    <i class="material-icons">$icon</i>
+    <span>$o_action[name]</span>
+</a>
+html
+                    );
+                    $module->setAttribute('class', 'nav-item');
+                    if ($action->parentNode) {
+                        $action->parentNode->replaceChild($module, $action);
+                    }
+                }
+            }
         }
+    }
+
+    /**
+     * @param string $element
+     * @param string $html
+     * @return DOMElement
+     */
+    private static function createElement(string $element, string $html)
+    {
+        $fragment = new DOMDocument();
+        $fragment->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'), 8192 | 4);
+
+        $module = self::$dom->createElement($element);
+        $module->appendChild(self::$dom->importNode($fragment->documentElement, true));
+
+        return $module;
     }
 
     public static function print_page()
