@@ -1506,10 +1506,20 @@ html;
 
         $href = strstr($file, '.php', true);
         if (strpos($href, '/') !== false) {
-            $href = strstr($href, '/', true);
+            $href = explode('/', trim($href, '/'));
         }
-        $o_module = MODULES[$href] ?? '';
-        $module_name = ucfirst(strtolower($o_module['name']));
+
+        $modules = MODULES;
+        if (is_array($href)) {
+            $o_module = $modules[$href[0]] ?? '';
+            $module_name = ucfirst(strtolower($o_module['name']));
+            if (!!($href[1] ?? null) && !!($o_module['modules'] ?? null)) {
+                $module_name .= ' / ' . $o_module['modules'][$href[1]]['name'] ?? '';
+            }
+        } else {
+            $o_module = $modules[$href] ?? '';
+            $module_name = ucfirst(strtolower($o_module['name']));
+        }
 
         $breadcrumbs = BREADCRUMBS ? 'unset' : 'none';
 
