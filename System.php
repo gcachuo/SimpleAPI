@@ -1364,28 +1364,69 @@ class System
                 }
 
                 foreach ($module_list as $module) {
-                    ['href' => $href] = $module;
-
+                    $href = $module['href'] ?? null;
                     $name = $module['name'] ?? null;
                     $icon = $module['icon'] ?? null;
+                    $children = $module['modules'] ?? null;
 
                     $disabled = System::isset_get($module['disabled']) ? 'disabled' : '';
                     $hidden = System::isset_get($module['hidden']) ? 'none' : 'unset';
                     $file = System::isset_get($module['file'], $entry);
+
                     if ($file != $entry) {
                         continue;
                     }
-                    $fragment->appendXML(<<<html
-<li class="nav-item" style="display: $hidden">
-    <a href="$href" class="$disabled nav-link" style="display: flex; align-items: center">
+
+                    if (!$href && $children) {
+                        $children_html = '';
+                        foreach ($children as $child) {
+                            $child_href = $child['href'] ?? null;
+                            $child_name = $child['name'] ?? null;
+                            $child_icon = $child['icon'] ?? null;
+
+                            $child_disabled = System::isset_get($child['disabled']) ? 'disabled' : '';
+                            $child_hidden = System::isset_get($child['hidden']) ? 'none' : 'unset';
+
+                            $children_html .= <<<html
+<li style="display: $child_hidden">
+    <a href="$child_href" class="$child_disabled" style="display: flex; align-items: center">
+        <span class="nav-icon">
+            <i class="material-icons">$child_icon</i>
+        </span>
+        <span class="nav-text">$child_name</span>
+    </a>
+</li>
+html;
+                        }
+                        $html = <<<html
+<li>
+    <a class="parent-module">
+        <span class="nav-caret">
+            <i class="fa fa-caret-down"></i>
+        </span>
+        <span class="nav-icon">
+            <i class="material-icons">$icon</i>
+        </span>
+        <span class="nav-text">$name</span>
+    </a>
+    <ul class="nav-sub">
+        $children_html
+    </ul>
+</li>
+html;
+                    } else {
+                        $html = <<<html
+<li style="display: $hidden">
+    <a href="$href" class="$disabled" style="display: flex; align-items: center">
         <span class="nav-icon">
             <i class="material-icons">$icon</i>
         </span>
         <span class="nav-text">$name</span>
     </a>
 </li>
-html
-                    );
+html;
+                    }
+                    $fragment->appendXML($html);
                 }
                 $modules = self::$dom->createElement('ul');
                 $modules->setAttribute('class', 'nav');
@@ -1454,9 +1495,6 @@ html;
             ];
             System::log_error(compact('status', 'code', 'response'));
             throw new CoreException('Not found', 404);
-            if ($_SERVER['REQUEST_URI'] != BASENAME) {
-                System::redirect('/');
-            }
         }
 
         ob_start();
