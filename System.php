@@ -1368,6 +1368,7 @@ class System
                     $name = $module['name'] ?? null;
                     $icon = $module['icon'] ?? null;
                     $children = $module['modules'] ?? null;
+                    $onclick = $module['onclick'] ?? null;
 
                     $disabled = System::isset_get($module['disabled']) ? 'disabled' : '';
                     $hidden = System::isset_get($module['hidden']) ? 'none' : 'unset';
@@ -1383,13 +1384,14 @@ class System
                             $child_href = $child['href'] ?? null;
                             $child_name = $child['name'] ?? null;
                             $child_icon = $child['icon'] ?? null;
+                            $child_onclick = $child['onclick'] ?? null;
 
                             $child_disabled = System::isset_get($child['disabled']) ? 'disabled' : '';
                             $child_hidden = System::isset_get($child['hidden']) ? 'none' : 'unset';
 
                             $children_html .= <<<html
 <li style="display: $child_hidden">
-    <a href="$child_href" class="$child_disabled" style="display: flex; align-items: center">
+    <a href="$child_href" class="$child_disabled" style="display: flex; align-items: center" onclick="$child_onclick">
         <span class="nav-icon">
             <i class="material-icons">$child_icon</i>
         </span>
@@ -1417,7 +1419,7 @@ html;
                     } else {
                         $html = <<<html
 <li style="display: $hidden">
-    <a href="$href" class="$disabled" style="display: flex; align-items: center">
+    <a href="$href" class="$disabled" style="display: flex; align-items: center" onclick="$onclick">
         <span class="nav-icon">
             <i class="material-icons">$icon</i>
         </span>
