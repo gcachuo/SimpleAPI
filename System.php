@@ -463,7 +463,7 @@ class System
      * @return mixed
      * @throws CoreException
      */
-    public static function decode_token(string $jwt)
+    public static function decode_token(string $jwt = null)
     {
         try {
             if (empty($jwt)) {
