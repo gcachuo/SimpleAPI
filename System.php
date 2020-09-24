@@ -1524,14 +1524,12 @@ html;
         $breadcrumbs = BREADCRUMBS ? 'unset' : 'none';
 
         $module = self::createElement('div', <<<html
-<div class="row justify-content-center">
-    <div class="col-12" style="padding: 0 25px">
-        <p class="text-left breadcrumbs $breadcrumbs" style="display: $breadcrumbs">
-            <span class="text-muted">Usted se encuentra en:</span> <span>$module_name</span>
-        </p>
-        <div class="container-fluid">
-            $contents
-        </div>
+<div class="justify-content-center container-fluid">
+    <p class="text-left breadcrumbs $breadcrumbs" style="display: $breadcrumbs">
+        <span class="text-muted">Usted se encuentra en:</span> <span>$module_name</span>
+    </p>
+    <div>
+        $contents
     </div>
 </div>
 html
@@ -1542,7 +1540,7 @@ html
             $body = self::$dom->getElementsByTagName('body')[0];
 
             $class = $view->getAttribute('class');
-            $module->setAttribute('class', $class . $href);
+            $module->setAttribute('class', $class . ' ' . $href);
             $module->setAttribute('id', 'view');
             $body->setAttribute('id', $href);
 
