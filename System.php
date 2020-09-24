@@ -1539,9 +1539,12 @@ html
 
         if (self::$dom->getElementById('view')) {
             $view = self::$dom->getElementById('view');
+            $body = self::$dom->getElementsByTagName('body')[0];
 
             $class = $view->getAttribute('class');
-            $module->setAttribute('class', $class);
+            $module->setAttribute('class', $class . $href);
+            $module->setAttribute('id', 'view');
+            $body->setAttribute('id', $href);
 
             if ($view->parentNode) {
                 $view->parentNode->replaceChild($module, $view);
