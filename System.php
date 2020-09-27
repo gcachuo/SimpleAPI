@@ -1516,6 +1516,7 @@ html;
             if (!!($href[1] ?? null) && !!($o_module['modules'] ?? null)) {
                 $module_name .= ' / ' . $o_module['modules'][$href[1]]['name'] ?? '';
             }
+            $o_module = $o_module['modules'][$href[1]];
         } else {
             $o_module = $modules[$href] ?? '';
             $module_name = ucfirst(strtolower($o_module['name']));
@@ -1538,9 +1539,15 @@ html
             $body = self::$dom->getElementsByTagName('body')[0];
 
             $class = $view->getAttribute('class');
-            $module->setAttribute('class', $class . ' ' . $href);
             $module->setAttribute('id', 'view');
-            $body->setAttribute('id', $href);
+
+            if (is_array($href)) {
+                $module->setAttribute('class', $class . ' ' . $href[1]);
+                $body->setAttribute('id', $href[1]);
+            } else {
+                $module->setAttribute('class', $class . ' ' . $href);
+                $body->setAttribute('id', $href);
+            }
 
             if ($view->parentNode) {
                 $view->parentNode->replaceChild($module, $view);
