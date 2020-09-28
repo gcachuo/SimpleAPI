@@ -267,13 +267,15 @@ class System
         return $result['data'];
     }
 
-    public static function redirect(string $path = '')
+    public static function redirect(string $path = '', bool $external = false)
     {
         $request_uri = str_replace(BASENAME, '', $_SERVER['REQUEST_URI']);
         $pathinfo = pathinfo($request_uri);
-        if ($pathinfo['dirname'] !== $path && !($pathinfo['extension'] ?? null)) {
-            $path = ltrim($path, '/');
-            header('Location: ' . rtrim(BASENAME, '/') . '/' . $path);
+        if ($pathinfo['dirname'] !== $path && $pathinfo['filename'] !== $path && !($pathinfo['extension'] ?? null)) {
+            if(!$external) {
+                $path = rtrim(BASENAME, '/') . '/' . ltrim($path, '/');
+            }
+            header('Location: ' . $path);
             exit;
         }
     }
