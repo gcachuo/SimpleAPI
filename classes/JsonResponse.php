@@ -19,8 +19,9 @@ class JsonResponse
             $code = http_response_code();
         }
 
+        $response = compact('data');
         $data = self::encode_items($data);
-        $response = compact('message', 'code', 'data');
+        $response = compact('message', 'code', 'data', 'response');
 
         if ($code < HTTPStatusCodes::BadRequest) {
             ob_clean();
