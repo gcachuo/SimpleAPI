@@ -272,7 +272,7 @@ class System
         $request_uri = str_replace(BASENAME, '', $_SERVER['REQUEST_URI']);
         $pathinfo = pathinfo($request_uri);
         if ($pathinfo['dirname'] !== $path && $pathinfo['filename'] !== $path && !($pathinfo['extension'] ?? null)) {
-            if(!$external) {
+            if (!$external) {
                 $path = rtrim(BASENAME, '/') . '/' . ltrim($path, '/');
             }
             header('Location: ' . $path);
@@ -815,6 +815,7 @@ class System
     private static function convert_endpoint(&$controller, &$action, &$id)
     {
         $request = trim($_SERVER['REQUEST_URI'], '/');
+        $request = str_replace('//', '/', $request);
         if (BASENAME !== '/') {
             $request = str_replace(trim(BASENAME, '/'), '', $request);
             if (empty($request)) {
