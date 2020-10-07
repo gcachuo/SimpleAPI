@@ -535,7 +535,8 @@ class System
             }
             if (ENVIRONMENT === 'web') {
                 if (ob_get_contents()) ob_end_clean();
-                die(json_encode(compact('code', 'message', 'data', 'error'), JSON_UNESCAPED_SLASHES));
+                $response = compact('message');
+                die(json_encode(compact('code', 'message', 'data', 'error', 'response'), JSON_UNESCAPED_SLASHES));
             } else {
                 die("\033[31m" . $message . "\033");
             }
