@@ -1366,6 +1366,7 @@ class System
                     }
                 }
 
+                $settings = self::getSettings();
                 foreach ($module_list as $module) {
                     $href = $module['href'] ?? null;
                     $name = $module['name'] ?? null;
@@ -1391,6 +1392,12 @@ class System
 
                             $child_disabled = System::isset_get($child['disabled']) ? 'disabled' : '';
                             $child_hidden = System::isset_get($child['hidden']) ? 'none' : 'unset';
+
+                            preg_match_all('/###(.+)###/m', $child_href, $matches, PREG_SET_ORDER, 0);
+                            foreach ($matches as $match) {
+                                $match = $match[1];
+                                $child_href = str_replace('###' . $match. '###', $settings[$match], $child_href);
+                            }
 
                             $children_html .= <<<html
 <li style="display: $child_hidden">
