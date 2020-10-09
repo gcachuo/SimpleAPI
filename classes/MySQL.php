@@ -2,6 +2,7 @@
 
 namespace Model;
 
+use CoreException;
 use HTTPStatusCodes;
 use JsonResponse;
 use mysqli;
@@ -173,13 +174,7 @@ sql
             $stmt = $this->pdo->prepare($sql);
 
             foreach ($params as $key => &$val) {
-                if ($val === '') {
-                    $val = null;
-                } elseif (is_int($val)) {
-                    $val = intval($val);
-                } elseif (is_array($val)) {
-                    $val = json_encode($val);
-                }
+                $this->parseValue($val);
                 $stmt->bindParam($key, $val);
             }
 
@@ -193,15 +188,25 @@ sql
             $code = $exception->getCode();
             $message = $exception->getMessage();
             System::query_log('#' . $message);
-            switch ($code) {
-                case 23000:
-                    throw new PDOException($message, HTTPStatusCodes::InternalServerError);
-                    break;
-                default:
-                    $trace = $exception->getTrace();
-                    JsonResponse::sendResponse($message, HTTPStatusCodes::InternalServerError, compact('code', 'message', 'trace'));
-                    break;
+
+            $trace = $exception->getTrace();
+            foreach ($params as $key => &$val) {
+                $this->parseValue($val);
             }
+            $parsed_sql = self::interpolate_query($sql, $params, false);
+            throw new CoreException($message, HTTPStatusCodes::InternalServerError, compact('trace','params', 'sql', 'parsed_sql'));
+        }
+    }
+
+    private function parseValue(&$val){
+        if ($val === '') {
+            $val = null;
+        } elseif (is_int($val)) {
+            $val = intval($val);
+        } elseif (is_numeric($val)) {
+            $val = floatval($val);
+        } elseif (is_array($val)) {
+            $val = json_encode($val);
         }
     }
 
