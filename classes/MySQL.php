@@ -168,6 +168,12 @@ sql
         }
     }
 
+    /**
+     * @param string $sql
+     * @param array $params
+     * @return $this
+     * @throws CoreException
+     */
     public function prepare2(string $sql, array $params = [])
     {
         try {
