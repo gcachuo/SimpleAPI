@@ -1,11 +1,11 @@
 {
-  "code": "",
-  "project": "",
+  "code": "default",
+  "project": "Default",
   "theme": "themes/default/",
   "entry": "index.html",
   "default": "dashboard",
   "basename": "/web/",
-  "breadcrumbs": true,
+  "breadcrumbs": false,
   "error": {
     "file": "error.html",
     "button": "",
