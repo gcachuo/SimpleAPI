@@ -3,6 +3,7 @@ cd "$parent_path";
 
 mkdir -p ../../modules;
 mkdir -p ../../ajax;
+mkdir -p ../../assets/src;
 mkdir -p ../../themes;
 mkdir -p ../../Logs;
 
@@ -19,3 +20,6 @@ cp ../web/settings.json ../../;
 cp -avr ../web/modules/* ../../modules/;
 
 wget -O ../../logo.png https://picsum.photos/300/300;
+
+cp -avr ../web/assets/* ../../assets/;
+cd ../../assets/src && yarn && yarn webpack:build;

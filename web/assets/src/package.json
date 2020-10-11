@@ -1,0 +1,30 @@
+{
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.14.0",
+    "bootstrap": "^4.5.2",
+    "jquery": "^3.5.1",
+    "toastr": "^2.1.4"
+  },
+  "devDependencies": {
+    "@types/datatables.net": "^1.10.19",
+    "@types/datatables.net-buttons": "^1.4.3",
+    "@types/jquery": "^3.5.1",
+    "@types/node": "^14.10.1",
+    "@types/toastr": "^2.1.38",
+    "css-loader": "^4.3.0",
+    "expose-loader": "^1.0.0",
+    "file-loader": "^6.1.0",
+    "sass": "^1.26.11",
+    "sass-loader": "^10.0.2",
+    "style-loader": "^1.2.1",
+    "ts-loader": "^8.0.3",
+    "typescript": "^4.0.2",
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12"
+  },
+  "scripts": {
+    "clean": "rm -rf ../dist/*.js",
+    "webpack:build": "yarn clean; yarn; webpack",
+    "webpack:watch": "yarn clean; yarn; webpack --watch"
+  }
+}
