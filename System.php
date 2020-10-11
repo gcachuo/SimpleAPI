@@ -773,6 +773,8 @@ class System
                 if ($project_config) {
                     define('CONFIG', json_decode($project_config, true));
                 } else {
+                    copy(DIR . '/Config/default.json', DIR . "/Config/$project.json");
+
                     header('Content-Type: application/json');
                     http_response_code(500);
                     die(json_encode(['message' => "Config not found for project '$project'"]));
@@ -1397,7 +1399,7 @@ class System
                             preg_match_all('/###(.+)###/m', $child_href, $matches, PREG_SET_ORDER, 0);
                             foreach ($matches as $match) {
                                 $match = $match[1];
-                                $child_href = str_replace('###' . $match. '###', $settings[$match], $child_href);
+                                $child_href = str_replace('###' . $match . '###', $settings[$match], $child_href);
                             }
 
                             $children_html .= <<<html
