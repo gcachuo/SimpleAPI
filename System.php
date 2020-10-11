@@ -1359,7 +1359,7 @@ class System
             } elseif ($module_file ?? null) {
                 $fragment = self::$dom->createDocumentFragment();
 
-                if (defined('SESSIONCHECK')) {
+                if (defined('SESSIONCHECK') && SESSIONCHECK) {
                     if (($user['username'] ?? null) !== 'admin') {
                         System::sessionCheck("user_token");
 
