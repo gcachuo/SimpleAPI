@@ -10,7 +10,7 @@
     "file": "error.html",
     "button": "",
     "messages": {
-      "404": ""
+      "404": "Not Found"
     }
   },
   "modules": {
