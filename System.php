@@ -1377,6 +1377,15 @@ class System
                     $children = $module['modules'] ?? null;
                     $onclick = $module['onclick'] ?? null;
 
+                    $nav_icon = '';
+                    if(WEBCONFIG['module-icons']??true) {
+                        $nav_icon = <<<html
+<span class="nav-icon">
+    <i class="material-icons">$icon</i>
+</span>
+html;
+                    }
+
                     $disabled = System::isset_get($module['disabled']) ? 'disabled' : '';
                     $hidden = System::isset_get($module['hidden']) ? 'none' : 'unset';
                     $file = System::isset_get($module['file'], $entry);
@@ -1402,12 +1411,16 @@ class System
                                 $child_href = str_replace('###' . $match . '###', $settings[$match], $child_href);
                             }
 
+                            $nav_icon = <<<html
+<span class="nav-icon">
+    <i class="material-icons">$child_icon</i>
+</span>
+html;
+
                             $children_html .= <<<html
 <li style="display: $child_hidden">
     <a href="$child_href" class="$child_disabled" style="display: flex; align-items: center" onclick="$child_onclick">
-        <span class="nav-icon">
-            <i class="material-icons">$child_icon</i>
-        </span>
+        $nav_icon
         <span class="nav-text">$child_name</span>
     </a>
 </li>
@@ -1419,9 +1432,7 @@ html;
         <span class="nav-caret">
             <i class="fa fa-caret-down"></i>
         </span>
-        <span class="nav-icon">
-            <i class="material-icons">$icon</i>
-        </span>
+        $nav_icon
         <span class="nav-text">$name</span>
     </a>
     <ul class="nav-sub">
@@ -1433,9 +1444,7 @@ html;
                         $html = <<<html
 <li style="display: $hidden">
     <a href="$href" class="$disabled" style="display: flex; align-items: center" onclick="$onclick">
-        <span class="nav-icon">
-            <i class="material-icons">$icon</i>
-        </span>
+        $nav_icon
         <span class="nav-text">$name</span>
     </a>
 </li>

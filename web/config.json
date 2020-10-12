@@ -6,6 +6,7 @@
   "default": "dashboard",
   "basename": "/web/",
   "breadcrumbs": false,
+  "module-icons": true,
   "error": {
     "file": "error.html",
     "button": "",
