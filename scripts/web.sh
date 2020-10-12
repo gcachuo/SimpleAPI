@@ -1,3 +1,5 @@
+#!/bin/bash
+
 parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P );
 cd "$parent_path";
 
@@ -17,9 +19,9 @@ cp ../web/service-worker.js ../../;
 cp ../web/.htaccess ../../;
 cp ../web/.gitignore ../../;
 cp ../web/settings.json ../../;
-cp -avr ../web/modules/* ../../modules/;
+cp -avR ../web/modules/* ../../modules/;
 
 wget -O ../../logo.png https://picsum.photos/300/300;
 
-cp -avr ../web/assets/* ../../assets/;
+cp -avR ../web/assets/* ../../assets/;
 cd ../../assets/src && yarn && yarn webpack:build;
