@@ -1378,7 +1378,7 @@ class System
                     $onclick = $module['onclick'] ?? null;
 
                     $nav_icon = '';
-                    if(WEBCONFIG['module-icons']??true) {
+                    if (WEBCONFIG['module-icons'] ?? true) {
                         $nav_icon = <<<html
 <span class="nav-icon">
     <i class="material-icons">$icon</i>
@@ -1579,19 +1579,26 @@ html
                 $o_action = $o_module['action'];
                 if (self::$dom->getElementById('project-action')) {
                     $action = self::$dom->getElementById('project-action');
+                    $class = ($action->childNodes->item(1))->getAttribute('class');
 
                     $icon = $o_action['icon'] ?? 'add_circle';
-                    $module = self::createElement('li', <<<html
-<a href="?action=$o_action[href]" class="nav-link">
+                    $module = self::createElement('div', <<<html
+<a href="?action=$o_action[href]">
     <i class="material-icons">$icon</i>
     <span>$o_action[name]</span>
 </a>
 html
                     );
-                    $module->setAttribute('class', 'nav-item');
+                    $module->setAttribute('class', $action->getAttribute('class'));
+                    $module->firstChild->setAttribute('class', $class);
                     if ($action->parentNode) {
                         $action->parentNode->replaceChild($module, $action);
                     }
+                }
+            } else {
+                if (self::$dom->getElementById('project-action')) {
+                    $action = self::$dom->getElementById('project-action');
+                    $action->parentNode->replaceChild(self::createElement('div', '<a></a>'), $action);
                 }
             }
         }
