@@ -256,7 +256,10 @@ class System
                 }
             } else {
                 $result = self::json_decode($json, true);
-                if (($result['code'] ?? $result['status']) >= 400) {
+                if (($result['code'] ?? $result['status'] ?? 500) >= 400) {
+                    if (is_array($result['message'])) {
+                        $result['message'] = implode(' ', $result['message']);
+                    }
                     JsonResponse::sendResponse($result['message'], $result['code']);
                 }
             }
