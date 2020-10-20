@@ -256,7 +256,7 @@ class System
                 }
             } else {
                 $result = self::json_decode($json, true);
-                $code = $result['code'] ?? $result['status'] ?? null;
+                $code = $result['code'] ?? $result['status'] ?? $info['http_code'];
                 if (($code ?: 500) >= 400) {
                     if(!$code){
                         throw new CoreException('Response Code not defined',500);
@@ -264,7 +264,7 @@ class System
                     if (is_array($result['message'])) {
                         $result['message'] = implode(' ', $result['message']);
                     }
-                    JsonResponse::sendResponse($result['message'], $result['code']);
+                    JsonResponse::sendResponse($result['message'], $code);
                 }
             }
         } else {
