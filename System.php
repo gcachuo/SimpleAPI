@@ -221,6 +221,7 @@ class System
             }
         }
 
+        $options['url'] = str_replace(' ', '%20', $options['url']);
         curl_setopt_array($curl, [
             CURLOPT_URL => $settings['apiUrl'] . ($options['url'] ?? ''),
             CURLOPT_RETURNTRANSFER => true,
@@ -258,8 +259,8 @@ class System
                 $result = self::json_decode($json, true);
                 $code = $result['code'] ?? $result['status'] ?? $info['http_code'];
                 if (($code ?: 500) >= 400) {
-                    if(!$code){
-                        throw new CoreException('Response Code not defined',500);
+                    if (!$code) {
+                        throw new CoreException('Response Code not defined', 500);
                     }
                     if (is_array($result['message'])) {
                         $result['message'] = implode(' ', $result['message']);
