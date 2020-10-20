@@ -1554,7 +1554,7 @@ html;
         $breadcrumbs = BREADCRUMBS ? 'unset' : 'none';
 
         $module = self::createElement('div', <<<html
-<div class="justify-content-center" style="height: 100vh">
+<div class="justify-content-center" style="height: unset; overflow: hidden;">
     <p class="text-left breadcrumbs $breadcrumbs" style="display: $breadcrumbs">
         <span class="text-muted">Usted se encuentra en:</span> <span>$module_name</span>
     </p>
