@@ -216,9 +216,7 @@ class System
             "Cookie: XDEBUG_SESSION=PHPSTORM"
         ];
         if ($options['method'] ?? null) {
-            if ($options['method'] !== 'GET' && $options['method'] !== 'POST') {
-                $headers[] = "Content-Type: application/json";
-            }
+            $options['method'] = mb_strtoupper($options['method']);
         }
 
         $options['url'] = str_replace(' ', '%20', $options['url']);
@@ -231,11 +229,18 @@ class System
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => $options['method'] ?? "GET",
-            CURLOPT_HTTPHEADER => $headers,
         ]);
         if ($options['data'] ?? null) {
-            curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($options['data']));
+            if ($options['method'] !== 'GET') {
+                $data = json_encode($options['data']);
+
+                $headers[] = "Content-Type: application/json";
+                $headers[] = 'Content-Length: ' . strlen($data);
+
+                curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+            }
         }
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
 
         $json = curl_exec($curl);
         $error = curl_error($curl);
