@@ -512,7 +512,7 @@ class System
                     'url' => 'api/decodeToken',
                     'method' => 'POST',
                     'data' => ['token' => $token]
-                ])['data'];
+                ]);
             } catch (CoreException $exception) {
                 unset($_SESSION['user_token']);
                 return [];
