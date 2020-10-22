@@ -1447,7 +1447,7 @@ html;
                                 $child_href = str_replace('###' . $match . '###', $settings[$match], $child_href);
                             }
 
-                            $nav_icon = <<<html
+                            $child_nav_icon = <<<html
 <span class="nav-icon">
     <i class="material-icons">$child_icon</i>
 </span>
@@ -1456,7 +1456,7 @@ html;
                             $children_html .= <<<html
 <li style="display: $child_hidden">
     <a href="$child_href" class="$child_disabled" style="display: flex; align-items: center" onclick="$child_onclick">
-        $nav_icon
+        $child_nav_icon
         <span class="nav-text">$child_name</span>
     </a>
 </li>
