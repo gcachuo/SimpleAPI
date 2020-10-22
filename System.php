@@ -56,7 +56,21 @@ class System
         $user = System::curlDecodeToken($check);
         $user['permissions'] = System::json_decode($user['permissions'] ?? '[]', true);
 
-        $_SESSION['modules'] = array_intersect_key(MODULES, array_flip($user['permissions']));
+        $_SESSION['modules'] = [];
+        foreach ($user['permissions'] as $key) {
+            if (strpos($key, '/') !== false) {
+                $key = explode("/", $key);
+                $_SESSION['modules'][$key[0]]['modules'][$key[1]] = MODULES[$key[0]]['modules'][$key[1]];
+                foreach (MODULES[$key[0]] as $key2 => $name) {
+                    if ($key2 == 'modules') {
+                        continue;
+                    }
+                    $_SESSION['modules'][$key[0]][$key2] = $name;
+                }
+            } else {
+                $_SESSION['modules'][$key] = MODULES[$key];
+            }
+        }
 
         return $user;
     }
