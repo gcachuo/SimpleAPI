@@ -57,6 +57,8 @@ class System
         $user['permissions'] = System::json_decode($user['permissions'] ?? '[]', true);
 
         $_SESSION['modules'] = array_intersect_key(MODULES, array_flip($user['permissions']));
+
+        return $user;
     }
 
     public static function decrypt(string $value_encrypted)
@@ -1373,8 +1375,15 @@ class System
                 $fragment = self::$dom->createDocumentFragment();
 
                 if (defined('SESSIONCHECK') && SESSIONCHECK) {
-                    if (($user['username'] ?? null) !== 'admin') {
-                        System::sessionCheck("user_token");
+                    if (($user['type'] ?? null) !== 'admin') {
+                        $user = System::sessionCheck("user_token");
+
+                        if (!in_array($module_file, $user['permissions']) && $module_file != 'dashboard') {
+                            if (!$_GET['module']) {
+                                System::redirect('dashboard');
+                            }
+                            throw new CoreException($module_file, HTTPStatusCodes::Forbidden);
+                        }
 
                         $module_list = ($_SESSION['modules'] ?? []) + array_filter(MODULES, function ($module) {
                                 return ($module['permissions'] ?? true) === false;
