@@ -29,7 +29,9 @@ class Controller
         } else {
             $name = $action;
         }
-        JsonResponse::sendResponse("Endpoint not found. [$name]", HTTPStatusCodes::NotFound);
+
+        $endpoint = ENDPOINT;
+        throw new CoreException("Endpoint not found. [$endpoint]", HTTPStatusCodes::NotFound);
     }
 
     public function method_exists(Controller $class, $action)
