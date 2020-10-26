@@ -14,7 +14,7 @@ RewriteCond %{REQUEST_URI} !public
 RewriteCond %{REQUEST_URI} !templates
 RewriteRule ^(.*)$ index.php [QSA]
 
-AddHandler application/x-httpd-php73 .php
+AddHandler application/x-httpd-php .php
 
 php_value post_max_size 30M
 php_value upload_max_filesize 30M
