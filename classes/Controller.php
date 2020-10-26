@@ -23,20 +23,21 @@ class Controller
 
     public function call(string $action, array $arguments)
     {
-        $name = System::isset_get($this->_methods[REQUEST_METHOD][$action]);
-        if ($name) {
-            return $this->$name(...($arguments ?: [null]));
-        } else {
-            $name = $action;
+        if ($this->method_exists($action)) {
+            $method = $this->_methods[REQUEST_METHOD][$action];
+            return $this->$method(...($arguments ?: [null]));
         }
 
         $endpoint = ENDPOINT;
-        throw new CoreException("Endpoint not found. [$endpoint]", HTTPStatusCodes::NotFound);
+        $request_method = REQUEST_METHOD;
+        $class = get_class($this);
+
+        throw new CoreException("Endpoint not found. [$endpoint]", HTTPStatusCodes::NotFound, compact('class', 'method', 'endpoint', 'request_method'));
     }
 
-    public function method_exists(Controller $class, $action)
+    public function method_exists($action)
     {
-        return method_exists($class, $this->_methods[REQUEST_METHOD][$action]);
+        return method_exists($this, $this->_methods[REQUEST_METHOD][$action]);
     }
 
     private function allowed_methods(array $methods)
