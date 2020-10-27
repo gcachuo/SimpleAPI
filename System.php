@@ -1334,6 +1334,9 @@ class System
             if (self::$dom->getElementsByTagName('title')->item(0)) {
                 self::$dom->getElementsByTagName('title')->item(0)->nodeValue = $project;
             }
+            if (self::$dom->getElementById('tag-title')) {
+                self::$dom->getElementById('tag-title')->setAttribute('content', $project);
+            }
             if (self::$dom->getElementById('project-title')) {
                 self::$dom->getElementById('project-title')->nodeValue = $project;
             }
@@ -1347,6 +1350,10 @@ class System
                 self::$dom->getElementById('project-error-button')->nodeValue = self::$error_button;
             }
 
+            if (self::$dom->getElementById('tag-code')) {
+                $env = WEBCONFIG['code'];
+                self::$dom->getElementById('tag-code')->setAttribute('content', $env);
+            }
             if (self::$dom->getElementById('favicon')) {
                 $env = WEBCONFIG['code'];
 
