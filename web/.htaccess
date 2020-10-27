@@ -1,5 +1,10 @@
 RewriteEngine on
 
+php_flag  log_errors on
+php_value error_log error.log
+
+AddHandler application/x-httpd-php .php
+
 # Don't rewrite files or directories
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d

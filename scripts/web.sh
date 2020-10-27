@@ -1,12 +1,27 @@
-parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
-cd "$parent_path"
+#!/bin/bash
+
+parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P );
+cd "$parent_path";
 
 mkdir -p ../../modules;
+mkdir -p ../../ajax;
+mkdir -p ../../assets/src;
 mkdir -p ../../themes;
 mkdir -p ../../Logs;
 
-cp ../web/index.php ../../
-cp ../web/config.json ../../
-cp -avr ../web/modules/* ../../modules/
+mkdir -p ../../themes/default;
+touch ../../themes/default/index.html;
+touch ../../themes/default/error.html;
 
-wget -O ../../logo.png https://picsum.photos/300/300
+cp ../web/index.php ../../;
+cp ../web/config.json ../../;
+cp ../web/service-worker.js ../../;
+cp ../web/.htaccess ../../;
+cp ../web/.gitignore ../../;
+cp ../web/settings.json ../../;
+cp -avR ../web/modules/* ../../modules/;
+
+wget -O ../../logo.png https://picsum.photos/300/300;
+
+cp -avR ../web/assets/* ../../assets/;
+cd ../../assets/src && yarn && yarn webpack:build;
