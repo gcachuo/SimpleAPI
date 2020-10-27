@@ -1300,8 +1300,14 @@ class System
                 if (strpos($old_link, 'http') !== false) {
                     continue;
                 }
+
                 if ($old_link === 'manifest.json') {
-                    $link->setAttribute('href', BASENAME . $old_link);
+                    $env = 'settings/' . WEBCONFIG['code'] . '/';
+                    $new_link = BASENAME . $env . $old_link;
+                    if (!file_exists($new_link)) {
+                        $new_link = BASENAME . $old_link;
+                    }
+                    $link->setAttribute('href', $new_link);
                 } else {
                     $link->setAttribute('href', BASENAME . $dir . $old_link);
                 }
