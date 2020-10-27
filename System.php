@@ -1230,7 +1230,12 @@ class System
             die('config.json does not exist');
         }
 
-        define('WEBCONFIG', json_decode(file_get_contents(WEBDIR . '/config.json'), true));
+        $config = json_decode(file_get_contents(WEBDIR . '/config.json'), true);
+        $env = getenv(mb_strtoupper($config['code']) . '_CONFIG');
+        if ($env) {
+            $config = array_merge($config, json_decode(file_get_contents(WEBDIR . "/settings/$env/config.json"), true));
+        }
+        define('WEBCONFIG', $config);
 
         [
             'entry' => $entry,
@@ -1343,14 +1348,24 @@ class System
             }
 
             if (self::$dom->getElementById('favicon')) {
+                $env = WEBCONFIG['code'];
+
+                $logo = 'favicon.ico';
+                if(file_exists('settings/' . $env . '/favicon.ico')){
+                    $logo = 'settings/' . $env . '/favicon.ico';
+                }
+
                 $favicon = self::$dom->getElementById('favicon');
-                $favicon->setAttribute('href', 'favicon.png');
+                $favicon->setAttribute('href', $logo);
             }
 
             if (self::getElementsByClass(self::$dom, 'img', 'project-img')) {
                 $imgs = (self::getElementsByClass(self::$dom, 'img', 'project-img'));
+                $config = WEBCONFIG;
                 foreach ($imgs as $img) {
-                    $img->setAttribute('src', BASENAME . 'logo.png');
+                    $env = $config['code'];
+                    $logo = $env ? BASENAME . 'settings/' . $env . '/logo.png' : BASENAME . 'logo.png';
+                    $img->setAttribute('src', $logo);
                 }
             }
 
