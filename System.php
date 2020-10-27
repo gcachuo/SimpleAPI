@@ -1358,8 +1358,8 @@ class System
                 $env = WEBCONFIG['code'];
 
                 $logo = 'favicon.ico';
-                if(file_exists('settings/' . $env . '/favicon.ico')){
-                    $logo = 'settings/' . $env . '/favicon.ico';
+                if (file_exists('settings/' . $env . '/img/favicon.ico')) {
+                    $logo = 'settings/' . $env . '/img/favicon.ico';
                 }
 
                 $favicon = self::$dom->getElementById('favicon');
@@ -1371,7 +1371,10 @@ class System
                 $config = WEBCONFIG;
                 foreach ($imgs as $img) {
                     $env = $config['code'];
-                    $logo = $env ? BASENAME . 'settings/' . $env . '/logo.png' : BASENAME . 'logo.png';
+                    $logo = BASENAME . 'logo.png';
+                    if (file_exists(__DIR__ . '/../settings/' . $env . '/img/logo.png')) {
+                        $logo = BASENAME . 'settings/' . $env . '/img/logo.png';
+                    }
                     $img->setAttribute('src', $logo);
                 }
             }
@@ -1615,9 +1618,11 @@ html
         if (self::$dom->getElementById('view')) {
             $view = self::$dom->getElementById('view');
             $body = self::$dom->getElementsByTagName('body')[0];
+            $html = self::$dom->getElementsByTagName('html')[0];
 
             $class = $view->getAttribute('class');
             $module->setAttribute('id', 'view');
+            $html->setAttribute('class', WEBCONFIG['code']);
 
             if (is_array($href)) {
                 $module->setAttribute('class', $class . ' ' . $href[1]);
