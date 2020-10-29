@@ -1409,6 +1409,13 @@ class System
                 define('MODULES', $module_list);
             }
 
+            if (($_GET['logout'] ?? '') === 'true') {
+                session_start();
+                unset($_SESSION['user_token']);
+                session_write_close();
+                System::redirect('login');
+            }
+
             if ($file != $entry) {
                 $fragment = self::$dom->createDocumentFragment();
 
