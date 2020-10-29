@@ -1698,4 +1698,29 @@ html
     {
         echo self::$dom->saveHTML();
     }
+
+    public static function getPermissions(array $permission_list = null)
+    {
+        if (session_id() == '') {
+            session_start();
+        }
+        $user = self::curlDecodeToken($_SESSION['user_token']);
+        session_write_close();
+
+        $permissions = self::json_decode($user['permissions'] ?? '[]', true);
+
+        $permissions = array_flip($permissions);
+
+        array_walk($permissions, function (&$permission) {
+            $permission = true;
+        });
+
+        if ($permission_list) {
+            foreach ($permission_list as $permission) {
+                $permissions[$permission] = $permissions[$permission] ?? ($user['type'] === 'admin');
+            }
+        }
+
+        return $permissions;
+    }
 }
