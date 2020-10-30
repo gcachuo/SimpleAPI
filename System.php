@@ -55,6 +55,7 @@ class System
 
         $user = System::curlDecodeToken($check);
         $user['permissions'] = System::json_decode($user['permissions'] ?? '[]', true);
+        $user['token'] = $check;
 
         $_SESSION['modules'] = [];
         foreach ($user['permissions'] as $key) {
