@@ -25,6 +25,7 @@ class JsonResponse
 
         if ($code < HTTPStatusCodes::BadRequest) {
             ob_clean();
+            header('Content-Type: application/json');
             die(json_encode($response, JSON_UNESCAPED_SLASHES));
         }
 

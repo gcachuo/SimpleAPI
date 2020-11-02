@@ -563,9 +563,10 @@ class System
             if ($code >= 500) {
                 $error = $exception->getTrace();
             }
-            if (ENVIRONMENT === 'web') {
+            if (ENVIRONMENT === 'web' || ENVIRONMENT === 'www') {
                 if (ob_get_contents()) ob_end_clean();
                 $response = compact('message');
+                header('Content-Type: application/json');
                 die(json_encode(compact('code', 'message', 'data', 'error', 'response'), JSON_UNESCAPED_SLASHES));
             } else {
                 die("\033[31m" . $message . "\033");
@@ -794,7 +795,9 @@ class System
                     file_put_contents(DIR . '/Config/default.json', json_encode($project_config));
 
                     header('Content-Type: application/json');
-                    JsonResponse::sendResponse("default.json not found", HTTPStatusCodes::InternalServerError);
+                    http_response_code(500);
+                    $message = "default.json not found";
+                    die(json_encode(compact('message')));
                 }
             } else {
                 $project_config = file_exists(DIR . '/Config/' . $project . '.json')
