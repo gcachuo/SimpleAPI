@@ -1,0 +1,119 @@
+$product-img-size: 135px;
+
+.modal {
+  &.fade {
+    &.show {
+      .modal-header {
+        .modal-title {
+          font-size: 20px;
+        }
+
+        .close {
+          margin: -1rem -1rem -1rem;
+
+          .material-icons {
+            font-size: 30px;
+          }
+        }
+      }
+
+      .modal-body {
+        height: calc(100vh - 59px);
+      }
+
+      .modal-dialog {
+        margin: 0;
+        transform: none;
+      }
+
+      &.hide {
+        .modal-dialog {
+          transition: transform 0.6s ease-out;
+          transform: translate(100vh, 0px);
+        }
+      }
+    }
+
+    transition: none;
+
+    .modal-dialog {
+      transition: transform 0.4s ease-out;
+      transform: translate(100vh, 0px);
+    }
+  }
+
+  ~ .modal-backdrop {
+    opacity: 0;
+  }
+}
+
+.nav {
+  flex-wrap: unset;
+  overflow: auto;
+
+  .nav-item {
+    a {
+      width: max-content;
+
+      &:not(href) {
+        color: black;
+
+        &:hover {
+          color: #636363;
+        }
+      }
+    }
+  }
+}
+
+ol, ul, dl {
+  &.tab-pane {
+    padding: 0;
+  }
+
+  margin-bottom: 0;
+}
+
+.product {
+  img {
+    max-height: $product-img-size;
+    max-width: $product-img-size;
+  }
+
+  margin-bottom: $spacer;
+
+  .product-description {
+    min-height: $product-img-size - 100px;
+    font-size: 12px;
+  }
+}
+
+.btn {
+  &.btn-xs {
+    font-size: 0.675rem;
+    padding: 0.25rem;
+  }
+}
+
+.tab-content {
+  min-height: calc(((#{$product-img-size} + #{$spacer}) * 4) + #{$spacer} - 24px);
+  max-height: calc(100vh - 130px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.nav-tabs {
+  border-bottom: unset;
+
+  .nav-link {
+    border-bottom-width: 3px;
+
+    &.active, &:hover {
+      border-color: $white $white $gray-300;
+    }
+  }
+}
+
+body {
+  overflow-y: hidden;
+}

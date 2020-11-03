@@ -1,6 +1,7 @@
 import AjaxSettings = DataTables.AjaxSettings;
 import {DT} from "./typings/DataTables";
 import * as $ from "jquery";
+import "bootstrap";
 import * as toastr from "toastr";
 
 export class Defaults {
@@ -15,7 +16,6 @@ export class Defaults {
         Defaults.ajaxSettings();
 
         Defaults.datatableSettings();
-
     }
 
     private static getSettings() {
@@ -137,11 +137,41 @@ export class Defaults {
                 }).done((result) => {
                     if (window[callback]) {
                         window[callback](result);
-                    } else if(callback) {
+                    } else if (callback) {
                         console.info(`Trigger: ${callback}`);
                     }
                 });
             }
         })
+    }
+
+    static openModal() {
+        this.initModal();
+        $(".modal").modal({backdrop: false});
+    }
+
+    private static initModal() {
+        if ($('.modal').length) {
+            return;
+        }
+        $(`<div class="modal fade">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button class="close"><i class="material-icons">arrow_back</i></button>
+                                <h5 class="modal-title"></h5>
+                            </div>
+                            <div class="modal-body">
+                
+                            </div>
+                        </div>
+                    </div>
+                </div>`).insertAfter('#view');
+        $(".modal .close").on('click', () => {
+            $(".modal").on('transitionend', () => {
+                $(".modal.hide").modal('hide').removeClass('hide');
+            })
+            $(".modal.show").addClass('hide');
+        });
     }
 }

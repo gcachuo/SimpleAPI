@@ -3,3 +3,13 @@ interface ApiResponse<T = { [name: string]: object | number | string }> {
     data: T
     message: string
 }
+
+interface JQuery {
+    modal();
+
+    modal(event: ('hide'));
+
+    modal(options: {
+        backdrop?: boolean
+    });
+}
