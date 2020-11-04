@@ -232,9 +232,7 @@ class System
         $headers = [
             "Cookie: XDEBUG_SESSION=PHPSTORM"
         ];
-        if ($options['method'] ?? null) {
-            $options['method'] = mb_strtoupper($options['method']);
-        }
+        $options['method'] = mb_strtoupper($options['method'] ?? 'get');
 
         $options['url'] = str_replace(' ', '%20', $options['url']);
         curl_setopt_array($curl, [
@@ -1449,6 +1447,7 @@ class System
 
                 $settings = self::getSettings();
                 foreach ($module_list as $module) {
+                    $modal = $module['modal'] ?? false;
                     $href = $module['href'] ?? null;
                     $name = $module['name'] ?? null;
                     $icon = $module['icon'] ?? null;
@@ -1462,6 +1461,11 @@ class System
     <i class="material-icons">$icon</i>
 </span>
 html;
+                    }
+
+                    if ($modal) {
+                        $module['hidden'] = true;
+                        $module['file'] = '';
                     }
 
                     $disabled = System::isset_get($module['disabled']) ? 'disabled' : '';
