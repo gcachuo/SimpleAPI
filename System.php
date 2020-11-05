@@ -631,7 +631,15 @@ class System
                                 case "session_start(): Cannot start session when headers already sent":
                                     break 2;
                             }
+                            break;
                         case 8:
+                            break;
+                        case 32:
+                            //Module '<module>' already loaded
+                            switch ($error['message']) {
+                                case "Module 'sqlite3' already loaded":
+                                    break 2;
+                            }
                             break;
                         default:
                             if (ob_get_contents()) ob_clean();
