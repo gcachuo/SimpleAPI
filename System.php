@@ -1444,7 +1444,9 @@ class System
                             if (!$_GET['module']) {
                                 System::redirect('dashboard');
                             }
-                            throw new CoreException($module_file, HTTPStatusCodes::Forbidden);
+                            if ($module_list[$module_file]['permissions'] ?? true) {
+                                throw new CoreException($module_file, HTTPStatusCodes::Forbidden);
+                            }
                         }
 
                         $module_list = ($_SESSION['modules'] ?? []) + array_filter(MODULES, function ($module) {
