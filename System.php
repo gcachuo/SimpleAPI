@@ -1373,9 +1373,9 @@ class System
             if (self::$dom->getElementById('favicon')) {
                 $env = WEBCONFIG['code'];
 
-                $logo = 'favicon.ico';
-                if (file_exists('settings/' . $env . '/img/favicon.ico')) {
-                    $logo = 'settings/' . $env . '/img/favicon.ico';
+                $logo = 'favicon.png';
+                if (file_exists('settings/' . $env . '/img/' . $logo)) {
+                    $logo = 'settings/' . $env . '/img/' . $logo;
                 }
 
                 $favicon = self::$dom->getElementById('favicon');
