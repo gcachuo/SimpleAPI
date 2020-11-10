@@ -164,7 +164,7 @@ class System
 
             $mail->send();
         } catch (\PHPMailer\PHPMailer\Exception $exception) {
-            JsonResponse::sendResponse($exception->getMessage(), HTTPStatusCodes::ServiceUnavailable, $exception->getTrace());
+            throw new CoreException($exception->getMessage(), HTTPStatusCodes::ServiceUnavailable);
         }
     }
 
