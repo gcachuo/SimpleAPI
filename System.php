@@ -1437,7 +1437,7 @@ class System
                 $fragment = self::$dom->createDocumentFragment();
 
                 if (defined('SESSIONCHECK') && SESSIONCHECK) {
-                    if (($user['type'] ?? null) !== 'admin') {
+                    if (($user['permissions'] ?? null)) {
                         $user = System::sessionCheck("user_token");
 
                         if (!in_array($module_file, $user['permissions']) && $module_file != 'dashboard') {
