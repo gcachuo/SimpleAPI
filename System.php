@@ -1631,7 +1631,7 @@ html;
             $o_module = $o_module['modules'][$href[1]];
         } else {
             $o_module = $modules[$href] ?? '';
-            $module_name = ucfirst(strtolower($o_module['name']));
+            $module_name = ucfirst(strtolower($o_module['name'] ?? ''));
         }
 
         $breadcrumbs = BREADCRUMBS ? 'unset' : 'none';
