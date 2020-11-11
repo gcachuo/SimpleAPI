@@ -394,10 +394,10 @@ class System
                 }
                 return $end_decoded;
             }
-        } elseif (!is_nan((float)$id)) {
+        } elseif (!is_string($id)) {
             return intval($id);
         }
-        return null;
+        return $id;
     }
 
     public static function format_date(string $format, $value)
