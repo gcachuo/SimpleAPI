@@ -1629,7 +1629,7 @@ html;
         $modules = MODULES;
         if (is_array($href)) {
             $o_module = $modules[$href[0]] ?? '';
-            $module_name = ucfirst(strtolower($o_module['name']));
+            $module_name = ucfirst(strtolower($o_module['name'] ?? ''));
             if (!!($href[1] ?? null) && !!($o_module['modules'] ?? null)) {
                 $module_name .= ' / ' . ($o_module['modules'][$href[1]]['name'] ?? '');
             }
