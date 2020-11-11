@@ -1248,7 +1248,9 @@ class System
         }
 
         if ($env) {
-            $env_config = array_merge($config, json_decode(file_get_contents(WEBDIR . "/settings/$env/config.json"), true));
+            $env_config = file_get_contents(WEBDIR . "/settings/$env/config.json");
+            $env_config = json_decode($env_config, true);
+            $env_config = array_merge($config, $env_config);
         }
         if ($env_config ?? null) {
             $config = $env_config;
