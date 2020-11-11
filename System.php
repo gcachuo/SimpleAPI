@@ -1243,7 +1243,10 @@ class System
         $config = json_decode(file_get_contents(WEBDIR . '/config.json'), true);
         $env = getenv(mb_strtoupper($config['code']) . '_CONFIG');
         if ($env) {
-            $config = array_merge($config, json_decode(file_get_contents(WEBDIR . "/settings/$env/config.json"), true));
+            $env_config = array_merge($config, json_decode(file_get_contents(WEBDIR . "/settings/$env/config.json"), true));
+        }
+        if ($env_config ?? null) {
+            $config = $env_config;
         }
         define('WEBCONFIG', $config);
 
