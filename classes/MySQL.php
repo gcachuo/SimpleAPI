@@ -20,7 +20,8 @@ class MySQL
     /** @var PDO */
     private $pdo;
     /** @var string */
-    private $dbname, $username, $passwd, $host;
+    private static $dbname;
+    private $username, $passwd, $host;
     /** @var PDOStatement */
     private $stmt;
     /**
@@ -46,9 +47,11 @@ class MySQL
                 $host = $config['host'];
                 $username = $config['username'];
                 $passwd = $config['passwd'];
-                $dbname = $dbname ?: (getenv('DATABASE') ?: $config['dbname']);
+                $config['dbname'] = $dbname ?: self::$dbname ?: (getenv('DATABASE') ?: $config['dbname']);
 
                 System::check_value_empty($config, ['host', 'username', 'passwd', 'dbname'], 'Missing data in config file.', HTTPStatusCodes::InternalServerError);
+
+                $dbname = $config['dbname'];
 
                 $this->mysqli = new mysqli($host, $username, $passwd, $dbname);
                 $this->pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $passwd);
@@ -58,7 +61,7 @@ class MySQL
                 $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
                 $this->host = $host;
-                $this->dbname = $dbname;
+                self::$dbname = $dbname;
                 $this->username = $username;
                 $this->passwd = $passwd;
             } else {
@@ -70,15 +73,10 @@ class MySQL
 
             switch ($code) {
                 case 1049:
-                    $mysql = new MySQL('mysql');
-                    $mysql->query(<<<sql
-CREATE DATABASE $dbname;
-sql
-                    );
+                    $this->create_database($dbname);
 
                     $error = "Database $dbname didn't exists and was created. try again";
-                    JsonResponse::sendResponse($error, HTTPStatusCodes::NotImplemented, compact('error', 'code'));
-                    break;
+                    throw new CoreException($error, HTTPStatusCodes::NotImplemented, compact('error', 'code'));
                 default:
                     $type = 'MySQL';
                     JsonResponse::sendResponse($error, HTTPStatusCodes::InternalServerError, compact('error', 'code', 'type'));
@@ -87,9 +85,19 @@ sql
         }
     }
 
+    public static function create_database($dbname)
+    {
+        $mysql = new MySQL('mysql');
+        $mysql->query(<<<sql
+CREATE DATABASE $dbname;
+sql
+        );
+        self::$dbname = $dbname;
+    }
+
     public function database()
     {
-        return $this->dbname;
+        return self::$dbname;
     }
 
     public static function default_values(&$values, $keys)

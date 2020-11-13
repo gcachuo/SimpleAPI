@@ -1036,7 +1036,7 @@ class System
      * @param int $code
      * @throws CoreException
      */
-    public static function check_value_empty($array, $required, $message, $code = 400)
+    public static function check_value_empty($array, $required, $message = 'Missing Data.', $code = 400)
     {
         $required = array_flip($required);
         $intersect = array_intersect_key($array ?: $required, $required);
