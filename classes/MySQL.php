@@ -188,8 +188,8 @@ sql
             $stmt = $this->pdo->prepare($sql);
 
             foreach ($params as $key => &$val) {
-                $this->parseValue($val);
-                $stmt->bindParam($key, $val);
+                $type = $this->parseValue($val);
+                $stmt->bindParam($key, $val, $type);
             }
 
             $stmt->execute();
@@ -201,6 +201,7 @@ sql
         } catch (PDOException $exception) {
             $code = $exception->getCode();
             $message = $exception->getMessage();
+            System::query_log(self::interpolate_query($sql, $params, false));
             System::query_log('#' . $message);
 
             $trace = $exception->getTrace();
@@ -208,11 +209,14 @@ sql
                 $this->parseValue($val);
             }
             $parsed_sql = self::interpolate_query($sql, $params, false);
-            throw new CoreException($message, HTTPStatusCodes::InternalServerError, compact('trace','params', 'sql', 'parsed_sql'));
+            throw new CoreException($message, HTTPStatusCodes::InternalServerError, compact('trace', 'params', 'sql', 'parsed_sql'));
         }
     }
 
-    private function parseValue(&$val){
+    private function parseValue(&$val): int
+    {
+        $type = PDO::PARAM_STR;
+
         if ($val === '') {
             $val = null;
         } elseif (is_int($val)) {
@@ -221,7 +225,12 @@ sql
             $val = floatval($val);
         } elseif (is_array($val)) {
             $val = json_encode($val);
+        } elseif (is_bool($val)) {
+            $type = PDO::PARAM_BOOL;
+            $val = $val ? 1 : 0;
         }
+
+        return $type;
     }
 
     function array_copy(array $array)
