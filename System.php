@@ -1646,7 +1646,10 @@ html;
             $module_name = ucfirst(strtolower($o_module['name'] ?? ''));
         }
 
-        $breadcrumbs = BREADCRUMBS ? 'unset' : 'none';
+        $breadcrumbs = 'none';
+        if (BREADCRUMBS && !($o_module['modal'] ?? false)) {
+            $breadcrumbs = 'unset';
+        }
 
         $module = self::createElement('div', <<<html
 <div>
