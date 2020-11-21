@@ -680,7 +680,7 @@ class System
         }
 
         if (file_exists(__DIR__ . '/../offline')) {
-            JsonResponse::sendResponse('We are updating the app, please be patient.', HTTPStatusCodes::ServiceUnavailable);
+            throw new CoreException('We are updating the app, please be patient.', HTTPStatusCodes::ServiceUnavailable);
         }
     }
 
@@ -1244,11 +1244,11 @@ class System
 
         $env = getenv(mb_strtoupper($config['code']) . '_CONFIG');
         if (file_exists(WEBDIR . '/.env')) {
-            $env = file_get_contents(WEBDIR . '/.env');
+            $env = trim(file_get_contents(WEBDIR . '/.env'));
         }
 
         if ($env) {
-            $env_config = file_get_contents(WEBDIR . "/settings/$env/config.json");
+            $env_config = file_get_contents(WEBDIR . "/settings/$env/" . "config.json");
             $env_config = json_decode($env_config, true);
             $env_config = array_merge($config, $env_config);
         }
@@ -1752,5 +1752,19 @@ html
         }
 
         return $permissions;
+    }
+
+    static function getQR(string $chl)
+    {
+        $url = http_build_query([
+            'chl' => $chl,
+            'cht' => 'qr',
+            'chs' => '500x500',
+            'choe' => 'UTF-8',
+            'chld' => 'H|4',
+        ]);
+
+        $chart = 'https://chart.googleapis.com/chart?' . $url;
+        return compact('chart', 'chl');
     }
 }
