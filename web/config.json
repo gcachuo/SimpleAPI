@@ -4,7 +4,6 @@
   "theme": "themes/default/",
   "entry": "index.html",
   "default": "dashboard",
-  "basename": "/web/",
   "breadcrumbs": false,
   "module-icons": true,
   "error": {
