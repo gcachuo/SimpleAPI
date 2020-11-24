@@ -1,6 +1,7 @@
 {
   "code": "default",
   "project": "Default",
+  "description": "Default Description",
   "theme": "themes/default/",
   "entry": "index.html",
   "default": "dashboard",

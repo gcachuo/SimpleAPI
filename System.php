@@ -1300,6 +1300,7 @@ class System
         try {
             [
                 'project' => $project,
+                'description' => $description,
                 'entry' => $entry,
                 'error' => $error_file,
                 'theme' => $dir,
@@ -1362,6 +1363,9 @@ class System
             }
             if (self::$dom->getElementById('tag-title')) {
                 self::$dom->getElementById('tag-title')->setAttribute('content', $project);
+            }
+            if (self::$dom->getElementById('tag-description')) {
+                self::$dom->getElementById('tag-description')->setAttribute('content', $description);
             }
             if (self::$dom->getElementById('project-title')) {
                 self::$dom->getElementById('project-title')->nodeValue = $project;
