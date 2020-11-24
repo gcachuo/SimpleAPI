@@ -9,3 +9,4 @@
 .phpunit.result.cache
 error.log
 *.dev.json
+*.css

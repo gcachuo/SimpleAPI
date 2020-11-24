@@ -55,6 +55,7 @@ class System
 
         $user = System::curlDecodeToken($check);
         $user['permissions'] = System::json_decode($user['permissions'] ?? '[]', true);
+        $user['token'] = $check;
 
         $_SESSION['modules'] = [];
         foreach ($user['permissions'] as $key) {
@@ -163,7 +164,7 @@ class System
 
             $mail->send();
         } catch (\PHPMailer\PHPMailer\Exception $exception) {
-            JsonResponse::sendResponse($exception->getMessage(), HTTPStatusCodes::ServiceUnavailable, $exception->getTrace());
+            throw new CoreException($exception->getMessage(), HTTPStatusCodes::ServiceUnavailable);
         }
     }
 
@@ -231,9 +232,7 @@ class System
         $headers = [
             "Cookie: XDEBUG_SESSION=PHPSTORM"
         ];
-        if ($options['method'] ?? null) {
-            $options['method'] = mb_strtoupper($options['method']);
-        }
+        $options['method'] = mb_strtoupper($options['method'] ?? 'get');
 
         $options['url'] = str_replace(' ', '%20', $options['url']);
         curl_setopt_array($curl, [
@@ -395,10 +394,10 @@ class System
                 }
                 return $end_decoded;
             }
-        } elseif (!is_nan((float)$id)) {
+        } elseif (!is_string($id)) {
             return intval($id);
         }
-        return null;
+        return $id;
     }
 
     public static function format_date(string $format, $value)
@@ -562,9 +561,10 @@ class System
             if ($code >= 500) {
                 $error = $exception->getTrace();
             }
-            if (ENVIRONMENT === 'web') {
+            if (ENVIRONMENT === 'web' || ENVIRONMENT === 'www') {
                 if (ob_get_contents()) ob_end_clean();
                 $response = compact('message');
+                header('Content-Type: application/json');
                 die(json_encode(compact('code', 'message', 'data', 'error', 'response'), JSON_UNESCAPED_SLASHES));
             } else {
                 die("\033[31m" . $message . "\033");
@@ -631,7 +631,15 @@ class System
                                 case "session_start(): Cannot start session when headers already sent":
                                     break 2;
                             }
+                            break;
                         case 8:
+                            break;
+                        case 32:
+                            //Module '<module>' already loaded
+                            switch ($error['message']) {
+                                case "Module 'sqlite3' already loaded":
+                                    break 2;
+                            }
                             break;
                         default:
                             if (ob_get_contents()) ob_clean();
@@ -672,7 +680,7 @@ class System
         }
 
         if (file_exists(__DIR__ . '/../offline')) {
-            JsonResponse::sendResponse('We are updating the app, please be patient.', HTTPStatusCodes::ServiceUnavailable);
+            throw new CoreException('We are updating the app, please be patient.', HTTPStatusCodes::ServiceUnavailable);
         }
     }
 
@@ -793,7 +801,9 @@ class System
                     file_put_contents(DIR . '/Config/default.json', json_encode($project_config));
 
                     header('Content-Type: application/json');
-                    JsonResponse::sendResponse("default.json not found", HTTPStatusCodes::InternalServerError);
+                    http_response_code(500);
+                    $message = "default.json not found";
+                    die(json_encode(compact('message')));
                 }
             } else {
                 $project_config = file_exists(DIR . '/Config/' . $project . '.json')
@@ -1026,7 +1036,7 @@ class System
      * @param int $code
      * @throws CoreException
      */
-    public static function check_value_empty($array, $required, $message, $code = 400)
+    public static function check_value_empty($array, $required, $message = 'Missing Data.', $code = 400)
     {
         $required = array_flip($required);
         $intersect = array_intersect_key($array ?: $required, $required);
@@ -1231,9 +1241,19 @@ class System
         }
 
         $config = json_decode(file_get_contents(WEBDIR . '/config.json'), true);
+
         $env = getenv(mb_strtoupper($config['code']) . '_CONFIG');
+        if (file_exists(WEBDIR . '/.env')) {
+            $env = trim(file_get_contents(WEBDIR . '/.env'));
+        }
+
         if ($env) {
-            $config = array_merge($config, json_decode(file_get_contents(WEBDIR . "/settings/$env/config.json"), true));
+            $env_config = file_get_contents(WEBDIR . "/settings/$env/" . "config.json");
+            $env_config = json_decode($env_config, true);
+            $env_config = array_merge($config, $env_config);
+        }
+        if ($env_config ?? null) {
+            $config = $env_config;
         }
         define('WEBCONFIG', $config);
 
@@ -1300,8 +1320,14 @@ class System
                 if (strpos($old_link, 'http') !== false) {
                     continue;
                 }
+
                 if ($old_link === 'manifest.json') {
-                    $link->setAttribute('href', BASENAME . $old_link);
+                    $env = 'settings/' . WEBCONFIG['code'] . '/';
+                    $new_link = BASENAME . $env . $old_link;
+                    if (!file_exists($new_link)) {
+                        $new_link = BASENAME . $old_link;
+                    }
+                    $link->setAttribute('href', $new_link);
                 } else {
                     $link->setAttribute('href', BASENAME . $dir . $old_link);
                 }
@@ -1357,9 +1383,9 @@ class System
             if (self::$dom->getElementById('favicon')) {
                 $env = WEBCONFIG['code'];
 
-                $logo = 'favicon.ico';
-                if (file_exists('settings/' . $env . '/img/favicon.ico')) {
-                    $logo = 'settings/' . $env . '/img/favicon.ico';
+                $logo = 'favicon.png';
+                if (file_exists('settings/' . $env . '/img/' . $logo)) {
+                    $logo = 'settings/' . $env . '/img/' . $logo;
                 }
 
                 $favicon = self::$dom->getElementById('favicon');
@@ -1403,6 +1429,13 @@ class System
                 define('MODULES', $module_list);
             }
 
+            if (($_GET['logout'] ?? '') === 'true') {
+                session_start();
+                unset($_SESSION['user_token']);
+                session_write_close();
+                System::redirect('login');
+            }
+
             if ($file != $entry) {
                 $fragment = self::$dom->createDocumentFragment();
 
@@ -1414,14 +1447,16 @@ class System
                 $fragment = self::$dom->createDocumentFragment();
 
                 if (defined('SESSIONCHECK') && SESSIONCHECK) {
-                    if (($user['type'] ?? null) !== 'admin') {
+                    if (($user['permissions'] ?? null)) {
                         $user = System::sessionCheck("user_token");
 
                         if (!in_array($module_file, $user['permissions']) && $module_file != 'dashboard') {
                             if (!$_GET['module']) {
                                 System::redirect('dashboard');
                             }
-                            throw new CoreException($module_file, HTTPStatusCodes::Forbidden);
+                            if ($module_list[$module_file]['permissions'] ?? true) {
+                                throw new CoreException($module_file, HTTPStatusCodes::Forbidden);
+                            }
                         }
 
                         $module_list = ($_SESSION['modules'] ?? []) + array_filter(MODULES, function ($module) {
@@ -1432,6 +1467,7 @@ class System
 
                 $settings = self::getSettings();
                 foreach ($module_list as $module) {
+                    $modal = $module['modal'] ?? false;
                     $href = $module['href'] ?? null;
                     $name = $module['name'] ?? null;
                     $icon = $module['icon'] ?? null;
@@ -1445,6 +1481,11 @@ class System
     <i class="material-icons">$icon</i>
 </span>
 html;
+                    }
+
+                    if ($modal) {
+                        $module['hidden'] = true;
+                        $module['file'] = '';
                     }
 
                     $disabled = System::isset_get($module['disabled']) ? 'disabled' : '';
@@ -1595,23 +1636,28 @@ html;
         $modules = MODULES;
         if (is_array($href)) {
             $o_module = $modules[$href[0]] ?? '';
-            $module_name = ucfirst(strtolower($o_module['name']));
+            $module_name = ucfirst(strtolower($o_module['name'] ?? ''));
             if (!!($href[1] ?? null) && !!($o_module['modules'] ?? null)) {
-                $module_name .= ' / ' . $o_module['modules'][$href[1]]['name'] ?? '';
+                $module_name .= ' / ' . ($o_module['modules'][$href[1]]['name'] ?? '');
             }
-            $o_module = $o_module['modules'][$href[1]];
+            $o_module = $o_module['modules'][$href[1]] ?? [];
         } else {
             $o_module = $modules[$href] ?? '';
-            $module_name = ucfirst(strtolower($o_module['name']));
+            $module_name = ucfirst(strtolower($o_module['name'] ?? ''));
         }
 
-        $breadcrumbs = BREADCRUMBS ? 'unset' : 'none';
+        $breadcrumbs = 'none';
+        if (BREADCRUMBS && !($o_module['modal'] ?? false)) {
+            $breadcrumbs = 'unset';
+        }
 
         $module = self::createElement('div', <<<html
+<div>
     <p class="text-left breadcrumbs $breadcrumbs" style="display: $breadcrumbs">
         <span class="text-muted">Usted se encuentra en:</span> <span>$module_name</span>
     </p>
     $contents
+</div>
 html
         );
 
@@ -1684,5 +1730,44 @@ html
     public static function print_page()
     {
         echo self::$dom->saveHTML();
+    }
+
+    public static function getPermissions(array $permission_list = null)
+    {
+        if (session_id() == '') {
+            session_start();
+        }
+        $user = self::curlDecodeToken($_SESSION['user_token']);
+        session_write_close();
+
+        $permissions = self::json_decode($user['permissions'] ?? '[]', true);
+
+        $permissions = array_flip($permissions);
+
+        array_walk($permissions, function (&$permission) {
+            $permission = true;
+        });
+
+        if ($permission_list) {
+            foreach ($permission_list as $permission) {
+                $permissions[$permission] = $permissions[$permission] ?? ($user['type'] === 'admin');
+            }
+        }
+
+        return $permissions;
+    }
+
+    static function getQR(string $chl)
+    {
+        $url = http_build_query([
+            'chl' => $chl,
+            'cht' => 'qr',
+            'chs' => '500x500',
+            'choe' => 'UTF-8',
+            'chld' => 'H|4',
+        ]);
+
+        $chart = 'https://chart.googleapis.com/chart?' . $url;
+        return compact('chart', 'chl');
     }
 }
