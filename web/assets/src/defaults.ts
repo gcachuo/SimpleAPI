@@ -5,8 +5,8 @@ import "bootstrap";
 import * as toastr from "toastr";
 
 export class Defaults {
-    private static settings: { apiUrl: string, dt: (DataTables.Settings & DT) };
-    public static global: { apiUrl, dt: (DataTables.Settings & DT) } = Defaults.getSettings();
+    private static settings: { apiUrl: string, code: string, dt: (DataTables.Settings & DT) };
+    public static global: { apiUrl, code: string, dt: (DataTables.Settings & DT), [name: string]: any } = Defaults.getSettings();
     private static $buttonHTML;
 
     constructor() {
@@ -145,33 +145,57 @@ export class Defaults {
         })
     }
 
-    static openModal() {
-        this.initModal();
-        $(".modal").modal({backdrop: false});
+    static closeModal() {
+        $(".modal").on('transitionend', () => {
+            $(".modal.hide").modal('hide').removeClass('hide');
+        })
+        $(".modal.show").addClass('hide');
     }
 
-    private static initModal() {
-        if ($('.modal').length) {
-            return;
-        }
-        $(`<div class="modal fade">
+    public static async openModal(options: { title: string, url: string, animationClass?: string }) {
+        if (!$('#modal').length) {
+            $(`<div class="modal" id="modal">
                     <div class="modal-dialog">
                         <div class="modal-content">
                             <div class="modal-header">
                                 <button class="close"><i class="material-icons">arrow_back</i></button>
                                 <h5 class="modal-title"></h5>
                             </div>
-                            <div class="modal-body">
-                
-                            </div>
+                            <div class="modal-body">Cargando...</div>
                         </div>
                     </div>
                 </div>`).insertAfter('#view');
-        $(".modal .close").on('click', () => {
-            $(".modal").on('transitionend', () => {
-                $(".modal.hide").modal('hide').removeClass('hide');
-            })
-            $(".modal.show").addClass('hide');
-        });
+            $("#modal .close").on('click', () => {
+                this.closeModal();
+            });
+        } else {
+            $('#modal .modal-body').text('Cargando...');
+        }
+
+        $('#modal .modal-title').text(options.title);
+        $("#modal")
+            .attr('class', 'modal')
+            .addClass(options.animationClass || 'slideLeft')
+            .modal({backdrop: false});
+
+        const ajaxSettings: AjaxSettings & { api: boolean } = {
+            api: false,
+            url: options.url
+        };
+
+        try {
+            const moduleClass = ajaxSettings.url.split('?');
+            const html = ($('<div></div>').append(await $.ajax(ajaxSettings))).find('#view').html();
+
+            $('#modal .modal-body').empty().append($(`<div>${html}</div>`).addClass(moduleClass[0]));
+        } catch (e) {
+            console.error('/' + ajaxSettings.url, e.status + ' ' + e.statusText);
+            $('#modal .modal-body').html(e.responseText);
+        }
+    }
+
+    static Alert(message, type = 'success') {
+        toastr.clear();
+        toastr[type](message);
     }
 }
