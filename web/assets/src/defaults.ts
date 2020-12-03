@@ -10,12 +10,22 @@ export class Defaults {
     private static $buttonHTML;
 
     constructor() {
-
         Defaults.overwriteFormSubmit();
 
         Defaults.ajaxSettings();
 
         Defaults.datatableSettings();
+    }
+
+    public static loadSelect2() {
+        require('select2');
+        if ($('.select2').length) {
+            $.each($('.select2'), (i, element) => {
+                $(element).select2({
+                    placeholder: $(element).data('placeholder')
+                });
+            });
+        }
     }
 
     private static getSettings() {
@@ -117,23 +127,30 @@ export class Defaults {
 
                 const method = $(e.currentTarget).attr('method');
                 const callback = $(e.currentTarget).attr('callback');
+                const fileUpload = $(e.currentTarget).attr('fileUpload');
 
                 if (!method) {
                     toastr.error('Missing property "method"');
                     return;
                 }
 
-                let data: JQuery.NameValuePair[] | FormData = $(e.currentTarget).serializeArray();
-                if (method.toUpperCase() === 'POST') {
-                    data = new FormData(<HTMLFormElement>$(e.currentTarget).get(0));
+                let valuePair: JQuery.NameValuePair[] | FormData = $(e.currentTarget).serializeArray();
+                if (method.toUpperCase() === 'POST' && fileUpload) {
+                    valuePair = new FormData(<HTMLFormElement>$(e.currentTarget).get(0));
                     $.ajaxSetup({
                         contentType: false,
                         processData: false,
                     });
                 }
 
+                let data: object = {};
+                (valuePair as JQuery.NameValuePair[]).map(({name, value}) => {
+                    console.log(name, value);
+                    data[name] = value;
+                });
+
                 $.ajax({
-                    url, method, data,
+                    url, method, data: JSON.stringify(data), contentType: 'application/json'
                 }).done((result) => {
                     if (window[callback]) {
                         window[callback](result);
