@@ -1,12 +1,14 @@
 import AjaxSettings = DataTables.AjaxSettings;
 import {DT} from "./typings/DataTables";
-import * as $ from "jquery";
+import $ from 'jquery';
+import 'datatables.net-dt'
+import 'datatables.net-buttons'
 import "bootstrap";
 import * as toastr from "toastr";
 
 export class Defaults {
-    private static settings: { apiUrl: string, code: string, dt: (DataTables.Settings & DT) };
-    public static global: { apiUrl, code: string, dt: (DataTables.Settings & DT), [name: string]: any } = Defaults.getSettings();
+    private static settings: { apiUrl: string, code: string, dt: ((DataTables.Settings & DT & { getColumns })) };
+    public static global: { apiUrl, code: string, dt: ((DataTables.Settings & DT & { getColumns })), [name: string]: any } = Defaults.getSettings();
     private static $buttonHTML;
 
     constructor() {
@@ -42,28 +44,27 @@ export class Defaults {
 
     private static datatableSettings(): void {
         if ($.fn.dataTable) {
-            $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn btn-sm';
+            $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn';
+            $.extend($.fn.dataTable.ext.classes, {
+                sFilterInput: "form-control",
+                sLengthSelect: "form-control",
+                sPageButton: "btn btn-outline-info"
+            });
             $.extend(true, $.fn.dataTable.defaults, {
                 dom: 'Bfrtip',
                 responsive: true,
                 stateSave: true,
                 order: [[0, 'asc']],
-                buttons: [],
+                buttons: ['excel'],
                 ajax: {
                     dataSrc: (name) => {
                         return ({status, code, data, error}) => data[name]
                     }
                 },
-                columnDefs: (columns) => {
-                    columns.map((column, index) => {
-                        column['targets'] = index;
-                        return column;
-                    });
-                    return columns;
-                },
                 pageLength: 25,
                 language: {
-                    search: "Buscar:",
+                    search: "",
+                    searchPlaceholder: "Buscar:",
                     emptyTable: "No hay registros que consultar",
                     lengthMenu: "Mostrar _MENU_ registros por pagina",
                     info: "Mostrando pagina _PAGE_ de _PAGES_",
@@ -79,7 +80,15 @@ export class Defaults {
                 },
             } as AjaxSettings);
 
-            this.settings.dt = <(DataTables.Settings & DT)>$.fn.dataTable.defaults;
+            this.settings.dt = <(DataTables.Settings & DT & { getColumns })>$.fn.dataTable.defaults;
+
+            this.settings.dt.getColumns = (columns) => {
+                (columns).map((column, index) => {
+                    column['targets'] = index;
+                    return column;
+                });
+                return columns;
+            }
         }
     }
 
