@@ -72,8 +72,18 @@ class System
                 $_SESSION['modules'][$key] = MODULES[$key];
             }
         }
+        session_write_close();
 
         return $user;
+    }
+
+    public static function sessionSet(string $name, $value)
+    {
+        session_start();
+        $_SESSION[$name] = $value;
+        session_write_close();
+
+        return self::sessionCheck($name);
     }
 
     public static function decrypt(string $value_encrypted)
@@ -255,7 +265,7 @@ class System
                 curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
             }
         }
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array_merge($headers, $options['headers']??[]));
 
         $json = curl_exec($curl);
         $error = curl_error($curl);
@@ -521,6 +531,9 @@ class System
 
     public static function curlDecodeToken($token)
     {
+        if ($_SESSION['user']) {
+            return $_SESSION['user'];
+        }
         if ($token) {
             try {
                 return System::curl([
