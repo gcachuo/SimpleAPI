@@ -10,9 +10,9 @@ export class Defaults {
     private static $buttonHTML;
 
     constructor() {
-        Defaults.overwriteFormSubmit();
-
         Defaults.ajaxSettings();
+
+        Defaults.overwriteFormSubmit();
 
         Defaults.datatableSettings();
     }
@@ -92,19 +92,21 @@ export class Defaults {
                     settings.url = Defaults.settings.apiUrl + settings.url;
                 }
             },
-            error: function ({responseJSON}) {
-                toastr.clear();
+            error: ({responseJSON, status: code}: JQuery.jqXHR) => {
                 try {
-                    const {code, data, message}: ApiResponse = responseJSON || {};
+                    const {message}: ApiResponse = responseJSON || {};
                     if (code >= 500) {
-                        toastr.error('Ocurrió un error en la petición, por favor intente mas tarde.');
+                        this.Alert('Ocurrió un error en la petición, por favor intente mas tarde.', 'error');
                         console.error(message, responseJSON);
                     } else if (code >= 400) {
-                        toastr.warning(message);
+                        this.Alert(message, 'warning');
                         console.warn(message, responseJSON);
+                    } else {
+                        this.Alert(message, 'error');
+                        console.error(responseJSON, code);
                     }
                 } catch (e) {
-                    toastr.error('Ocurrió un error en la petición, por favor intente mas tarde.');
+                    this.Alert('Ocurrió un error en la petición, por favor intente mas tarde.', 'error');
                     console.error(e, e);
                 }
             },
@@ -145,7 +147,6 @@ export class Defaults {
 
                 let data: object = {};
                 (valuePair as JQuery.NameValuePair[]).map(({name, value}) => {
-                    console.log(name, value);
                     data[name] = value;
                 });
 
