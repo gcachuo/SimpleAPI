@@ -265,7 +265,7 @@ class System
                 curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
             }
         }
-        curl_setopt($curl, CURLOPT_HTTPHEADER, array_merge($headers, $options['headers']??[]));
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array_merge($headers, $options['headers'] ?? []));
 
         $json = curl_exec($curl);
         $error = curl_error($curl);
@@ -323,7 +323,7 @@ class System
      * @param bool $assoc
      * @return object|array
      */
-    public static function json_decode($json, $assoc)
+    public static function json_decode(string $json, bool $assoc = true)
     {
         $json = json_decode($json, $assoc);
         $error = json_last_error();
