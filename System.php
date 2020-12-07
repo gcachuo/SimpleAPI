@@ -233,7 +233,7 @@ class System
      * @return mixed
      * @throws CoreException
      */
-    public static function curl($options)
+    public static function curl($options, $select = null)
     {
         $settings = self::getSettings();
 
@@ -298,6 +298,10 @@ class System
             }
         } else {
             JsonResponse::sendResponse('Empty response: ' . $options['url'], HTTPStatusCodes::ServiceUnavailable);
+        }
+
+        if ($select && $result['data'][$select]) {
+            return $result['data'][$select];
         }
 
         return $result['data'];
