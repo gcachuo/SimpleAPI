@@ -256,14 +256,12 @@ class System
             CURLOPT_CUSTOMREQUEST => $options['method'] ?? "GET",
         ]);
         if ($options['data'] ?? null) {
-            if ($options['method'] !== 'GET') {
-                $data = json_encode($options['data']);
+            $data = json_encode($options['data']);
 
-                $headers[] = "Content-Type: application/json";
-                $headers[] = 'Content-Length: ' . strlen($data);
+            $headers[] = "Content-Type: application/json";
+            $headers[] = 'Content-Length: ' . strlen($data);
 
-                curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
-            }
+            curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
         }
         curl_setopt($curl, CURLOPT_HTTPHEADER, array_merge($headers, $options['headers'] ?? []));
 
