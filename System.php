@@ -284,7 +284,7 @@ class System
                     throw new CoreException('', $info['http_code'], ['data' => $json]);
                 }
             } else {
-                $result = self::json_decode($json, true);
+                $result = self::json_decode($json);
                 $code = $result['code'] ?? $result['status'] ?? $info['http_code'];
                 if (($code ?: 500) >= 400) {
                     if (!$code) {
@@ -293,7 +293,7 @@ class System
                     if (is_array($result['message'])) {
                         $result['message'] = implode(' ', $result['message']);
                     }
-                    JsonResponse::sendResponse($result['message'], $code);
+                    throw new CoreException($result['message'], $code, $result['data']);
                 }
             }
         } else {
@@ -1216,7 +1216,7 @@ class System
      */
     public static function init_web(array $constants)
     {
-        set_exception_handler(function ($exception) {
+        set_exception_handler(function (CoreException $exception) {
             ob_clean();
             $status = 'exception';
             $code = $exception->getCode() ?: 500;
@@ -1235,6 +1235,12 @@ class System
             self::$error_message = WEBCONFIG['error']['messages'][$code];
             switch ($code) {
                 case 404:
+                    parse_str($_SERVER['QUERY_STRING'], $query_string);
+                    $endpoint = $exception->getData('endpoint');
+                    $message = $endpoint ?? $query_string['module'] ?? null;
+                    if ($message) {
+                        self::$error_message .= ' [' . $message . ']';
+                    }
                     break;
                 default:
                     self::$error_message .= ($message ? " [$message]" : '');
