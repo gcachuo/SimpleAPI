@@ -533,7 +533,7 @@ class System
 
     public static function curlDecodeToken($token)
     {
-        if ($_SESSION['user']) {
+        if ($_SESSION['user'] ?? null) {
             return $_SESSION['user'];
         }
         if ($token) {
