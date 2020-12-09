@@ -12,11 +12,17 @@ export class Defaults {
     private static $buttonHTML;
 
     constructor() {
+        $('.parent-module').on('click', (e) => {
+            $(e.currentTarget).parent().toggleClass('active');
+        });
+
         Defaults.ajaxSettings();
 
         Defaults.overwriteFormSubmit();
 
         Defaults.datatableSettings();
+
+        $("button").prop('disabled', false);
     }
 
     public static loadSelect2() {
@@ -97,6 +103,7 @@ export class Defaults {
         const ajaxSettings: AjaxSettings & { api: boolean } = {
             api: true,
             async: true,
+            dataType: "json",
             beforeSend: function (jqXHR, settings: AjaxSettings & { api: boolean }) {
                 if (settings.api) {
                     settings.url = Defaults.settings.apiUrl + settings.url;
@@ -140,6 +147,7 @@ export class Defaults {
                 const method = $(e.currentTarget).attr('method');
                 const callback = $(e.currentTarget).attr('callback');
                 const fileUpload = $(e.currentTarget).attr('fileUpload');
+                const redirect = $(e.currentTarget).attr('redirect');
 
                 if (!method) {
                     toastr.error('Missing property "method"');
@@ -167,6 +175,9 @@ export class Defaults {
                         window[callback](result);
                     } else if (callback) {
                         console.info(`Trigger: ${callback}`);
+                        if (redirect) {
+                            location.href = redirect;
+                        }
                     }
                 });
             }
