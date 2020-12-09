@@ -69,7 +69,7 @@ export class Defaults {
                 responsive: true,
                 stateSave: true,
                 order: [[0, 'asc']],
-                buttons: ['excel'],
+                buttons: [],
                 ajax: {
                     dataSrc: (name) => {
                         return ({status, code, data, error}) => data[name]
