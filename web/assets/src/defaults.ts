@@ -51,6 +51,7 @@ export class Defaults {
                 sPageButton: "btn btn-outline-info"
             });
             $.extend(true, $.fn.dataTable.defaults, {
+                scrollY: 'calc(100vh - 268px)',
                 dom: 'Bfrtip',
                 responsive: true,
                 stateSave: true,
