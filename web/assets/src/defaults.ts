@@ -1,18 +1,25 @@
 import AjaxSettings = DataTables.AjaxSettings;
 import {DT} from "./typings/DataTables";
 import $ from 'jquery';
+import 'datatables.net'
 import 'datatables.net-dt'
 import 'datatables.net-buttons'
 import "bootstrap";
 import * as toastr from "toastr";
 
+interface ISettings {
+    apiUrl: string,
+    code?: string,
+    dt?: ((DataTables.Settings & DT & { getColumns? }))
+}
+
 export class Defaults {
-    private static settings: { apiUrl: string, code: string, dt: ((DataTables.Settings & DT & { getColumns })) };
-    public static global: { apiUrl, code: string, dt: ((DataTables.Settings & DT & { getColumns })), [name: string]: any } = Defaults.getSettings();
+    private static settings: ISettings;
+    public static global: ISettings & { [name: string]: any } = Defaults.getSettings();
     private static $buttonHTML;
 
     constructor() {
-        $('.parent-module').on('click', (e) => {
+        $('.parent-module').off('click').on('click', (e) => {
             $(e.currentTarget).parent().toggleClass('active');
         });
 

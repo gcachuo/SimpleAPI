@@ -5,7 +5,7 @@ interface ApiResponse<T = { [name: string]: object | number | string }> {
 }
 
 interface JQuery {
-    select2();
+    select2(options);
 
     modal();
 
