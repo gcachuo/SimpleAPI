@@ -37,6 +37,8 @@ export class Defaults {
         if ($('.select2').length) {
             $.each($('.select2'), (i, element) => {
                 $(element).select2({
+                    width: 'resolve',
+                    dropdownAutoWidth: true,
                     placeholder: $(element).data('placeholder')
                 });
             });
@@ -192,10 +194,10 @@ export class Defaults {
     }
 
     static closeModal() {
-        $(".modal").on('transitionend', () => {
-            $(".modal.hide").modal('hide').removeClass('hide');
+        $("#modal").on('transitionend', () => {
+            $("#modal.hide").modal('hide').removeClass('hide');
         })
-        $(".modal.show").addClass('hide');
+        $("#modal.show").addClass('hide');
     }
 
     public static async openModal(options: { title: string, url: string, animationClass?: string }) {
