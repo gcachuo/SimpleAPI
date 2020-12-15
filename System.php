@@ -1369,6 +1369,13 @@ class System
                     }
                     $link->setAttribute('src', BASENAME . $dir . $old_link);
                 }
+                $old_link = $link->getAttribute("data-src");
+                if ($old_link) {
+                    if (strpos($old_link, 'http') !== false) {
+                        continue;
+                    }
+                    $link->setAttribute('data-src', BASENAME . $dir . $old_link);
+                }
             }
             foreach (self::$dom->getElementsByTagName('source') as $link) {
                 $old_link = $link->getAttribute("src");
