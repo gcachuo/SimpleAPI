@@ -1363,7 +1363,12 @@ class System
             }
             foreach (self::$dom->getElementsByTagName('img') as $link) {
                 $old_link = $link->getAttribute("src");
-                $link->setAttribute('src', BASENAME . $dir . $old_link);
+                if ($old_link) {
+                    if (strpos($old_link, 'http') !== false) {
+                        continue;
+                    }
+                    $link->setAttribute('src', BASENAME . $dir . $old_link);
+                }
             }
             foreach (self::$dom->getElementsByTagName('source') as $link) {
                 $old_link = $link->getAttribute("src");
