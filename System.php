@@ -300,7 +300,7 @@ class System
             JsonResponse::sendResponse('Empty response: ' . $options['url'], HTTPStatusCodes::ServiceUnavailable);
         }
 
-        if ($select && $result['data'][$select]) {
+        if ($select && key_exists($select, $result['data'])) {
             return $result['data'][$select];
         }
 

@@ -16,7 +16,7 @@ class CoreException extends Exception
 
     function getData($value = null)
     {
-        if ($value && $this->data[$value]) {
+        if ($value && $this->data && $this->data[$value]) {
             return $this->data[$value];
         }
         return $this->data;
