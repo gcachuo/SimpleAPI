@@ -571,7 +571,7 @@ class System
                 http_response_code($code);
             }
             $message = $exception->getMessage();
-            $data = $exception->data ?? [];
+            $data = $exception->getData() ?? [];
             $error = null;
             if ($code >= 500) {
                 $error = $exception->getTrace();
@@ -1040,7 +1040,9 @@ class System
                     break;
             }
         } else {
-            JsonResponse::sendResponse("Endpoint not found.  [$namespace]", HTTPStatusCodes::NotFound);
+            $method = REQUEST_METHOD;
+            $endpoint = $controller . '/' . $action;
+            throw new CoreException("Endpoint not found.  [$namespace]", HTTPStatusCodes::NotFound, compact('endpoint'));
         }
     }
 

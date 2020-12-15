@@ -13,5 +13,6 @@ abstract class ColumnTypes
     const BIT = 'bit';
     const DECIMAL = 'decimal';
     const LONGBLOB = 'longblob';
+    const TEXT = 'text';
     const JSON = 'json';
 }
