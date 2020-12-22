@@ -1042,7 +1042,7 @@ class System
         } else {
             $method = REQUEST_METHOD;
             $endpoint = $controller . '/' . $action;
-            throw new CoreException("Endpoint not found.  [$namespace]", HTTPStatusCodes::NotFound, compact('endpoint'));
+            throw new CoreException("Endpoint not found.  [$endpoint]", HTTPStatusCodes::NotFound, compact('endpoint', 'method'));
         }
     }
 
