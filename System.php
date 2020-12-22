@@ -1537,10 +1537,16 @@ html;
                     if (!$href && $children) {
                         $children_html = '';
                         foreach ($children as $child) {
+                            $child_modal = $child['modal'] ?? false;
                             $child_href = $child['href'] ?? null;
                             $child_name = $child['name'] ?? null;
                             $child_icon = $child['icon'] ?? null;
                             $child_onclick = $child['onclick'] ?? null;
+
+                            if ($child_modal) {
+                                $child['hidden'] = true;
+                                $child['file'] = '';
+                            }
 
                             $child_disabled = System::isset_get($child['disabled']) ? 'disabled' : '';
                             $child_hidden = System::isset_get($child['hidden']) ? 'none' : 'unset';
@@ -1678,7 +1684,9 @@ html;
             if (!!($href[1] ?? null) && !!($o_module['modules'] ?? null)) {
                 $module_name .= ' / ' . ($o_module['modules'][$href[1]]['name'] ?? '');
             }
-            $o_module = $o_module['modules'][$href[1]] ?? [];
+            foreach($href as $item) {
+                $o_module = $o_module['modules'][$item] ?? $o_module;
+            }
         } else {
             $o_module = $modules[$href] ?? '';
             $module_name = ucfirst(strtolower($o_module['name'] ?: $o_module['breadcrumbs'] ?? ''));
