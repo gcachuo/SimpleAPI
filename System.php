@@ -1684,12 +1684,12 @@ html;
             if (!!($href[1] ?? null) && !!($o_module['modules'] ?? null)) {
                 $module_name .= ' / ' . ($o_module['modules'][$href[1]]['name'] ?? '');
             }
-            foreach($href as $item) {
+            foreach ($href as $item) {
                 $o_module = $o_module['modules'][$item] ?? $o_module;
             }
         } else {
             $o_module = $modules[$href] ?? '';
-            $module_name = ucfirst(strtolower($o_module['name'] ?: $o_module['breadcrumbs'] ?? ''));
+            $module_name = ucfirst(strtolower(($o_module['name'] ?? null) ?: $o_module['breadcrumbs'] ?? ''));
         }
 
         $breadcrumbs = 'none';

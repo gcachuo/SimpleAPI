@@ -19,17 +19,21 @@ export class Defaults {
     private static $buttonHTML;
 
     constructor() {
-        $('.parent-module').off('click').on('click', (e) => {
-            $(e.currentTarget).parent().toggleClass('active');
+        $(() => {
+            Defaults.ajaxSettings();
+
+            Defaults.overwriteFormSubmit();
+
+            Defaults.datatableSettings();
+
+            Defaults.setupForms();
+
+            $('.parent-module').off('click').on('click', (e) => {
+                $(e.currentTarget).parent().toggleClass('active');
+            });
+
+            $("button").prop('disabled', false);
         });
-
-        Defaults.ajaxSettings();
-
-        Defaults.overwriteFormSubmit();
-
-        Defaults.datatableSettings();
-
-        $("button").prop('disabled', false);
     }
 
     public static loadSelect2() {
@@ -106,6 +110,12 @@ export class Defaults {
                 return columns;
             }
         }
+    }
+
+    private static setupForms() {
+        $('[required]').prev('label').append((index, html) => {
+            return html.indexOf('asteriskField') == -1 ? `<span class="asteriskField" style="color: #ff0000;" title="Campo requerido">&nbsp;*</span>` : "";
+        });
     }
 
     private static ajaxSettings() {
@@ -187,9 +197,9 @@ export class Defaults {
                         window[callback](result);
                     } else if (callback) {
                         console.info(`Trigger: ${callback}`);
-                        if (redirect) {
-                            location.href = redirect;
-                        }
+                    }
+                    if (redirect) {
+                        location.href = redirect;
                     }
                 });
             }
@@ -231,15 +241,21 @@ export class Defaults {
 
         const ajaxSettings: AjaxSettings & { api: boolean } = {
             api: false,
-            url: options.url
+            url: options.url,
+            dataType: "html",
         };
 
         try {
             const moduleClass = ajaxSettings.url.split('?');
-            const html = ($('<div></div>').append(await $.ajax(ajaxSettings))).find('#view').html();
+            const response = await $.ajax(ajaxSettings);
+            const html = ($('<div></div>').append(response)).find('#view').html();
 
             $('#modal .modal-body').empty().append($(`<div>${html}</div>`).addClass(moduleClass[0]));
         } catch (e) {
+            if (e.status === 200) {
+                console.log(e);
+                return;
+            }
             console.error('/' + ajaxSettings.url, e.status + ' ' + e.statusText);
             const html = ($('<div></div>').append(e.responseText)).find('#view').html();
             if (html) {
