@@ -120,11 +120,14 @@ export class Defaults {
             },
             error: ({responseJSON, status: code}: JQuery.jqXHR) => {
                 try {
-                    const {message}: ApiResponse = responseJSON || {};
+                    let {message}: ApiResponse = responseJSON || {};
                     if (code >= 500) {
                         this.Alert('Ocurrió un error en la petición, por favor intente mas tarde.', 'error');
                         console.error(message, responseJSON);
                     } else if (code >= 400) {
+                        if (code == 404) {
+                            message = 'Not Found';
+                        }
                         this.Alert(message, 'warning');
                         console.warn(message, responseJSON);
                     } else {
@@ -201,6 +204,9 @@ export class Defaults {
     }
 
     public static async openModal(options: { title: string, url: string, animationClass?: string }) {
+        $(document).on('click', "#modal .close", () => {
+            this.closeModal();
+        });
         if (!$('#modal').length) {
             $(`<div class="modal" id="modal">
                     <div class="modal-dialog">
@@ -213,9 +219,6 @@ export class Defaults {
                         </div>
                     </div>
                 </div>`).insertAfter('#view');
-            $("#modal .close").on('click', () => {
-                this.closeModal();
-            });
         } else {
             $('#modal .modal-body').text('Cargando...');
         }
@@ -238,7 +241,12 @@ export class Defaults {
             $('#modal .modal-body').empty().append($(`<div>${html}</div>`).addClass(moduleClass[0]));
         } catch (e) {
             console.error('/' + ajaxSettings.url, e.status + ' ' + e.statusText);
-            $('#modal .modal-body').html(e.responseText);
+            const html = ($('<div></div>').append(e.responseText)).find('#view').html();
+            if (html) {
+                $('#modal .modal-body').html(html);
+            } else {
+                $('#modal .modal-body').html(e.responseText);
+            }
         }
     }
 
