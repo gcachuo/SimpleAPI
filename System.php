@@ -1324,6 +1324,7 @@ class System
             [
                 'project' => $project,
                 'description' => $description,
+                'copyright' => $copyright,
                 'entry' => $entry,
                 'error' => $error_file,
                 'theme' => $dir,
@@ -1429,6 +1430,14 @@ class System
 
                 $favicon = self::$dom->getElementById('favicon');
                 $favicon->setAttribute('href', $logo);
+            }
+
+            if (self::getElementsByClass(self::$dom, 'div', 'copyright')) {
+                $e_copyrights = (self::getElementsByClass(self::$dom, 'div', 'copyright'));
+                /** @var DOMElement $e_copyright */
+                foreach ($e_copyrights as $e_copyright) {
+                    $e_copyright->getElementsByTagName('p')->item(0)->nodeValue = $copyright;
+                }
             }
 
             if (self::getElementsByClass(self::$dom, 'img', 'project-img')) {
