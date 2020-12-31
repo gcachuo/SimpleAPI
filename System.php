@@ -1429,7 +1429,7 @@ class System
                 }
 
                 $favicon = self::$dom->getElementById('favicon');
-                $favicon->setAttribute('href', $logo);
+                $favicon->setAttribute('href', '/' . $logo);
             }
 
             if (self::getElementsByClass(self::$dom, 'div', 'copyright')) {
