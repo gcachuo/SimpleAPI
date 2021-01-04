@@ -1805,7 +1805,7 @@ html
 
         if ($permission_list) {
             foreach ($permission_list as $permission) {
-                $permissions[$permission] = $permissions[$permission] ?? ($user['type'] === 'admin');
+                $permissions[$permission] = $permissions[$permission] ?? empty($permissions);
             }
         }
 
