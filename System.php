@@ -571,7 +571,13 @@ class System
                 http_response_code($code);
             }
             $message = $exception->getMessage();
-            $data = $exception->getData() ?? [];
+            if (method_exists($exception, 'getData')) {
+                $data = $exception->getData() ?? [];
+            } else {
+                $data = [
+                    'exception' => get_class($exception)
+                ];
+            }
             $error = null;
             if ($code >= 500) {
                 $error = $exception->getTrace();
@@ -1093,15 +1099,18 @@ class System
 
     public static function request_log()
     {
-        $explode = explode('/', $_SERVER['REQUEST_URI']);
-        if (end($explode) === 'errors') {
+        $uri = explode('/', $_SERVER['REQUEST_URI']);
+        if (end($uri) === 'errors') {
             return;
         }
 
+        array_shift($uri);
+        array_shift($uri);
+
         $data = '[' . date('Y-m-d H:i:s') . '] ';
         $data .= '[' . $_SERVER['HTTP_HOST'] . '] ';
+        $data .= '[' . implode('/', $uri) . '] ';
         $data .= '[' . $_SERVER['REQUEST_METHOD'] . '] ';
-        $data .= '[' . strstr($_SERVER['REQUEST_URI'], 'api/') . '] ';
 
         $data .= '[' . preg_replace('/\s/', '', file_get_contents('php://input')) . ']';
 
