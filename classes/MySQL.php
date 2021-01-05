@@ -222,7 +222,9 @@ sql
         } elseif (is_int($val)) {
             $val = intval($val);
         } elseif (is_numeric($val)) {
-            $val = floatval($val);
+            if(strpos((string)floatval($val), 'E') === false) {
+                $val = floatval($val);
+            }
         } elseif (is_array($val)) {
             $val = json_encode($val);
         } elseif (is_bool($val)) {
