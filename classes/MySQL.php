@@ -136,7 +136,8 @@ sql
                 return $this->query($sql);
             }
 
-            $this->mysqli->select_db($this->dbname??'');
+            $dbname = self::$dbname ?? '';
+            $this->mysqli->select_db($dbname);
             $stmt = $this->mysqli->prepare($sql);
             foreach ($params as $k => &$param) {
                 $array[] =& $param;
