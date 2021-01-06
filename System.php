@@ -976,7 +976,7 @@ class System
                         });
                         $entry = array_values(array_filter($entry));
 
-                        $error_code = $entry[3];
+                        $error_code = $entry[2];
                         if (!is_int($error_code) && $errors) {
                             $entry = null;
                         } elseif (is_int($error_code) && !$errors) {
