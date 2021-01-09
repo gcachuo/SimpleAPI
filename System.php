@@ -1224,6 +1224,7 @@ class System
     /**
      * @param array $constants
      * @return void
+     * @throws CoreException
      */
     public static function init_web(array $constants)
     {
@@ -1327,6 +1328,11 @@ class System
         self::formatDocument($file, $module_file);
     }
 
+    /**
+     * @param $file
+     * @param null $module_file
+     * @throws CoreException
+     */
     public static function formatDocument($file, $module_file = null)
     {
         try {
@@ -1403,7 +1409,14 @@ class System
                 }
             }
 
-            if (self::$dom->getElementsByTagName('title')->item(0)) {
+            if (self::$dom->getElementsByTagName('head')->item(0)) {
+                if (!file_exists(WEBDIR . '/assets/dist/bundle.js')) {
+                    throw new CoreException('Assets not generated', 500, ['dir' => WEBDIR . '/assets/dist/bundle.js']);
+                }
+                $fragment=self::$dom->createDocumentFragment();
+                $fragment->appendXML('<script src="assets/dist/bundle.js"></script>');
+                self::$dom->getElementsByTagName('head')->item(0)->appendChild($fragment);
+            }if (self::$dom->getElementsByTagName('title')->item(0)) {
                 self::$dom->getElementsByTagName('title')->item(0)->nodeValue = $project;
             }
             if (self::$dom->getElementById('tag-title')) {
