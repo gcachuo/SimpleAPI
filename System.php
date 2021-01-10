@@ -1228,7 +1228,7 @@ class System
      */
     public static function init_web(array $constants)
     {
-        set_exception_handler(function (CoreException $exception) {
+        set_exception_handler(function ($exception) {
             ob_clean();
             $status = 'exception';
             $code = $exception->getCode() ?: 500;
@@ -1413,10 +1413,11 @@ class System
                 if (!file_exists(WEBDIR . '/assets/dist/bundle.js')) {
                     throw new CoreException('Assets not generated', 500, ['dir' => WEBDIR . '/assets/dist/bundle.js']);
                 }
-                $fragment=self::$dom->createDocumentFragment();
+                $fragment = self::$dom->createDocumentFragment();
                 $fragment->appendXML('<script src="assets/dist/bundle.js"></script>');
                 self::$dom->getElementsByTagName('head')->item(0)->appendChild($fragment);
-            }if (self::$dom->getElementsByTagName('title')->item(0)) {
+            }
+            if (self::$dom->getElementsByTagName('title')->item(0)) {
                 self::$dom->getElementsByTagName('title')->item(0)->nodeValue = $project;
             }
             if (self::$dom->getElementById('tag-title')) {
@@ -1757,6 +1758,16 @@ html
 
             if ($view->parentNode) {
                 $view->parentNode->replaceChild($module, $view);
+            }
+
+            if (file_exists("settings/" . WEBCONFIG['code'] . "/css/index.css")) {
+                $code = WEBCONFIG['code'];
+                $fragment = self::$dom->createDocumentFragment();
+                $fragment->appendXML(<<<html
+<link rel="stylesheet" href="settings/$code/css/index.css"/>
+html
+                );
+                $html->appendChild($fragment);
             }
 
             if ($o_module['action'] ?? null) {
