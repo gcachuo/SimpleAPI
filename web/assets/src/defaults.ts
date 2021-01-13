@@ -157,10 +157,12 @@ export class Defaults {
     }
 
     private static overwriteFormSubmit() {
-        $(document).off('submit').on('submit', 'form', (e) => {
+        $(document).off('submit', 'form').on('submit', 'form', (e) => {
+            const triggered = $(e.currentTarget).attr('triggered');
             const url = $(e.currentTarget).attr('uri');
-            if (url) {
+            if (url && !triggered) {
                 e.preventDefault();
+                $(e.currentTarget).attr('triggered', 'true');
 
                 const $button = $(`button[type='submit']`);
                 this.$buttonHTML = $button.html();
@@ -201,6 +203,8 @@ export class Defaults {
                     if (redirect) {
                         location.href = redirect;
                     }
+                }).always(() => {
+                    $(e.currentTarget).removeAttr('triggered');
                 });
             }
         })
