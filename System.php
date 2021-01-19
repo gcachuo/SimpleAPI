@@ -1339,6 +1339,8 @@ class System
             [
                 'project' => $project,
                 'description' => $description,
+                'keywords' => $keywords,
+                'author' => $author,
                 'copyright' => $copyright,
                 'entry' => $entry,
                 'error' => $error_file,
@@ -1425,6 +1427,12 @@ class System
             }
             if (self::$dom->getElementById('tag-description')) {
                 self::$dom->getElementById('tag-description')->setAttribute('content', $description);
+            }
+            if (self::$dom->getElementById('tag-keywords')) {
+                self::$dom->getElementById('tag-keywords')->setAttribute('content', $keywords);
+            }
+            if (self::$dom->getElementById('tag-author')) {
+                self::$dom->getElementById('tag-author')->setAttribute('content', $author);
             }
             if (self::$dom->getElementById('project-title')) {
                 self::$dom->getElementById('project-title')->nodeValue = $project;
