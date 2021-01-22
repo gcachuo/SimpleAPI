@@ -224,3 +224,8 @@ ol, ul, dl {
 body {
   overflow-y: hidden;
 }
+
+#view{
+  overflow: auto;
+  height: 100vh;
+}
