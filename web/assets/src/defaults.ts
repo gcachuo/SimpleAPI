@@ -189,7 +189,14 @@ export class Defaults {
 
                 let data: object = {};
                 (valuePair as JQuery.NameValuePair[]).map(({name, value}) => {
-                    data[name] = value;
+                    if (name.includes('[]')) {
+                        name = name.replace('[]', '');
+                        data[name] = data[name] || [];
+                        data[name].push(value);
+                    } else {
+                        data[name] = value;
+                    }
+                    console.log(name, value, data);
                 });
 
                 $.ajax({
