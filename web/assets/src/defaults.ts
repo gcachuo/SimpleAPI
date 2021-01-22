@@ -196,7 +196,6 @@ export class Defaults {
                     } else {
                         data[name] = value;
                     }
-                    console.log(name, value, data);
                 });
 
                 $.ajax({
