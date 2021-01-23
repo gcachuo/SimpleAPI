@@ -1,4 +1,7 @@
 import AjaxSettings = DataTables.AjaxSettings;
+import ColumnSettings = DataTables.ColumnSettings;
+import ColumnDefsSettings = DataTables.ColumnDefsSettings;
+
 import {DT} from "./typings/DataTables";
 
 import $ from 'jquery';
@@ -17,7 +20,7 @@ import '@fortawesome/fontawesome-free/js/brands';
 interface ISettings {
     apiUrl: string,
     code?: string,
-    dt?: ((DataTables.Settings & DT & { getColumns? }))
+    dt?: ((DataTables.Settings & DT & { getColumns?: (columns: (ColumnSettings & { responsivePriority?: number })[]) => ColumnDefsSettings[] }))
 }
 
 export class Defaults {
@@ -77,7 +80,6 @@ export class Defaults {
                 sPageButton: "btn btn-outline-info"
             });
             $.extend(true, $.fn.dataTable.defaults, {
-                scrollY: 'calc(100vh - 268px)',
                 dom: 'Bfrtip',
                 responsive: true,
                 stateSave: true,
@@ -114,7 +116,7 @@ export class Defaults {
                     column['targets'] = index;
                     return column;
                 });
-                return columns;
+                return <ColumnDefsSettings[]>columns;
             }
         }
     }
