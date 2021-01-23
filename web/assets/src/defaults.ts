@@ -1,11 +1,18 @@
 import AjaxSettings = DataTables.AjaxSettings;
 import {DT} from "./typings/DataTables";
+
 import $ from 'jquery';
-import 'datatables.net'
-import 'datatables.net-dt'
-import 'datatables.net-buttons'
 import "bootstrap";
 import * as toastr from "toastr";
+
+import 'datatables.net';
+import 'datatables.net-dt';
+import 'datatables.net-buttons';
+
+import '@fortawesome/fontawesome-free/js/fontawesome';
+import '@fortawesome/fontawesome-free/js/solid';
+import '@fortawesome/fontawesome-free/js/regular';
+import '@fortawesome/fontawesome-free/js/brands';
 
 interface ISettings {
     apiUrl: string,

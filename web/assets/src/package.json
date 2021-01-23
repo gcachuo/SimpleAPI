@@ -31,7 +31,7 @@
     "webpack-cli": "^3.3.12"
   },
   "scripts": {
-    "clean": "rm -rf ../dist/*.js",
+    "clean": "rm -rf ../dist/*.js ../dist/*.eot ../dist/*.woff ../dist/*.woff2 ../dist/*.svg ../dist/*.ttf;",
     "webpack:build": "yarn clean; yarn; webpack",
     "webpack:watch": "yarn clean; yarn; webpack --watch"
   }

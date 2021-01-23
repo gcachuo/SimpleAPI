@@ -1616,7 +1616,7 @@ html;
 <li>
     <a class="parent-module">
         <span class="nav-caret">
-            <i class="fa fa-caret-down"></i>
+            <i class="fas fa-caret-down"></i>
         </span>
         $nav_icon
         <span class="nav-text">$name</span>
