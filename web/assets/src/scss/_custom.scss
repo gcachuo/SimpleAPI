@@ -229,3 +229,7 @@ body {
   overflow: auto;
   height: 100vh;
 }
+
+.app-footer:not(.hide) ~ .app-body {
+  padding-bottom: unset;
+}
