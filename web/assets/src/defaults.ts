@@ -28,25 +28,25 @@ export class Defaults {
     public static global: ISettings & { [name: string]: any } = Defaults.getSettings();
     private static $buttonHTML;
 
-    constructor() {
-        $(() => {
-            Defaults.ajaxSettings();
+    public static init() {
+        Defaults.ajaxSettings();
 
-            Defaults.overwriteFormSubmit();
+        Defaults.overwriteFormSubmit();
 
-            Defaults.datatableSettings();
+        Defaults.datatableSettings();
 
-            Defaults.setupForms();
+        Defaults.setupForms();
 
-            $('.parent-module').off('click').on('click', (e) => {
-                $(e.currentTarget).parent().toggleClass('active');
-            });
+        Defaults.loadSelect2();
 
-            $("button").prop('disabled', false);
+        $('.parent-module').off('click').on('click', (e) => {
+            $(e.currentTarget).parent().toggleClass('active');
         });
+
+        $("button").prop('disabled', false);
     }
 
-    public static loadSelect2() {
+    private static loadSelect2() {
         require('select2');
         if ($('.select2').length) {
             $.each($('.select2'), (i, element) => {
