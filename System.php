@@ -1864,4 +1864,37 @@ html
         $chart = 'https://chart.googleapis.com/chart?' . $url;
         return compact('chart', 'chl');
     }
+
+    static function parseRows($name, $path, $template): array
+    {
+        $parse = SimpleXLSX::parse($path);
+
+        if (!$parse) {
+            $error = SimpleXLSX::parseError();
+            throw new CoreException($error . ': ' . $name, 400, compact('name', 'path'));
+        }
+
+        $rows = $parse->rows();
+        $headers = $rows[0];
+
+        //Validar headers
+        $template = SimpleXLSX::parse($template);
+        if (!$template) {
+            $error = SimpleXLSX::parseError();
+            throw new CoreException($error . ': ' . $name, 400, compact('name', 'path'));
+        }
+        $template_headers = $template->rows()[0];
+        $diff = array_diff($template_headers, $headers);
+        if (!empty($diff)) {
+            throw new CoreException('El archivo no tiene el formato correcto. Descarge el formato de nuevo.', 400, compact('diff'));
+        }
+
+        array_splice($rows, 0, 1);
+
+        array_walk($rows, function (&$row) use ($headers) {
+            $row = array_combine($headers, $row);
+        });
+
+        return compact('headers', 'rows');
+    }
 }
