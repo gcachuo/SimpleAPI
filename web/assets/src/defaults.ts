@@ -289,4 +289,15 @@ export class Defaults {
         toastr.clear();
         toastr[type](message);
     }
+
+    static downloadFile(uri, name) {
+        const url = Defaults.global.apiUrl + '/' + uri;
+
+        const link = document.createElement("a");
+        link.setAttribute('download', name);
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    }
 }
