@@ -382,20 +382,10 @@ class System
     public static function encode_id($id)
     {
         return base64_encode(rand(10000, 99999) . '=' . $id);
-        /*$salt = 9734 + $id;
-        return 'DAR' . $salt;*/
     }
 
     public static function decode_id(string $id)
     {
-        /*$end_decoded = str_replace('DAR', '', strtoupper($base64));
-        if (!empty($end_decoded) && !intval($base64)) {
-            if (intval($end_decoded)) {
-                $base64 = $end_decoded - 9734;
-            }
-            return $end_decoded;
-        }
-        return $base64;*/
         $base64 = base64_decode($id);
         $end_decoded = strstr($base64, '=');
         if (!empty($base64) && (strlen($end_decoded) > 1)) {
