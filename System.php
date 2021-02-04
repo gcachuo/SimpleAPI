@@ -211,7 +211,7 @@ class System
     public static function getTemplate(string $filename, $data)
     {
         ob_start();
-        include __DIR__ . '/../templates/' . $filename . '.php';
+        include_once __DIR__ . '/../templates/' . $filename . '.php';
         $contents = ob_get_contents();
         ob_end_clean();
 
@@ -681,7 +681,7 @@ class System
             $file = str_replace('\\', '/', $class);
             $path = DIR . "/$file.php";
             if (file_exists($path)) {
-                include $path;
+                include_once $path;
             }
         });
         if (function_exists('xdebug_disable')) {
@@ -1023,7 +1023,7 @@ class System
                     break;
                 case "webhook":
                     if (REQUEST_METHOD === 'POST' && $_GET['platform']) {
-                        include __DIR__ . '/Webhook.php';
+                        include_once __DIR__ . '/Webhook.php';
                         new Webhook($_GET['platform']);
                         JsonResponse::sendResponse('Webhook', 200, $_POST);
                     } else {
@@ -1698,7 +1698,7 @@ html;
         }
 
         ob_start();
-        include $module_path;
+        include_once $module_path;
         $contents = ob_get_contents();
         ob_end_clean();
 
