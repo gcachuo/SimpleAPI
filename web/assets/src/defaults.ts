@@ -190,28 +190,33 @@ export class Defaults {
                     return;
                 }
 
+                let data;
                 let valuePair: JQuery.NameValuePair[] | FormData = $(e.currentTarget).serializeArray();
                 if (method.toUpperCase() === 'POST' && fileUpload) {
-                    valuePair = new FormData(<HTMLFormElement>$(e.currentTarget).get(0));
+                    data = new FormData(<HTMLFormElement>$(e.currentTarget).get(0));
                     $.ajaxSetup({
                         contentType: false,
                         processData: false,
                     });
+                } else {
+                    data = {};
+                    (valuePair as JQuery.NameValuePair[]).map(({name, value}) => {
+                        if (name.includes('[]')) {
+                            name = name.replace('[]', '');
+                            data[name] = data[name] || [];
+                            data[name].push(value);
+                        } else {
+                            data[name] = value;
+                        }
+                    });
+                    data = JSON.stringify(data);
+                    $.ajaxSetup({
+                        contentType: 'application/json'
+                    });
                 }
 
-                let data: object = {};
-                (valuePair as JQuery.NameValuePair[]).map(({name, value}) => {
-                    if (name.includes('[]')) {
-                        name = name.replace('[]', '');
-                        data[name] = data[name] || [];
-                        data[name].push(value);
-                    } else {
-                        data[name] = value;
-                    }
-                });
-
                 $.ajax({
-                    url, method, data: JSON.stringify(data), contentType: 'application/json',
+                    url, method, data: data,
                     headers: {
                         Authorization: $('#tag-code').attr('content').toString()
                     }
