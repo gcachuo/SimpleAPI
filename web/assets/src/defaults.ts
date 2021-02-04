@@ -88,6 +88,9 @@ export class Defaults {
                 ajax: {
                     dataSrc: (name) => {
                         return ({status, code, data, error}) => data[name]
+                    },
+                    headers: {
+                        Authorization: $('#tag-code').attr('content').toString()
                     }
                 },
                 pageLength: 25,
@@ -208,7 +211,10 @@ export class Defaults {
                 });
 
                 $.ajax({
-                    url, method, data: JSON.stringify(data), contentType: 'application/json'
+                    url, method, data: JSON.stringify(data), contentType: 'application/json',
+                    headers: {
+                        Authorization: $('#tag-code').attr('content').toString()
+                    }
                 }).done((result) => {
                     if (window[callback]) {
                         window[callback](result);
