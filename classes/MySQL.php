@@ -35,7 +35,7 @@ class MySQL
         mysqli_report(MYSQLI_REPORT_ALL ^ MYSQLI_REPORT_INDEX);
         try {
             if (defined('CONFIG')) {
-                $filename = DIR . '/Config/' . CONFIG['project']['code'] . '.json';
+                $filename = DIR . '/Config/' . PROJECT . '.json';
             } else {
                 $filename = DIR . '/Config/default.json';
             }

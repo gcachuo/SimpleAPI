@@ -784,7 +784,7 @@ class System
                     : null;
                 if ($project_config) {
                     $project_config = json_decode($project_config, true);
-                    define('PROJECT', $project_config['project']['code']);
+                    if(!defined('PROJECT')) define('PROJECT', $project_config['project']['code']);
                     self::define_constants($config);
                 } else {
                     $project_config = [
