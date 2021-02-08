@@ -15,4 +15,5 @@ abstract class ColumnTypes
     const LONGBLOB = 'longblob';
     const TEXT = 'text';
     const JSON = 'json';
+    const FLOAT = 'float';
 }
