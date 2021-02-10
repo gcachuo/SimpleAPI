@@ -784,7 +784,7 @@ class System
                     : null;
                 if ($project_config) {
                     $project_config = json_decode($project_config, true);
-                    if(!defined('PROJECT')) define('PROJECT', $project_config['project']['code']);
+                    if (!defined('PROJECT')) define('PROJECT', $project_config['project']['code']);
                     self::define_constants($config);
                 } else {
                     $project_config = [
@@ -1239,7 +1239,7 @@ class System
                 case 404:
                     parse_str($_SERVER['QUERY_STRING'], $query_string);
                     $endpoint = $exception->getData('endpoint');
-                    $message = $endpoint ?? $query_string['module'] ?? null;
+                    $message = $endpoint ?? ($query_string['action'] ?? null) ?? ($query_string['module'] ?? null);
                     if ($message) {
                         self::$error_message .= ' [' . $message . ']';
                     }
