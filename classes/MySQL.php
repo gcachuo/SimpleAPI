@@ -30,6 +30,11 @@ class MySQL
      */
     private $mysqli;
 
+    static function unset_database()
+    {
+        self::$dbname = null;
+    }
+
     public function __construct($dbname = null)
     {
         mysqli_report(MYSQLI_REPORT_ALL ^ MYSQLI_REPORT_INDEX);
@@ -223,7 +228,7 @@ sql
         } elseif (is_int($val)) {
             $val = intval($val);
         } elseif (is_numeric($val)) {
-            if(strpos((string)floatval($val), 'E') === false) {
+            if (strpos((string)floatval($val), 'E') === false) {
                 $val = floatval($val);
             }
         } elseif (is_array($val)) {

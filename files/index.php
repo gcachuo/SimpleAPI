@@ -9,8 +9,8 @@ if (file_exists($path)) {
 }
 
 $headers = apache_request_headers();
-if ($headers['Authorization'] ?? null) {
-    define('PROJECT', $headers['Authorization']);
+if ($headers['X-Client'] ?? null) {
+    define('PROJECT', $headers['X-Client']);
 }
 
 $system = new System();
