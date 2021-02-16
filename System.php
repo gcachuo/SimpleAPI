@@ -240,7 +240,8 @@ class System
         $curl = curl_init();
 
         $headers = [
-            "Cookie: XDEBUG_SESSION=PHPSTORM"
+            "Cookie: XDEBUG_SESSION=PHPSTORM",
+            "X-Client: " . WEBCONFIG['code']
         ];
         $options['method'] = mb_strtoupper($options['method'] ?? 'get');
 

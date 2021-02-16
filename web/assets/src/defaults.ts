@@ -90,7 +90,7 @@ export class Defaults {
                         return ({status, code, data, error}) => data[name]
                     },
                     headers: {
-                        Authorization: $('#tag-code').attr('content').toString()
+                        'X-Client': $('#tag-code').attr('content').toString()
                     }
                 },
                 pageLength: 25,
