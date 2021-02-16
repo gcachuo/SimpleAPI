@@ -218,7 +218,7 @@ export class Defaults {
                 $.ajax({
                     url, method, data: data,
                     headers: {
-                        Authorization: $('#tag-code').attr('content').toString()
+                        'X-Client': $('#tag-code').attr('content').toString()
                     }
                 }).done((result) => {
                     if (window[callback]) {
