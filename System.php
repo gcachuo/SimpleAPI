@@ -54,11 +54,11 @@ class System
         }
 
         $user = System::curlDecodeToken($check);
-        $user['permissions'] = System::json_decode($user['permissions'] ?? '[]', true);
+        $user['permissions'] = $user['permissions'] ? System::json_decode($user['permissions']) : null;
         $user['token'] = $check;
 
         $_SESSION['modules'] = [];
-        foreach ($user['permissions'] as $key) {
+        foreach ($user['permissions'] ?? [] as $key) {
             if (strpos($key, '/') !== false) {
                 $key = explode("/", $key);
                 $_SESSION['modules'][$key[0]]['modules'][$key[1]] = MODULES[$key[0]]['modules'][$key[1]];
@@ -1518,7 +1518,7 @@ class System
 
                 if (defined('SESSIONCHECK') && SESSIONCHECK) {
                     $user = System::sessionCheck("user_token");
-                    if (($user['permissions'] ?? null)) {
+                    if (($user['permissions'] ?? null) !== null) {
                         if (!in_array($module_file, $user['permissions']) && $module_file != 'dashboard') {
                             if (!$_GET['module']) {
                                 System::redirect('dashboard');
