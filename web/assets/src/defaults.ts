@@ -53,7 +53,23 @@ export class Defaults {
                 $(element).select2({
                     width: 'resolve',
                     dropdownAutoWidth: true,
-                    placeholder: $(element).data('placeholder')
+                    placeholder: $(element).data('placeholder'),
+                    ajax: $(element).data('url') ? {
+                        url: $(element).data('url'),
+                        dataType: 'json',
+                        processResults: function ({data}) {
+                            if($(element).data('items')) {
+                                let items = data[$(element).data('items')];
+                                items = items.map((item) => {
+                                    return {id: item.id, text: item.name};
+                                });
+                                return {
+                                    results: items
+                                };
+                            }
+                            return data;
+                        }
+                    } : null
                 });
             });
         }
