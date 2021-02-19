@@ -43,10 +43,13 @@ class System
         return $_SERVER['REMOTE_ADDR'];
     }
 
-    public static function sessionCheck(string $name)
+    public static function sessionCheck(string $name, string $token = null)
     {
+        if (ENVIRONMENT !== 'www') {
+            throw new CoreException('sessionCheck can only be used on web.');
+        }
         session_start();
-        $check = $_SESSION[$name] ?? null;
+        $check = $_SESSION[$name] ?? $token ?? null;
 
         $module = $_GET['module'];
         if (!$check && ($module !== 'login' && $module !== 'signup')) {
@@ -236,6 +239,9 @@ class System
      */
     public static function curl($options, $select = null)
     {
+        if (ENVIRONMENT !== 'www') {
+            throw new CoreException('curl can only be used on web');
+        }
         $settings = self::getSettings();
 
         $curl = curl_init();
@@ -1829,6 +1835,9 @@ html
 
     public static function getPermissions(array $permission_list = null)
     {
+        if (ENVIRONMENT !== 'www') {
+            throw new CoreException('getPermissions can only be used on web.');
+        }
         if (session_id() == '') {
             session_start();
         }
