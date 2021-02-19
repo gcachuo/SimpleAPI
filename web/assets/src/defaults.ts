@@ -90,7 +90,8 @@ export class Defaults {
                         return ({status, code, data, error}) => data[name]
                     },
                     headers: {
-                        'X-Client': $('#tag-code').attr('content').toString()
+                        'X-Client': $('#tag-code').attr('content').toString(),
+                        Authorization: 'Bearer ' + ($("#tag-user-token").attr('content').toString() || '')
                     }
                 },
                 pageLength: 25,
@@ -218,7 +219,8 @@ export class Defaults {
                 $.ajax({
                     url, method, data: data,
                     headers: {
-                        'X-Client': $('#tag-code').attr('content').toString()
+                        'X-Client': $('#tag-code').attr('content').toString(),
+                        Authorization: 'Bearer ' + ($("#tag-user-token").attr('content').toString() || '')
                     }
                 }).done((result) => {
                     if (window[callback]) {
