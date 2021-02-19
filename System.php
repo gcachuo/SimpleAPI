@@ -58,15 +58,16 @@ class System
         $user['token'] = $check;
 
         $_SESSION['modules'] = [];
-        foreach ($user['permissions'] ?? [] as $key) {
-            if (strpos($key, '/') !== false) {
-                $key = explode("/", $key);
-                $_SESSION['modules'][$key[0]]['modules'][$key[1]] = MODULES[$key[0]]['modules'][$key[1]];
-                foreach (MODULES[$key[0]] as $key2 => $name) {
-                    if ($key2 == 'modules') {
-                        continue;
+        foreach ($user['permissions'] ?? [] as $key => $permissions) {
+            if (MODULES[$key]['modules'] ?? null) {
+                $_SESSION['modules'][$key] = MODULES[$key];
+                foreach (MODULES[$key]['modules'] as $permission => $module) {
+                    if (($permissions[$permission] ?? null) === null) {
+                        unset($_SESSION['modules'][$key]['modules'][$permission]);
                     }
-                    $_SESSION['modules'][$key[0]][$key2] = $name;
+                }
+                if (empty($_SESSION['modules'][$key]['modules'])) {
+                    unset($_SESSION['modules'][$key]);
                 }
             } else {
                 $_SESSION['modules'][$key] = MODULES[$key];
@@ -1516,21 +1517,30 @@ class System
             } elseif ($module_file ?? null) {
                 $fragment = self::$dom->createDocumentFragment();
 
-                if (defined('SESSIONCHECK') && SESSIONCHECK) {
+                if (defined('SESSIONCHECK') && SESSIONCHECK && pathinfo($module_file, PATHINFO_EXTENSION) !== 'js') {
                     $user = System::sessionCheck("user_token");
                     if (($user['permissions'] ?? null) !== null) {
-                        if (!in_array($module_file, $user['permissions']) && $module_file != 'dashboard') {
-                            if (!$_GET['module']) {
-                                System::redirect('dashboard');
-                            }
-                            if ($module_list[$module_file]['permissions'] ?? true) {
-                                throw new CoreException($module_file, HTTPStatusCodes::Forbidden);
-                            }
-                        }
-
                         $module_list = ($_SESSION['modules'] ?? []) + array_filter(MODULES, function ($module) {
                                 return ($module['permissions'] ?? true) === false;
                             });
+                        if ($module_file !== 'dashboard' && !($module_list[$module_file] ?? null)) {
+                            [$module, $action] = explode('/', $module_file);
+                            if(empty($module_list[$module]) && !empty(MODULES[$module])){
+                                throw new CoreException($module_file, HTTPStatusCodes::Forbidden);
+                            }
+                            switch (true) {
+                                case $module_list[$module]['modules'][$action]:
+                                case $module_list[$module]['action']['href'] === $action:
+                                    break;
+                                case !MODULES[$module]['modules'][$action]:
+                                    throw new CoreException($module_file, HTTPStatusCodes::NotFound);
+                                default:
+                                    throw new CoreException($module_file, HTTPStatusCodes::Forbidden);
+                            }
+                        }
+                    }
+                    if (self::$dom->getElementById('tag-user-token')) {
+                        self::$dom->getElementById('tag-user-token')->setAttribute('content', $user['token']);
                     }
                 }
 
