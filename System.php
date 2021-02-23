@@ -72,7 +72,7 @@ class System
                 if (empty($_SESSION['modules'][$key]['modules'])) {
                     unset($_SESSION['modules'][$key]);
                 }
-            } else {
+            } elseif (MODULES[$key] ?? null) {
                 $_SESSION['modules'][$key] = MODULES[$key];
             }
         }
