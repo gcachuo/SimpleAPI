@@ -1415,7 +1415,7 @@ class System
                 }
                 $fragment = self::$dom->createDocumentFragment();
                 $fragment->appendXML('<script src="assets/dist/bundle.js"></script>');
-                self::$dom->getElementsByTagName('head')->item(0)->appendChild($fragment);
+                self::$dom->getElementsByTagName('head')->item(0)->insertBefore($fragment,self::$dom->getElementsByTagName('title')->item(0));
             }
             if (self::$dom->getElementsByTagName('title')->item(0)) {
                 self::$dom->getElementsByTagName('title')->item(0)->nodeValue = $project;
