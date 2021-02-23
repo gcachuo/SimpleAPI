@@ -1031,7 +1031,7 @@ class System
                     break;
                 case "webhook":
                     if (REQUEST_METHOD === 'POST' && $_GET['platform']) {
-                        include_once __DIR__ . '/Webhook.php';
+                        include_once __DIR__ . '/classes/Webhook.php';
                         new Webhook($_GET['platform']);
                         JsonResponse::sendResponse('Webhook', 200, $_POST);
                     } else {
