@@ -1416,7 +1416,7 @@ class System
                 }
                 $fragment = self::$dom->createDocumentFragment();
                 $fragment->appendXML('<script src="assets/dist/bundle.js"></script>');
-                self::$dom->getElementsByTagName('head')->item(0)->insertBefore($fragment,self::$dom->getElementsByTagName('title')->item(0));
+                self::$dom->getElementsByTagName('head')->item(0)->insertBefore($fragment, self::$dom->getElementsByTagName('title')->item(0));
             }
             if (self::$dom->getElementsByTagName('title')->item(0)) {
                 self::$dom->getElementsByTagName('title')->item(0)->nodeValue = $project;
@@ -1532,7 +1532,7 @@ class System
                             });
                         if ($module_file !== 'dashboard' && !($module_list[$module_file] ?? null)) {
                             [$module, $action] = explode('/', $module_file);
-                            if(empty($module_list[$module]) && !empty(MODULES[$module])){
+                            if (empty($module_list[$module]) && !empty(MODULES[$module])) {
                                 throw new CoreException($module_file, HTTPStatusCodes::Forbidden);
                             }
                             switch (true) {
@@ -1907,5 +1907,10 @@ html
         });
 
         return compact('headers', 'rows');
+    }
+
+    static function array_fill(array $keys, $value = null): array
+    {
+        return array_fill_keys($keys, $value);
     }
 }
