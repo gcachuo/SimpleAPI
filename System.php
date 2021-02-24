@@ -1395,6 +1395,18 @@ class System
                     }
                     $link->setAttribute('data-src', BASENAME . $dir . $old_link);
                 }
+                $old_links = $link->getAttribute("srcset");
+                if ($old_links) {
+                    $new_links = [];
+                    foreach (explode(', ', $old_links) as $old_link) {
+                        if (strpos($old_link, 'http') !== false) {
+                            $new_links[] = $old_link;
+                            continue;
+                        }
+                        $new_links[] = BASENAME . $dir . $old_link;
+                    }
+                    $link->setAttribute('srcset', implode(', ', $new_links));
+                }
             }
             foreach (self::$dom->getElementsByTagName('source') as $link) {
                 $old_link = $link->getAttribute("src");
