@@ -959,7 +959,7 @@ class System
                     rsort($log);
                     $log = array_filter($log);
 
-                    $errors = !!$_GET['errors'];
+                    $errors = !!($_GET['errors'] ?? null);
 
                     array_walk($log, function (&$entry) use ($errors) {
                         $entry = preg_split('/\] \[|] |^\[/m', $entry);
