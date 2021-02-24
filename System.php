@@ -1356,6 +1356,14 @@ class System
             self::$dom->loadHTMLFile($dir . $file);
 
             /** @var DOMElement $link */
+            foreach (self::$dom->getElementsByTagName('a') as $link) {
+                $old_link = $link->getAttribute("href");
+                if (strpos($old_link, 'http') !== false) {
+                    continue;
+                }
+
+                $link->setAttribute('href', BASENAME . trim($old_link, '/'));
+            }
             foreach (self::$dom->getElementsByTagName('link') as $link) {
                 $old_link = $link->getAttribute("href");
                 if (strpos($old_link, 'http') !== false) {
@@ -1428,7 +1436,7 @@ class System
                 }
                 $fragment = self::$dom->createDocumentFragment();
                 $fragment->appendXML('<script src="assets/dist/bundle.js"></script>');
-                self::$dom->getElementsByTagName('head')->item(0)->insertBefore($fragment, self::$dom->getElementsByTagName('title')->item(0));
+                self::$dom->getElementsByTagName('head')->item(0)->appendChild($fragment);
             }
             if (self::$dom->getElementsByTagName('title')->item(0)) {
                 self::$dom->getElementsByTagName('title')->item(0)->nodeValue = $project;
