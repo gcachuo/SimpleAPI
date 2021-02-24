@@ -58,7 +58,7 @@ export class Defaults {
                         url: $(element).data('url'),
                         dataType: 'json',
                         processResults: function ({data}) {
-                            if($(element).data('items')) {
+                            if ($(element).data('items')) {
                                 let items = data[$(element).data('items')];
                                 items = items.map((item) => {
                                     return {id: item.id, text: item.name};
@@ -88,6 +88,14 @@ export class Defaults {
     }
 
     private static datatableSettings(): void {
+        let code = '';
+        let user_token = '';
+        if ($("#ttag-code").attr('content')) {
+            code = $("#tag-code").attr('content').toString() || '';
+        }
+        if ($("#tag-user-token").attr('content')) {
+            user_token = $("#tag-user-token").attr('content').toString() || '';
+        }
         if ($.fn.dataTable) {
             $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn';
             $.extend($.fn.dataTable.ext.classes, {
@@ -106,8 +114,8 @@ export class Defaults {
                         return ({status, code, data, error}) => data[name]
                     },
                     headers: {
-                        'X-Client': $('#tag-code').attr('content').toString(),
-                        Authorization: 'Bearer ' + ($("#tag-user-token").attr('content').toString() || '')
+                        'X-Client': code,
+                        Authorization: 'Bearer ' + user_token
                     }
                 },
                 pageLength: 25,
