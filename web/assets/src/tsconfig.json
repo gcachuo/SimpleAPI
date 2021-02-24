@@ -1,6 +1,8 @@
 {
   "compilerOptions": {
+    "baseUrl": "./",
     "target": "es6",
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true
   }
 }

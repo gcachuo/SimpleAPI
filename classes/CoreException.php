@@ -2,7 +2,7 @@
 
 class CoreException extends Exception
 {
-    public $data;
+    private $data;
 
     public function __construct($message = "", $code = 0, array $data = null)
     {
@@ -12,5 +12,13 @@ class CoreException extends Exception
         $response = compact('message', 'data');
         System::log_error(compact('status', 'code', 'response', 'error'));
         parent::__construct($message, $code);
+    }
+
+    function getData($value = null)
+    {
+        if ($value && $this->data && $this->data[$value]) {
+            return $this->data[$value];
+        }
+        return $this->data;
     }
 }

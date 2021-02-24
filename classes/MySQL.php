@@ -30,12 +30,17 @@ class MySQL
      */
     private $mysqli;
 
+    static function unset_database()
+    {
+        self::$dbname = null;
+    }
+
     public function __construct($dbname = null)
     {
         mysqli_report(MYSQLI_REPORT_ALL ^ MYSQLI_REPORT_INDEX);
         try {
             if (defined('CONFIG')) {
-                $filename = DIR . '/Config/' . CONFIG['project']['code'] . '.json';
+                $filename = DIR . '/Config/' . PROJECT . '.json';
             } else {
                 $filename = DIR . '/Config/default.json';
             }
@@ -136,7 +141,8 @@ sql
                 return $this->query($sql);
             }
 
-            $this->mysqli->select_db($this->dbname);
+            $dbname = self::$dbname ?? '';
+            $this->mysqli->select_db($dbname);
             $stmt = $this->mysqli->prepare($sql);
             foreach ($params as $k => &$param) {
                 $array[] =& $param;
@@ -222,7 +228,9 @@ sql
         } elseif (is_int($val)) {
             $val = intval($val);
         } elseif (is_numeric($val)) {
-            $val = floatval($val);
+            if (strpos((string)floatval($val), 'E') === false) {
+                $val = floatval($val);
+            }
         } elseif (is_array($val)) {
             $val = json_encode($val);
         } elseif (is_bool($val)) {

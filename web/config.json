@@ -1,6 +1,10 @@
 {
   "code": "default",
   "project": "Default",
+  "description": "Default Description",
+  "keywords": "Default Keywords",
+  "copyright": "Default Copyright",
+  "author": "admin@admin.com",
   "theme": "themes/default/",
   "entry": "index.html",
   "default": "dashboard",

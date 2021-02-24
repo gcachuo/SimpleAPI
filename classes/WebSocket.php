@@ -8,7 +8,7 @@ use WebSocket\BadUriException;
 use WebSocket\Client;
 use WebSocket\ConnectionException;
 
-abstract class Socket
+abstract class WebSocket
 {
     protected static $connections;
     /** @var App */

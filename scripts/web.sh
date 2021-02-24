@@ -19,9 +19,12 @@ cp ../web/service-worker.js ../../;
 cp ../web/.htaccess ../../;
 cp ../web/.gitignore ../../;
 cp ../web/settings.json ../../;
+cp ../web/manifest.json ../../;
 cp -avR ../web/modules/* ../../modules/;
 
 wget -O ../../logo.png https://picsum.photos/300/300;
+wget -O ../../favicon.png https://picsum.photos/16/16;
 
+#cd assets/src && ln -s ../../core/web/assets/src/defaults.ts
 cp -avR ../web/assets/* ../../assets/;
 cd ../../assets/src && yarn && yarn webpack:build;
