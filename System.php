@@ -1031,9 +1031,9 @@ class System
                     JsonResponse::sendResponse('Endpoints', HTTPStatusCodes::OK, compact('swagger', 'info', 'host', 'basePath', 'paths'));
                     break;
                 case "webhook":
-                    if (REQUEST_METHOD === 'POST' && $_GET['platform']) {
+                    if (REQUEST_METHOD === 'POST' && $id) {
                         include_once __DIR__ . '/classes/Webhook.php';
-                        new Webhook($_GET['platform']);
+                        new Webhook($id);
                         JsonResponse::sendResponse('Webhook', 200, $_POST);
                     } else {
                         $method = REQUEST_METHOD;
