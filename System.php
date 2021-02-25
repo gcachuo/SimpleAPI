@@ -607,6 +607,17 @@ class System
         }
     }
 
+    /**
+     * @param string $string
+     * @return string
+     */
+    public static function translate(string $string)
+    {
+        $string = mb_strtolower($string);
+        $lang = LANG[MODULE] ?? [];
+        return $lang[$string] ?? $string;
+    }
+
     public function startup()
     {
         define('ENVIRONMENT', 'init');
@@ -1355,6 +1366,15 @@ class System
             libxml_use_internal_errors(true);
             self::$dom->loadHTMLFile($dir . $file);
 
+            if (self::$dom->getElementsByTagName('html')[0]->getAttribute("lang")) {
+                session_start();
+                $lang = ($_GET['lang'] ?? null) ? $_GET['lang'] : ($_SESSION['lang'] ?? self::$dom->getElementsByTagName('html')[0]->getAttribute("lang"));
+                $_SESSION['lang'] = $lang;
+                session_write_close();
+                self::$dom->getElementsByTagName('html')[0]->setAttribute('lang', $lang);
+                if (!defined('LANG')) define('LANG', self::json_decode(file_get_contents(WEBDIR . '/lang.json'))[$lang]);
+            }
+
             /** @var DOMElement $link */
             foreach (self::$dom->getElementsByTagName('a') as $link) {
                 $old_link = $link->getAttribute("href");
@@ -1479,7 +1499,7 @@ class System
                 }
 
                 $favicon = self::$dom->getElementById('favicon');
-                $favicon->setAttribute('href', '/' . $logo);
+                $favicon->setAttribute('href', BASENAME . $logo);
             }
 
             if (self::getElementsByClass(self::$dom, 'div', 'copyright')) {
@@ -1572,13 +1592,17 @@ class System
                 }
 
                 $settings = self::getSettings();
-                foreach ($module_list as $module) {
+                foreach ($module_list as $key => $module) {
                     $modal = $module['modal'] ?? false;
                     $href = $module['href'] ?? null;
                     $name = $module['name'] ?? null;
                     $icon = $module['icon'] ?? null;
                     $children = $module['modules'] ?? null;
                     $onclick = $module['onclick'] ?? null;
+
+                    if (defined('LANG')) {
+                        $name = LANG['modules'][$key] ?? $name;
+                    }
 
                     $nav_icon = '';
                     if (WEBCONFIG['module-icons'] ?? true) {
@@ -1736,6 +1760,7 @@ html;
         }
 
         ob_start();
+        define('MODULE', $pathinfo['basename']);
         include_once $module_path;
         $contents = ob_get_contents();
         ob_end_clean();
