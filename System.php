@@ -1697,8 +1697,8 @@ html;
                 }
 
                 /** @var DOMElement $nav */
-                $nav = self::$dom->getElementsByTagName('nav')[0];
-                if ($nav) {
+                $navs = self::$dom->getElementsByTagName('nav');
+                foreach ($navs as $nav) {
                     if ($nav->parentNode) {
                         $modules->setAttribute('id', $nav->getAttribute('id'));
                         $modules->setAttribute('class', $nav->getAttribute('class'));
