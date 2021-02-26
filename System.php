@@ -1396,7 +1396,9 @@ class System
                 $_SESSION['lang'] = $lang;
                 session_write_close();
                 self::$dom->getElementsByTagName('html')[0]->setAttribute('lang', $lang);
-                if (!defined('LANG')) define('LANG', self::json_decode(file_get_contents(WEBDIR . '/lang.json'))[$lang]);
+                if (file_exists(WEBDIR . '/lang.json')) {
+                    if (!defined('LANG')) define('LANG', self::json_decode(file_get_contents(WEBDIR . '/lang.json'))[$lang]);
+                }
             }
 
             /** @var DOMElement $link */
