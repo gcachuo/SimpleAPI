@@ -248,9 +248,11 @@ class System
 
         $headers = [
             "Cookie: XDEBUG_SESSION=PHPSTORM",
-            "X-Client: " . WEBCONFIG['code'],
-            "Authorization: Bearer " . $_SESSION['user_token'],
+            "X-Client: " . WEBCONFIG['code']
         ];
+        if ($_SESSION['user_token']) {
+            $headers[] = "Authorization: Bearer " . $_SESSION['user_token'];
+        }
         $options['method'] = mb_strtoupper($options['method'] ?? 'get');
 
         $options['url'] = str_replace(' ', '%20', $options['url']);
