@@ -562,13 +562,6 @@ class System
             }
         }
 
-        $classes = glob(__DIR__ . "/classes/*.php");
-        foreach ($classes as $class) {
-            require_once($class);
-        }
-
-        self::define_constants($config);
-
         set_exception_handler(function ($exception) {
             $status = 'exception';
             $code = $exception->getCode() ?: 500;
@@ -598,6 +591,13 @@ class System
                 die("\033[31m" . $message . "\033");
             }
         });
+
+        $classes = glob(__DIR__ . "/classes/*.php");
+        foreach ($classes as $class) {
+            require_once($class);
+        }
+
+        self::define_constants($config);
 
         self::load_php_functions($config);
 
