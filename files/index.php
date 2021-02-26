@@ -10,7 +10,10 @@ if (file_exists($path)) {
 
 $headers = apache_request_headers();
 if ($headers['X-Client'] ?? null) {
-    define('PROJECT', $headers['X-Client']);
+    if (!defined('PROJECT')) define('PROJECT', $headers['X-Client']);
+}
+if ($headers['X-Database'] ?? null) {
+    if (!defined('DATABASE')) define('DATABASE', $headers['X-Database']);
 }
 if ($headers['Authorization'] ?? null) {
     $user_token = trim(strstr($headers['Authorization'], ' '));
