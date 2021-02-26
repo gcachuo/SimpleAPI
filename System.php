@@ -652,7 +652,7 @@ class System
             header('Content-Type: application/json');
             header('Access-Control-Allow-Origin: *');
             header('Access-Control-Allow-Methods: PUT, POST, GET, OPTIONS, PATCH, DELETE');
-            header('Access-Control-Allow-Headers: X-Requested-With, Content-Type, dataType, contenttype, processdata, authorization, x-client');
+            header('Access-Control-Allow-Headers: X-Requested-With, Content-Type, dataType, contenttype, processdata, authorization, x-client, x-database');
         }
         register_shutdown_function(function () {
             if (error_get_last()) {
