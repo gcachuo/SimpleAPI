@@ -494,9 +494,9 @@ class System
     {
         if (empty(JWT_KEY)) {
             if (!file_exists(DIR . '/Config/.jwt_key')) {
-                JsonResponse::sendResponse('Missing file .jwt_key', HTTPStatusCodes::InternalServerError);
+                throw new CoreException('Missing file .jwt_key');
             }
-            JsonResponse::sendResponse('JWT key is empty', HTTPStatusCodes::InternalServerError);
+            throw new CoreException('JWT key is empty');
         }
         return JWT_KEY;
     }
@@ -560,6 +560,11 @@ class System
             if (ENVIRONMENT === 'www') {
                 throw new CoreException('Not allowed', HTTPStatusCodes::InternalServerError);
             }
+        }
+
+        $classes = glob(__DIR__ . "/classes/*.php");
+        foreach ($classes as $class) {
+            require_once($class);
         }
 
         self::define_constants($config);
@@ -685,11 +690,6 @@ class System
                 }
             }
         });
-
-        $classes = glob(__DIR__ . "/classes/*.php");
-        foreach ($classes as $class) {
-            require_once($class);
-        }
 
         ini_set('memory_limit', '2048M');
         ini_set('display_errors', 'On');
