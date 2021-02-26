@@ -52,7 +52,7 @@ class MySQL
                 $host = $config['host'];
                 $username = $config['username'];
                 $passwd = $config['passwd'];
-                $config['dbname'] = $dbname ?: self::$dbname ?: (getenv('DATABASE') ?: $config['dbname'] ?? DATABASE);
+                $config['dbname'] = $dbname ?: self::$dbname ?: (getenv('DATABASE') ?: $config['dbname'] ?? (defined('DATABASE') ? DATABASE : null));
 
                 System::check_value_empty($config, ['host', 'username', 'passwd', 'dbname'], 'Missing data in config file.', HTTPStatusCodes::InternalServerError);
 

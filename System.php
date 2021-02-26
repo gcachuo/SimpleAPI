@@ -559,6 +559,29 @@ class System
             }
         }
 
+        $headers = apache_request_headers();
+        if ($headers['X-Client'] ?? null) {
+            if (!defined('PROJECT')) define('PROJECT', $headers['X-Client']);
+        }
+        if ($headers['X-Database'] ?? null) {
+            if ($headers['Authorization'] ?? null) {
+                $user_token = trim(strstr($headers['Authorization'], ' '));
+                $user = System::decode_token($user_token);
+                if ($user) {
+                    define('USER_TOKEN', $user_token);
+                }
+            }
+            if (!defined('DATABASE')) define('DATABASE', $headers['X-Database']);
+        } else {
+            if ($headers['Authorization'] ?? null) {
+                $user_token = trim(strstr($headers['Authorization'], ' '));
+                $user = System::decode_token($user_token);
+                if ($user) {
+                    define('USER_TOKEN', $user_token);
+                }
+            }
+        }
+
         self::define_constants($config);
 
         set_exception_handler(function ($exception) {
@@ -590,7 +613,6 @@ class System
                 die("\033[31m" . $message . "\033");
             }
         });
-
 
         self::load_php_functions($config);
 
