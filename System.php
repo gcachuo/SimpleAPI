@@ -684,8 +684,11 @@ class System
                             $status = 'error';
                             $code = HTTPStatusCodes::InternalServerError;
                             $response = null;
-                            die(json_encode(compact('status', 'code', 'response', 'error')));
-                            break;
+                            if (ENVIRONMENT == 'www') {
+                                die($error['message']);
+                            } else {
+                                die(json_encode(compact('status', 'code', 'response', 'error')));
+                            }
                     }
                 }
             }
@@ -1259,10 +1262,14 @@ class System
     /**
      * @param array $constants
      * @return void
-     * @throws CoreException
      */
     public static function init_web(array $constants)
     {
+        $classes = glob(__DIR__ . "/classes/*.php");
+        foreach ($classes as $class) {
+            require_once($class);
+        }
+
         set_exception_handler(function ($exception) {
             ob_clean();
             $status = 'exception';
@@ -1295,7 +1302,11 @@ class System
             }
 
             self::$error_button = WEBCONFIG['error']['button'];
-            self::formatDocument(WEBCONFIG['error']['file']);
+            try {
+                self::formatDocument(WEBCONFIG['error']['file']);
+            } catch (Exception $e) {
+                die($e->getMessage());
+            }
             exit;
         });
 
@@ -1478,12 +1489,20 @@ class System
             }
 
             if (self::$dom->getElementsByTagName('head')->item(0)) {
-                if (!file_exists(WEBDIR . '/assets/dist/bundle.js')) {
-                    throw new CoreException('Assets not generated', 500, ['dir' => WEBDIR . '/assets/dist/bundle.js']);
+                $assets = glob(__DIR__ . "/../assets/dist/*.js");
+                if (empty($assets)) {
+                    throw new CoreException('Assets not generated', 500, ['dir' => WEBDIR . '/assets/dist/']);
                 }
-                $fragment = self::$dom->createDocumentFragment();
-                $fragment->appendXML('<script src="assets/dist/bundle.js"></script>');
-                self::$dom->getElementsByTagName('head')->item(0)->appendChild($fragment);
+                foreach ($assets as $asset_file) {
+                    ['basename' => $bundle] = pathinfo($asset_file);
+                    $uniqid = uniqid();
+                    $fragment = self::$dom->createDocumentFragment();
+                    $fragment->appendXML(<<<html
+<script src="assets/dist/$bundle?$uniqid"></script>
+html
+                    );
+                    self::$dom->getElementsByTagName('head')->item(0)->appendChild($fragment);
+                }
             }
             if (self::$dom->getElementsByTagName('title')->item(0)) {
                 self::$dom->getElementsByTagName('title')->item(0)->nodeValue = $project;

@@ -1,9 +1,10 @@
 module.exports = {
     mode: "development", //production | development
+    devtool: 'source-map',
     entry: ["./index.ts", "./index.scss"],
     output: {
         path: __dirname + '/../dist',
-        filename: 'bundle.js'
+        filename: 'bundle.[contenthash].js'
     },
     resolve: {
         extensions: [".js", ".ts"],

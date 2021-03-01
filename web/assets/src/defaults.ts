@@ -90,7 +90,7 @@ export class Defaults {
     private static datatableSettings(): void {
         let code = '';
         let user_token = '';
-        if ($("#ttag-code").attr('content')) {
+        if ($("#tag-code").attr('content')) {
             code = $("#tag-code").attr('content').toString() || '';
         }
         if ($("#tag-user-token").attr('content')) {

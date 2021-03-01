@@ -1,6 +1,7 @@
+*.js
+*.map
 *.eot
-*.svg
-*.woff
 *.woff2
 *.ttf
-*.js
+*.woff
+*.svg
