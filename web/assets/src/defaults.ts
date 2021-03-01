@@ -27,6 +27,8 @@ export class Defaults {
     private static settings: ISettings;
     public static global: ISettings & { [name: string]: any } = Defaults.getSettings();
     private static $buttonHTML;
+    private static code: string = ($("#tag-code").length ? $("#tag-code").attr('content').toString() : '');
+    private static user_token: string = ($("#tag-user-token").length ? $("#tag-user-token").attr('content').toString() : '');
 
     public static init() {
         Defaults.ajaxSettings();
@@ -88,14 +90,6 @@ export class Defaults {
     }
 
     private static datatableSettings(): void {
-        let code = '';
-        let user_token = '';
-        if ($("#tag-code").attr('content')) {
-            code = $("#tag-code").attr('content').toString() || '';
-        }
-        if ($("#tag-user-token").attr('content')) {
-            user_token = $("#tag-user-token").attr('content').toString() || '';
-        }
         if ($.fn.dataTable) {
             $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn';
             $.extend($.fn.dataTable.ext.classes, {
@@ -114,8 +108,8 @@ export class Defaults {
                         return ({status, code, data, error}) => data[name]
                     },
                     headers: {
-                        'X-Client': code,
-                        Authorization: 'Bearer ' + user_token
+                        'X-Client': this.code,
+                        Authorization: 'Bearer ' + this.user_token
                     }
                 },
                 pageLength: 25,
@@ -243,8 +237,8 @@ export class Defaults {
                 $.ajax({
                     url, method, data: data,
                     headers: {
-                        'X-Client': $('#tag-code').attr('content').toString(),
-                        Authorization: 'Bearer ' + ($("#tag-user-token").attr('content').toString() || '')
+                        'X-Client': this.code,
+                        Authorization: 'Bearer ' + this.user_token
                     }
                 }).done((result) => {
                     if (window[callback]) {

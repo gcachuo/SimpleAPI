@@ -6,6 +6,7 @@
     "datatables.net-buttons": "^1.6.5",
     "datatables.net-dt": "^1.10.22",
     "jquery": "^3.5.1",
+    "popper.js": "^1.16.1",
     "select2": "^4.0.13",
     "toastr": "^2.1.4"
   },
@@ -31,7 +32,7 @@
     "webpack-cli": "^3.3.12"
   },
   "scripts": {
-    "clean": "rm -rf ../dist/*.js ../dist/*.eot ../dist/*.woff ../dist/*.woff2 ../dist/*.svg ../dist/*.ttf;",
+    "clean": "rm -rf ../dist/*.js ../dist/*.map ../dist/*.eot ../dist/*.woff ../dist/*.woff2 ../dist/*.svg ../dist/*.ttf;",
     "webpack:build": "yarn clean; yarn; webpack",
     "webpack:watch": "yarn clean; yarn; webpack --watch"
   }
