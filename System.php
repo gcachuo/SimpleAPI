@@ -684,6 +684,7 @@ class System
                             $status = 'error';
                             $code = HTTPStatusCodes::InternalServerError;
                             $response = null;
+                            http_response_code($code);
                             if (ENVIRONMENT == 'www') {
                                 die($error['message']);
                             } else {
