@@ -681,15 +681,16 @@ class System
                             break;
                         default:
                             if (ob_get_contents()) ob_clean();
+
                             $status = 'error';
                             $code = HTTPStatusCodes::InternalServerError;
-                            $response = null;
+                            $response = ['message' => $error['message']];
                             http_response_code($code);
+
                             if (ENVIRONMENT == 'www') {
                                 die($error['message']);
-                            } else {
-                                die(json_encode(compact('status', 'code', 'response', 'error')));
                             }
+                            die(json_encode(compact('status', 'code', 'response', 'error')));
                     }
                 }
             }
