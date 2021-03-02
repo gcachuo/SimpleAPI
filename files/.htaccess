@@ -1,7 +1,4 @@
 RewriteEngine on
-
-ErrorDocument 503 503.html
-
 RewriteCond %{REQUEST_URI} !doc
 RewriteCond %{REQUEST_URI} !public
 RewriteRule ^(.*)$ index.php [QSA]

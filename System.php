@@ -96,18 +96,6 @@ sql
         return base64_encode(rand(10000, 99999) . '=' . $id);
     }
 
-    public static function format_date(string $format, $value)
-    {
-        $value = strtotime($value);
-        return date($format, $value);
-    }
-
-    public static function format_date_locale(string $format, $locale, $value)
-    {
-        setlocale(LC_TIME, $locale);
-        return strftime($format, strtotime($value));
-    }
-
     public static function decode_id(string &$base64)
     {
         $end_decoded = trim(strstr(base64_decode($base64), '='), '=');
@@ -153,12 +141,10 @@ sql
     {
         $jwt_key = self::get_jwt_key();
 
-        $expiration = (60 * 60) * 12; //12 Hours
-
         $time = time();
         $token = [
             'iat' => $time,
-            'exp' => $time + $expiration,
+            'exp' => $time + (60 * 60),
             'data' => $data
         ];
         return JWT::encode($token, $jwt_key);
@@ -195,9 +181,7 @@ sql
         } catch (Firebase\JWT\SignatureInvalidException $ex) {
             JsonResponse::sendResponse(['message' => $ex->getMessage()]);
         } catch (UnexpectedValueException $ex) {
-            JsonResponse::sendResponse(['message' => 'Invalid token.', 'error' => $ex->getMessage()]);
-        } catch (DomainException $ex) {
-            JsonResponse::sendResponse(['message' => 'Invalid token.', 'error' => $ex->getMessage()]);
+            JsonResponse::sendResponse(['message' => 'Invalid token.']);
         }
     }
 
@@ -257,7 +241,7 @@ sql
                 if (!strpos($error['file'], 'vendor')) {
                     switch ($error['type']) {
                         case 2:
-                            switch ($error['message']) {
+                            switch($error['message']){
                                 case "session_start(): Cannot start session when headers already sent":
                                     break 2;
                             }
@@ -274,7 +258,7 @@ sql
         $pathMySQL = "MySQL.php";
         require_once($pathMySQL);
 
-//        error_reporting(E_ALL ^ E_DEPRECATED);
+        error_reporting(E_ALL ^ E_DEPRECATED);
         ini_set('display_errors', 1);
         ini_set('always_populate_raw_post_data', -1);
         ini_set('max_execution_time', 300);
@@ -290,10 +274,6 @@ sql
             //Disables stack traces
             //Disable showing stack traces on error conditions.
             xdebug_disable();
-        }
-
-        if (file_exists(__DIR__ . '/../offline')) {
-            JsonResponse::sendResponse(['message' => 'We are updating the app, please be patient.'], HTTPStatusCodes::ServiceUnavailable);
         }
     }
 
@@ -355,7 +335,7 @@ sql
         global $_PATCH, $_PUT, $_DELETE;
 
         if (!defined('ENVIRONMENT'))
-            define('ENVIRONMENT', 'web');
+            define('ENVIRONMENT', isset($_SERVER['SHELL']) || isset($_SERVER['argv']) ? 'cli' : 'web');
 
         if (!defined('REQUEST_METHOD'))
             define('REQUEST_METHOD', System::isset_get($_SERVER['REQUEST_METHOD']));
@@ -468,17 +448,6 @@ sql
         $required = array_flip($required);
         $intersect = array_intersect_key($array ?: $required, $required);
         $empty_values = '';
-
-        foreach ($required as $key => $value) {
-            if (!System::isset_get($array[$key])) {
-                $empty_values .= $key . ', ';
-            }
-        }
-        $empty_values = trim($empty_values, ', ');
-        if (!empty($empty_values)) {
-            JsonResponse::sendResponse(['message' => $message . ' ' . "[$empty_values]"], HTTPStatusCodes::BadRequest);
-        }
-
         foreach ($intersect as $key => $value) {
             $value = is_string($value) ? trim($value) : $value;
             if (empty($value) and $value !== "0") {
@@ -675,14 +644,7 @@ class JsonResponse
         $exception = json_decode(self::$json, true);
 
         if ($exception['code'] !== HTTPStatusCodes::OK) {
-            $error = '';
-            if (is_array($exception['error'])) {
-                $error = $exception['error']['message'];
-            } elseif (System::isset_get($exception['response']['message'])) {
-                $error = $exception['response']['message'];
-            }
-
-            throw new JsonException($error, $exception['code']);
+            throw new JsonException(System::isset_get($exception['error']['message'],$exception['response']['message']), $exception['code']);
         } else {
             die($exception['status']);
         }

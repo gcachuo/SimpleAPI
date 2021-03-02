@@ -2,4 +2,3 @@
 /vendor/
 /Config/database.prod.json
 *.log
-/offline
