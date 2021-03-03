@@ -57,7 +57,7 @@ class System
         }
 
         $user = System::curlDecodeToken($check);
-        $user['permissions'] = $user['permissions'] ? System::json_decode($user['permissions']) : null;
+        $user['permissions'] = ($user['permissions'] ?? null) ? System::json_decode($user['permissions']) : null;
         $user['token'] = $check;
 
         $_SESSION['modules'] = [];
@@ -1676,9 +1676,8 @@ html;
 
                     $disabled = System::isset_get($module['disabled']) ? 'disabled' : '';
                     $hidden = System::isset_get($module['hidden']) ? 'none' : 'unset';
-                    $file = System::isset_get($module['file'], $entry);
 
-                    if ($file != $entry) {
+                    if (System::isset_get($module['file'], $entry) != $entry) {
                         continue;
                     }
 
@@ -1766,7 +1765,7 @@ html;
                     $nav->parentNode->replaceChild($clone, $nav);
                 }
 
-                if ($module_file) {
+                if ($module_file && $file === $entry) {
                     self::load_module($module_file);
                 }
             }
