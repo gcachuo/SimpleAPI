@@ -1264,6 +1264,7 @@ class System
     /**
      * @param array $constants
      * @return void
+     * @throws CoreException
      */
     public static function init_web(array $constants)
     {
@@ -1499,8 +1500,9 @@ class System
                     ['basename' => $bundle] = pathinfo($asset_file);
                     $uniqid = uniqid();
                     $fragment = self::$dom->createDocumentFragment();
+                    $basename = BASENAME;
                     $fragment->appendXML(<<<html
-<script src="assets/dist/$bundle?$uniqid"></script>
+<script src="$basename/assets/dist/$bundle?$uniqid"></script>
 html
                     );
                     self::$dom->getElementsByTagName('head')->item(0)->appendChild($fragment);
@@ -1568,6 +1570,19 @@ html
                         $logo = BASENAME . 'settings/' . $env . '/img/logo.png';
                     }
                     $img->setAttribute('src', $logo);
+
+                    $old_links = $img->getAttribute("srcset");
+                    if ($old_links) {
+                        $new_links = [];
+                        foreach (explode(', ', $old_links) as $old_link) {
+                            if (strpos($old_link, 'http') !== false) {
+                                $new_links[] = $old_link;
+                                continue;
+                            }
+                            $new_links[] = $logo;
+                        }
+                        $img->setAttribute('srcset', implode(', ', $new_links));
+                    }
                 }
             }
 
@@ -1602,14 +1617,7 @@ html
                 System::redirect('login');
             }
 
-            if ($file != $entry) {
-                $fragment = self::$dom->createDocumentFragment();
-
-                $body = self::$dom->getElementsByTagName('body');
-                if ($body->length > 0 && $fragment->textContent) {
-                    $body->item(0)->appendChild($fragment);
-                }
-            } elseif ($module_file ?? null) {
+            if (self::$dom->getElementsByTagName('nav')) {
                 $fragment = self::$dom->createDocumentFragment();
 
                 if (defined('SESSIONCHECK') && SESSIONCHECK && pathinfo($module_file, PATHINFO_EXTENSION) !== 'js') {
@@ -1758,10 +1766,9 @@ html;
                     $nav->parentNode->replaceChild($clone, $nav);
                 }
 
-                self::load_module($module_file);
-            } else {
-                self::formatDocument($error_file);
-                return;
+                if ($module_file) {
+                    self::load_module($module_file);
+                }
             }
 
             libxml_clear_errors();
@@ -1791,7 +1798,7 @@ html;
         return $nodes;
     }
 
-    public static function load_module($file)
+    public static function module_exists($file)
     {
         $pathinfo = pathinfo($file);//['extension'];
         if (!($pathinfo['extension'] ?? null)) {
@@ -1810,6 +1817,12 @@ html;
             System::log_error(compact('status', 'code', 'response'));
             throw new CoreException('Not found', 404);
         }
+        return compact('pathinfo', 'module_path');
+    }
+
+    public static function load_module($file)
+    {
+        ['pathinfo' => $pathinfo, 'module_path' => $module_path] = self::module_exists($file);
 
         ob_start();
         define('MODULE', $pathinfo['basename']);
