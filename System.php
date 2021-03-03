@@ -556,12 +556,6 @@ class System
 
     public static function init($config)
     {
-        if (defined('ENVIRONMENT')) {
-            if (ENVIRONMENT === 'www') {
-                throw new CoreException('Not allowed', HTTPStatusCodes::InternalServerError);
-            }
-        }
-
         set_exception_handler(function ($exception) {
             $status = 'exception';
             $code = $exception->getCode() ?: 500;
@@ -598,6 +592,12 @@ class System
         }
 
         self::define_constants($config);
+
+        if (defined('ENVIRONMENT')) {
+            if (ENVIRONMENT === 'www') {
+                throw new CoreException('Not allowed', HTTPStatusCodes::InternalServerError);
+            }
+        }
 
         self::load_php_functions($config);
 
