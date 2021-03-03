@@ -1797,7 +1797,7 @@ html;
         return $nodes;
     }
 
-    public static function module_exists($file)
+    public static function load_module($file)
     {
         $pathinfo = pathinfo($file);//['extension'];
         if (!($pathinfo['extension'] ?? null)) {
@@ -1816,12 +1816,6 @@ html;
             System::log_error(compact('status', 'code', 'response'));
             throw new CoreException('Not found', 404);
         }
-        return compact('pathinfo', 'module_path');
-    }
-
-    public static function load_module($file)
-    {
-        ['pathinfo' => $pathinfo, 'module_path' => $module_path] = self::module_exists($file);
 
         ob_start();
         define('MODULE', $pathinfo['basename']);
