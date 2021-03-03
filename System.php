@@ -1738,20 +1738,24 @@ html;
                     }
                     $fragment->appendXML($html);
                 }
+
                 $modules = self::$dom->createElement('ul');
                 $modules->setAttribute('class', 'nav');
                 if ($fragment->textContent) {
                     $modules->appendChild($fragment);
                 }
 
-                /** @var DOMElement $nav */
                 $navs = self::$dom->getElementsByTagName('nav');
-                foreach ($navs as $nav) {
-                    if ($nav->parentNode) {
-                        $modules->setAttribute('id', $nav->getAttribute('id'));
-                        $modules->setAttribute('class', $nav->getAttribute('class'));
-                        $nav->parentNode->replaceChild($modules, $nav);
-                    }
+                while ($navs->length) {
+                    /** @var DOMElement $nav */
+                    $nav = $navs->item(0);
+                    [$id, $class] = [$nav->getAttribute('id'), $nav->getAttribute('class')];
+
+                    $clone = $modules->cloneNode(true);
+                    $clone->setAttribute('id', $id);
+                    $clone->setAttribute('class', $class);
+
+                    $nav->parentNode->replaceChild($clone, $nav);
                 }
 
                 self::load_module($module_file);
