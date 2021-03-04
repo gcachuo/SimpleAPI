@@ -250,7 +250,7 @@ class System
             "Cookie: XDEBUG_SESSION=PHPSTORM",
             "X-Client: " . WEBCONFIG['code']
         ];
-        if ($_SESSION['user_token']) {
+        if ($_SESSION['user_token'] ?? null) {
             $headers[] = "Authorization: Bearer " . $_SESSION['user_token'];
         }
         $options['method'] = mb_strtoupper($options['method'] ?? 'get');
