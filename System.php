@@ -332,12 +332,15 @@ class System
     }
 
     /**
-     * @param string $json
+     * @param string|null $json
      * @param bool $assoc
      * @return object|array
      */
-    public static function json_decode(string $json, bool $assoc = true)
+    public static function json_decode(string $json = null, bool $assoc = true): ?array
     {
+        if (!$json) {
+            return null;
+        }
         $json = json_decode($json, $assoc);
         $error = json_last_error();
         switch ($error) {
