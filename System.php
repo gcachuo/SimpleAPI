@@ -595,7 +595,7 @@ class System
 
         if (defined('ENVIRONMENT')) {
             if (ENVIRONMENT === 'www') {
-                throw new CoreException('Not allowed', HTTPStatusCodes::InternalServerError);
+                return;
             }
         }
 
@@ -803,30 +803,30 @@ class System
             define('BASENAME', dirname($_SERVER['SCRIPT_NAME']));
         }
 
-        $headers = apache_request_headers();
-        if ($headers['X-Client'] ?? null) {
-            if (!defined('PROJECT')) define('PROJECT', $headers['X-Client']);
-        }
-        if ($headers['X-Database'] ?? null) {
-            if (($headers['Authorization'] ?? null) and !defined('USER_TOKEN')) {
-                $user_token = trim(strstr($headers['Authorization'], ' '));
-                $user = System::decode_token($user_token);
-                if ($user) {
-                    define('USER_TOKEN', $user_token);
-                }
-            }
-            if (!defined('DATABASE')) define('DATABASE', $headers['X-Database']);
-        } else {
-            if (($headers['Authorization'] ?? null) and !defined('USER_TOKEN')) {
-                $user_token = trim(strstr($headers['Authorization'], ' '));
-                $user = System::decode_token($user_token);
-                if ($user) {
-                    define('USER_TOKEN', $user_token);
-                }
-            }
-        }
-
         if (ENVIRONMENT !== 'www') {
+            $headers = apache_request_headers();
+            if ($headers['X-Client'] ?? null) {
+                if (!defined('PROJECT')) define('PROJECT', $headers['X-Client']);
+            }
+            if ($headers['X-Database'] ?? null) {
+                if (($headers['Authorization'] ?? null) and !defined('USER_TOKEN')) {
+                    $user_token = trim(strstr($headers['Authorization'], ' '));
+                    $user = System::decode_token($user_token);
+                    if ($user) {
+                        define('USER_TOKEN', $user_token);
+                    }
+                }
+                if (!defined('DATABASE')) define('DATABASE', $headers['X-Database']);
+            } else {
+                if (($headers['Authorization'] ?? null) and !defined('USER_TOKEN')) {
+                    $user_token = trim(strstr($headers['Authorization'], ' '));
+                    $user = System::decode_token($user_token);
+                    if ($user) {
+                        define('USER_TOKEN', $user_token);
+                    }
+                }
+            }
+
             $project = defined('PROJECT') ? PROJECT : getenv('PROJECT');
             if (empty($project)) {
                 $project_config = file_exists(DIR . '/Config/default.json')
@@ -1238,7 +1238,7 @@ class System
             $path = __DIR__ . '/../Logs/' . date('Y-m-d') . '.log';
         }
 
-        if (!file_exists($path)) {
+        if (!is_dir(dirname($path))) {
             chmod(__DIR__ . '/../', 0755);
             mkdir(dirname($path), 0755, true);
         }
