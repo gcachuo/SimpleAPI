@@ -375,12 +375,12 @@ sql;
             } catch (PDOException $exception) {
                 $sql .= $extra_sql;
             }
-            $result = $this->prepare2($sql);
+            $this->prepare2($sql);
             return false;
         } else {
             try {
                 $sql_columns = implode(',', array_column($columns, 'name'));
-                $result = $this->prepare2("select $sql_columns from $table");
+                $this->prepare2("select $sql_columns from $table");
             } catch (CoreException $exception) {
                 $code = $exception->getData('code');
                 $message = $exception->getMessage();
@@ -392,6 +392,8 @@ sql;
                         $sql_column = trim($this->parsed_sql_column($columns[$index]), ',');
                         $this->prepare2("ALTER TABLE $table ADD $sql_column;");
                         break;
+                    default:
+                        throw $exception;
                 }
             }
         }
