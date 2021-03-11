@@ -207,14 +207,16 @@ sql
         } catch (PDOException $exception) {
             [$pdoerror, $code, $message] = $exception->errorInfo;
 
-            System::query_log(self::interpolate_query($sql, $params, false));
+            $message = $message ?: $exception->getMessage();
+
+            System::query_log(self::interpolate_query($sql, $params));
             System::query_log('#' . $message);
 
             $trace = $exception->getTrace();
             foreach ($params as $key => &$val) {
                 $this->parseValue($val);
             }
-            $parsed_sql = self::interpolate_query($sql, $params, false);
+            $parsed_sql = self::interpolate_query($sql, $params);
             throw new CoreException($message, HTTPStatusCodes::InternalServerError, compact('code', 'pdoerror', 'trace', 'params', 'sql', 'parsed_sql'));
         }
     }
