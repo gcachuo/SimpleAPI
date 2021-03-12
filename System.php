@@ -51,7 +51,8 @@ class System
         session_start();
         $check = $_SESSION[$name] ?? $token ?? null;
 
-        $module = MODULES[$_GET['module']];
+        $module = MODULES[$_GET['module'] ?: WEBCONFIG['default']];
+
         if (!$check && ($module['onlogin'] !== false)) {
             System::redirect('login');
         }
