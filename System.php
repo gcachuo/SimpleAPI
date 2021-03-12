@@ -1508,7 +1508,8 @@ class System
 <script src="$basename/assets/dist/$bundle?$uniqid"></script>
 html
                     );
-                    self::$dom->getElementsByTagName('head')->item(0)->appendChild($fragment);
+                    $head = self::$dom->getElementsByTagName('head')->item(0);
+                    $head->insertBefore($fragment, $head->firstChild);
                 }
             }
             if (self::$dom->getElementsByTagName('title')->item(0)) {
