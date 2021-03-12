@@ -1501,11 +1501,10 @@ class System
                 }
                 foreach ($assets as $asset_file) {
                     ['basename' => $bundle] = pathinfo($asset_file);
-                    $uniqid = uniqid();
                     $fragment = self::$dom->createDocumentFragment();
                     $basename = BASENAME;
                     $fragment->appendXML(<<<html
-<script src="$basename/assets/dist/$bundle?$uniqid"></script>
+<script src="$basename/assets/dist/$bundle"></script>
 html
                     );
                     $head = self::$dom->getElementsByTagName('head')->item(0);
