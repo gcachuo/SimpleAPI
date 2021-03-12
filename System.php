@@ -78,6 +78,7 @@ class System
         }
         session_write_close();
 
+        $user = array_filter($user);
         return $user;
     }
 
@@ -1630,23 +1631,25 @@ html
                                 return ($module['permissions'] ?? true) === false;
                             });
                         if ($module_file !== 'dashboard' && !($module_list[$module_file] ?? null)) {
-                            [$module, $action] = explode('/', $module_file);
-                            if (empty($module_list[$module]) && !empty(MODULES[$module])) {
+                            @list($module, $action) = explode('/', $module_file);
+                            if ((empty($module_list[$module] ?? null) && !empty(MODULES[$module]) && (MODULES[$module]['permissions'] ?? null) === false)) {
                                 throw new CoreException($module_file, HTTPStatusCodes::Forbidden);
                             }
-                            switch (true) {
-                                case $module_list[$module]['modules'][$action]:
-                                case $module_list[$module]['action']['href'] === $action:
-                                    break;
-                                case !MODULES[$module]['modules'][$action]:
-                                    throw new CoreException($module_file, HTTPStatusCodes::NotFound);
-                                default:
-                                    throw new CoreException($module_file, HTTPStatusCodes::Forbidden);
+                            if ($action) {
+                                switch (true) {
+                                    case $module_list[$module]['modules'][$action]:
+                                    case $module_list[$module]['action']['href'] === $action:
+                                        break;
+                                    case !MODULES[$module]['modules'][$action]:
+                                        throw new CoreException($module_file, HTTPStatusCodes::NotFound);
+                                    default:
+                                        throw new CoreException($module_file, HTTPStatusCodes::Forbidden);
+                                }
                             }
                         }
                     }
                     if (self::$dom->getElementById('tag-user-token')) {
-                        self::$dom->getElementById('tag-user-token')->setAttribute('content', $user['token']);
+                        self::$dom->getElementById('tag-user-token')->setAttribute('content', $user['token'] ?? '');
                     }
                 }
 
@@ -1658,6 +1661,15 @@ html
                     $icon = $module['icon'] ?? null;
                     $children = $module['modules'] ?? null;
                     $onclick = $module['onclick'] ?? null;
+                    $onlogin = $module['onlogin'] ?? null;
+
+                    if ($onlogin !== null) {
+                        if ($onlogin && empty($user)) {
+                            continue;
+                        } elseif (!$onlogin && !empty($user)) {
+                            continue;
+                        }
+                    }
 
                     if (defined('LANG')) {
                         $name = LANG['modules'][$key] ?? $name;
