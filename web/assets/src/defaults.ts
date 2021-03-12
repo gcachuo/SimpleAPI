@@ -27,10 +27,13 @@ export class Defaults {
     private static settings: ISettings;
     public static global: ISettings & { [name: string]: any } = Defaults.getSettings();
     private static $buttonHTML;
-    private static code: string = ($("#tag-code").length ? $("#tag-code").attr('content').toString() : '');
-    private static user_token: string = ($("#tag-user-token").length ? $("#tag-user-token").attr('content').toString() : '');
+    private static code: string;
+    private static user_token: string;
 
     public static init() {
+        this.code = ($("#tag-code").length ? $("#tag-code").attr('content').toString() : '');
+        this.user_token = ($("#tag-user-token").length ? $("#tag-user-token").attr('content').toString() : '');
+
         Defaults.ajaxSettings();
 
         Defaults.overwriteFormSubmit();
