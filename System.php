@@ -51,8 +51,8 @@ class System
         session_start();
         $check = $_SESSION[$name] ?? $token ?? null;
 
-        $module = $_GET['module'];
-        if (!$check && ($module !== 'login' && $module !== 'signup')) {
+        $module = MODULES[$_GET['module']];
+        if (!$check && ($module['onlogin'] !== false)) {
             System::redirect('login');
         }
 
