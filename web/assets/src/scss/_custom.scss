@@ -3,6 +3,10 @@ $spacer: 0;
 $white: 'white';
 $gray-300: 'gray';
 
+body {
+  overflow-y: auto;
+}
+
 #modal {
   &.show {
     opacity: 1;
@@ -219,10 +223,6 @@ ol, ul, dl {
       border-color: $white $white $gray-300;
     }
   }
-}
-
-body {
-  overflow-y: hidden;
 }
 
 #view{
