@@ -91,7 +91,7 @@ export class Defaults {
 
     private static datatableSettings(): void {
         if ($.fn.dataTable) {
-            $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn';
+            $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn btn-sm';
             $.extend($.fn.dataTable.ext.classes, {
                 sFilterInput: "form-control",
                 sLengthSelect: "form-control",
@@ -317,6 +317,9 @@ export class Defaults {
     }
 
     static Alert(message, type = 'success') {
+        if (!message) {
+            return;
+        }
         toastr.clear();
         toastr[type](message);
     }
