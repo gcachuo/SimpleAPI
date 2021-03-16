@@ -32,6 +32,9 @@
   },
   "scripts": {
     "clean": "rm -rf ../dist/*.js ../dist/*.map ../dist/*.eot ../dist/*.woff ../dist/*.woff2 ../dist/*.svg ../dist/*.ttf;",
+    "settings:clean": "mv ../../settings.dev.json ../../settings.backup.json",
+    "settings:restore": "mv ../../settings.backup.json ../../settings.dev.json",
+    "webpack:prod": "yarn settings:clean; yarn webpack:build; yarn settings:restore",
     "webpack:build": "yarn; webpack",
     "webpack:watch": "yarn; webpack --watch"
   }
