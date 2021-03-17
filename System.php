@@ -1693,7 +1693,7 @@ html;
                     }
 
                     $disabled = System::isset_get($module['disabled']) ? 'disabled' : '';
-                    $hidden = System::isset_get($module['hidden']) ? 'none' : 'unset';
+                    $hidden = System::isset_get($module['hidden']) ? true : false;
 
                     if (System::isset_get($module['file'], $entry) != $entry) {
                         continue;
@@ -1714,7 +1714,7 @@ html;
                             }
 
                             $child_disabled = System::isset_get($child['disabled']) ? 'disabled' : '';
-                            $child_hidden = System::isset_get($child['hidden']) ? 'none' : 'unset';
+                            $child_hidden = System::isset_get($child['hidden']) ? true : false;
 
                             preg_match_all('/###(.+)###/m', $child_href, $matches, PREG_SET_ORDER, 0);
                             foreach ($matches as $match) {
@@ -1730,14 +1730,14 @@ html;
 </span>
 html;
 
-                            $children_html .= <<<html
-<li style="display: $child_hidden">
+                            $children_html .= !$child_hidden ? <<<html
+<li>
     <a href="$child_href" class="$child_disabled" style="display: flex; align-items: center" onclick="$child_onclick">
         $child_nav_icon
         <span class="nav-text">$child_name</span>
     </a>
 </li>
-html;
+html: '';
                         }
                         $html = <<<html
 <li>
@@ -1755,14 +1755,14 @@ html;
 html;
                     } else {
                         $href = BASENAME . $href;
-                        $html = <<<html
-<li style="display: $hidden">
+                        $html = !$hidden ? <<<html
+<li>
     <a href="$href" class="$disabled" style="display: flex; align-items: center" onclick="$onclick">
         $nav_icon
         <span class="nav-text">$name</span>
     </a>
 </li>
-html;
+html: '';
                     }
                     $fragment->appendXML($html);
                 }
