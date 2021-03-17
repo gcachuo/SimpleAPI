@@ -53,7 +53,7 @@ class System
 
         $module = MODULES[$_GET['module'] ?: WEBCONFIG['default']];
 
-        if (!$check && ($module['onlogin'] !== false)) {
+        if (!$check && (($module['onlogin']??null) !== false)) {
             System::redirect('login');
         }
 
