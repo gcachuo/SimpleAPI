@@ -51,7 +51,9 @@ class System
         session_start();
         $check = $_SESSION[$name] ?? $token ?? null;
 
-        $module = MODULES[$_GET['module'] ?? WEBCONFIG['default']] ?? null;
+        $module_name = ($_GET['module'] ?? WEBCONFIG['default']);
+        $module_name = strstr($module_name, '/', true) ?: $module_name;
+        $module = MODULES[$module_name] ?? null;
 
         if (!$check && (($module['onlogin'] ?? null) !== false)) {
             System::redirect('login');
@@ -1720,6 +1722,8 @@ html;
                                 $child_href = str_replace('###' . $match . '###', $settings[$match], $child_href);
                             }
 
+                            $child_href = BASENAME . $key . '/' . $child_href;
+
                             $child_nav_icon = <<<html
 <span class="nav-icon">
     <i class="material-icons">$child_icon</i>
@@ -1750,6 +1754,7 @@ html;
 </li>
 html;
                     } else {
+                        $href = BASENAME . $href;
                         $html = <<<html
 <li style="display: $hidden">
     <a href="$href" class="$disabled" style="display: flex; align-items: center" onclick="$onclick">
@@ -1905,13 +1910,14 @@ html
 
             if ($o_module['action'] ?? null) {
                 $o_action = $o_module['action'];
+                $o_action['href'] = BASENAME . implode('/', $href) . '/' . $o_action['href'];
                 if (self::$dom->getElementById('project-action')) {
                     $action = self::$dom->getElementById('project-action');
                     $class = ($action->childNodes->item(1))->getAttribute('class');
 
                     $icon = $o_action['icon'] ?? 'add_circle';
                     $module = self::createElement('div', <<<html
-<a href="?action=$o_action[href]">
+<a href="$o_action[href]">
     <i class="material-icons">$icon</i>
     <span>$o_action[name]</span>
 </a>
