@@ -1910,7 +1910,8 @@ html
 
             if ($o_module['action'] ?? null) {
                 $o_action = $o_module['action'];
-                $o_action['href'] = BASENAME . implode('/', $href) . '/' . $o_action['href'];
+                $href = is_array($href) ? implode('/', $href) : $href;
+                $o_action['href'] = BASENAME . $href . '/' . $o_action['href'];
                 if (self::$dom->getElementById('project-action')) {
                     $action = self::$dom->getElementById('project-action');
                     $class = ($action->childNodes->item(1))->getAttribute('class');
