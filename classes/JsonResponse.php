@@ -11,8 +11,12 @@ class JsonResponse
      * @param array $data
      * @throws CoreException
      */
-    public static function sendResponse(string $message, $code = 400, array $data = [])
+    public static function sendResponse(string $message, array $data = [], $code = 200)
     {
+        if (ENVIRONMENT !== 'www') {
+            throw new CoreException('sendResponse can only be used on www', 500);
+        }
+
         if ($code) {
             http_response_code($code);
         } else {
@@ -27,16 +31,16 @@ class JsonResponse
             ob_clean();
             header('Content-Type: application/json');
             die(json_encode($response, JSON_UNESCAPED_SLASHES));
+        } else {
+            $status = 'error';
+            $error = error_get_last();
+
+            if (defined('FILE')) unlink(FILE);
+
+            System::log_error(compact('status', 'code', 'response', 'error'));
+
+            throw new CoreException($response['message'] ?? $response['error'], $code, $data);
         }
-
-        $status = 'error';
-        $error = error_get_last();
-
-        if (defined('FILE')) unlink(FILE);
-
-        System::log_error(compact('status', 'code', 'response', 'error'));
-
-        throw new CoreException($response['message'] ?? $response['error'], $code, $data);
     }
 
     private function json_encode()

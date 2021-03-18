@@ -340,16 +340,20 @@ class System
      * @param bool $assoc
      * @return object|array
      */
-    public static function json_decode(string $json = null, bool $assoc = true): ?array
+    public static function json_decode(string $json_string = null, bool $assoc = true): ?array
     {
-        if (!$json) {
+        if (!$json_string) {
             return null;
         }
-        $json = json_decode($json, $assoc);
+        $json = json_decode($json_string, $assoc);
         $error = json_last_error();
         switch ($error) {
             case 0:
                 //No Error
+                break;
+            case 4:
+                //Syntax Error
+                throw new CoreException('Syntax Error', 500);
                 break;
             case 5:
                 //Malformed UTF-8 characters, possibly incorrectly encoded
@@ -632,6 +636,25 @@ class System
         return $lang[$string] ?? $string;
     }
 
+    /**
+     * @param string $filename
+     * @return array|object
+     * @throws CoreException
+     */
+    public static function readJsonFile(string $filename)
+    {
+        $file = fopen($filename, 'a+');
+        fclose($file);
+        return System::json_decode(file_get_contents($filename)) ?: [];
+    }
+
+    public static function writeJsonFile(string $filename, array $data)
+    {
+        $file = fopen($filename, 'a+');
+        fclose($file);
+        file_put_contents($filename, json_encode($data));
+    }
+
     public function startup()
     {
         define('ENVIRONMENT', 'init');
@@ -801,7 +824,7 @@ class System
             define('DEBUG_MODE', ENVIRONMENT == 'cli' || preg_match('/Mozilla/', $_SERVER['HTTP_USER_AGENT'] ?? '') != 1);
 
         if (!defined('DIR'))
-            define('DIR', $config['DIR']);
+            define('DIR', $config['DIR'] ?? '');
 
         if (!defined('JWT_KEY'))
             define('JWT_KEY', file_exists(DIR . '/Config/.jwt_key') ? file_get_contents(DIR . '/Config/.jwt_key') : null);
@@ -1268,68 +1291,54 @@ class System
         }
     }
 
-    /**
-     * @param array $constants
-     * @return void
-     * @throws CoreException
-     */
-    public static function init_web(array $constants)
+    private static function set_web_exception($exception)
     {
-        $classes = glob(__DIR__ . "/classes/*.php");
-        foreach ($classes as $class) {
-            require_once($class);
+        ob_clean();
+        $status = 'exception';
+        $code = $exception->getCode() ?: 500;
+        $message = $exception->getMessage();
+        http_response_code($code);
+        $response = ['message' => $message];
+        $error = null;
+        if ($code >= 500) {
+            $error = $exception->getTrace();
         }
 
-        set_exception_handler(function ($exception) {
-            ob_clean();
-            $status = 'exception';
-            $code = $exception->getCode() ?: 500;
-            $message = $exception->getMessage();
-            http_response_code($code);
-            $response = ['message' => $message];
-            $error = null;
-            if ($code >= 500) {
-                $error = $exception->getTrace();
-            }
+        self::log_error(compact('status', 'code', 'response', 'error'));
 
-            self::log_error(compact('status', 'code', 'response', 'error'));
+        self::$error_code = $code;
 
-            self::$error_code = $code;
-
-            self::$error_message = WEBCONFIG['error']['messages'][$code];
-            switch ($code) {
-                case 404:
-                    parse_str($_SERVER['QUERY_STRING'], $query_string);
-                    $endpoint = $exception->getData('endpoint');
-                    $message = $endpoint ?? ($query_string['action'] ?? null) ?? ($query_string['module'] ?? null);
-                    if ($message) {
-                        self::$error_message .= ' [' . $message . ']';
-                    }
-                    break;
-                default:
-                    self::$error_message .= ($message ? " [$message]" : '');
-                    break;
-            }
-
-            self::$error_button = WEBCONFIG['error']['button'];
-            try {
-                self::formatDocument(WEBCONFIG['error']['file']);
-            } catch (Exception $e) {
-                die($e->getMessage());
-            }
-            exit;
-        });
-
-        define('WEBDIR', $constants['WEBDIR']);
-        define('ENVIRONMENT', 'www');
-        if (!defined('JWT_KEY'))
-            define('JWT_KEY', file_exists(WEBDIR . '/../api/Config/.jwt_key') ? file_get_contents(WEBDIR . '/../api/Config/.jwt_key') : null);
-
-        if (!file_exists(WEBDIR . '/config.json')) {
-            die('config.json does not exist');
+        self::get_web_config();
+        self::$error_message = WEBCONFIG['error']['messages'][$code];
+        switch ($code) {
+            case 404:
+                parse_str($_SERVER['QUERY_STRING'], $query_string);
+                $endpoint = $exception->getData('endpoint');
+                $message = $endpoint ?? ($query_string['action'] ?? null) ?? ($query_string['module'] ?? null);
+                if ($message) {
+                    self::$error_message .= ' [' . $message . ']';
+                }
+                break;
+            default:
+                self::$error_message .= ($message ? " [$message]" : '');
+                break;
         }
 
-        $config = json_decode(file_get_contents(WEBDIR . '/config.json'), true);
+        self::$error_button = WEBCONFIG['error']['button'];
+        try {
+            self::formatDocument(WEBCONFIG['error']['file']);
+        } catch (Exception $e) {
+            die($e->getMessage());
+        }
+        exit;
+    }
+
+    /**
+     * @return array
+     */
+    private static function get_web_config()
+    {
+        $config = System::readJsonFile(WEBDIR . '/config.json');
 
         $env = getenv(mb_strtoupper($config['code']) . '_CONFIG');
         if (file_exists(WEBDIR . '/.env')) {
@@ -1344,7 +1353,39 @@ class System
         if ($env_config ?? null) {
             $config = $env_config;
         }
-        define('WEBCONFIG', $config);
+
+        if (!defined('WEBCONFIG')) define('WEBCONFIG', $config);
+        return $config;
+    }
+
+    /**
+     * @param array $constants
+     * @return void
+     * @throws CoreException
+     */
+    public static function init_web(array $constants)
+    {
+        $classes = glob(__DIR__ . "/classes/*.php");
+        foreach ($classes as $class) {
+            require_once($class);
+        }
+
+        define('ENVIRONMENT', 'www');
+        define('WEBDIR', $constants['WEBDIR']);
+
+        set_exception_handler(function ($exception) {
+            self::set_web_exception($exception);
+        });
+        self::load_php_functions();
+
+        if (!defined('JWT_KEY'))
+            define('JWT_KEY', file_exists(WEBDIR . '/../api/Config/.jwt_key') ? file_get_contents(WEBDIR . '/../api/Config/.jwt_key') : null);
+
+        if (!file_exists(WEBDIR . '/config.json')) {
+            die('config.json does not exist');
+        }
+
+        self::get_web_config();
 
         [
             'entry' => $entry,
@@ -1361,7 +1402,6 @@ class System
             define('BASENAME', '/' . (trim(dirname($_SERVER['SCRIPT_NAME']), '/') ?: '.') . '/');
         }
 
-        self::load_php_functions();
         if (file_exists(__DIR__ . "/vendor/autoload.php")) {
             require __DIR__ . "/vendor/autoload.php";
         }
@@ -1737,7 +1777,8 @@ html;
         <span class="nav-text">$child_name</span>
     </a>
 </li>
-html: '';
+html
+                                : '';
                         }
                         $html = <<<html
 <li>
@@ -1762,7 +1803,8 @@ html;
         <span class="nav-text">$name</span>
     </a>
 </li>
-html: '';
+html
+                            : '';
                     }
                     $fragment->appendXML($html);
                 }

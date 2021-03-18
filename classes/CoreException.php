@@ -4,7 +4,7 @@ class CoreException extends Exception
 {
     private $data;
 
-    public function __construct($message = "", $code = 0, array $data = null)
+    public function __construct($message, $code, array $data = null)
     {
         $status = 'exception';
         $error = $this->getTrace();
