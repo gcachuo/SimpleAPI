@@ -627,12 +627,13 @@ class System
 
     /**
      * @param string $string
+     * @param string|null $module
      * @return string
      */
-    public static function translate(string $string)
+    public static function translate(string $string, string $module = null)
     {
         $string = mb_strtolower($string);
-        $lang = LANG[MODULE] ?? [];
+        $lang = LANG[$module ?: MODULE] ?? [];
         return $lang[$string] ?? $string;
     }
 
