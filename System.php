@@ -1061,10 +1061,10 @@ class System
                     if (REQUEST_METHOD === 'POST') {
                         if ($_POST['token'] ?? null) {
                             $data = System::decode_token($_POST['token']);
-                            JsonResponse::sendResponse('Completed.', HTTPStatusCodes::OK, $data);
+                            JsonResponse::sendResponse('Completed.', $data);
                         }
                     } else {
-                        JsonResponse::sendResponse("Endpoint not found.  [$namespace]", HTTPStatusCodes::NotFound);
+                        throw new CoreException("Endpoint not found.  [$namespace]", 400);
                     }
                     break;
                 case "backup":
