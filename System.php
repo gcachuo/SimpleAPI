@@ -1901,7 +1901,13 @@ html;
                 $module_name .= ' / ' . ($o_module['modules'][$href[1]]['name'] ?? '');
             }
             foreach ($href as $item) {
-                $o_module = $o_module['modules'][$item] ?? $o_module;
+                $o_module['action'] = $o_module['action'] ?? ['href' => null];
+                if ($o_module['action']['href'] == $item) {
+                    $o_module = $o_module['action'];
+                    $module_name .= ' / ' . ($o_module['name'] ?? '');
+                }else {
+                    $o_module = $o_module['modules'][$item] ?? $o_module;
+                }
             }
         } else {
             $o_module = $modules[$href] ?? '';
