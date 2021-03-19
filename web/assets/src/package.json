@@ -38,9 +38,9 @@
     "clean": "rm -rf ../dist/*.js ../dist/*.map ../dist/*.eot ../dist/*.woff ../dist/*.woff2 ../dist/*.svg ../dist/*.ttf;",
     "settings:clean": "mv ../../settings.dev.json ../../settings.backup.json",
     "settings:restore": "mv ../../settings.backup.json ../../settings.dev.json",
-    "webpack:prod": "yarn settings:clean; yarn webpack:build; yarn settings:restore",
-    "webpack:build": "yarn; webpack",
-    "webpack:watch": "yarn; webpack --watch",
+    "webpack:build:prod": "yarn settings:clean; webpack;",
+    "webpack:build:dev": "yarn settings:restore; webpack;",
+    "webpack:watch": "yarn settings:restore; webpack --watch",
     "cypress:open:dev": "cypress open --config-file ./cypress.dev.json",
     "cypress:run:dev": "cypress run --config-file ./cypress.dev.json",
     "prepare": "cd ../.. && husky install assets/src/.husky"
