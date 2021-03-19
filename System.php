@@ -1006,12 +1006,12 @@ class System
 
             $message = 'Completed.';
             if (!$response) {
-                JsonResponse::sendResponse($message, HTTPStatusCodes::OK);
+                JsonResponse::sendResponse($message);
             } else if (is_scalar($response)) {
-                JsonResponse::sendResponse($response, HTTPStatusCodes::OK);
+                JsonResponse::sendResponse($response);
             } else {
                 $data = $response;
-                JsonResponse::sendResponse($message, HTTPStatusCodes::OK, $data);
+                JsonResponse::sendResponse($message, $data);
             }
         }
         if ($controller == 'api') {

@@ -13,10 +13,6 @@ class JsonResponse
      */
     public static function sendResponse(string $message, array $data = [], $code = 200)
     {
-        if (ENVIRONMENT !== 'www') {
-            throw new CoreException('sendResponse can only be used on www', 500);
-        }
-
         if ($code) {
             http_response_code($code);
         } else {
