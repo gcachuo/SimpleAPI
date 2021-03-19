@@ -1604,6 +1604,7 @@ html
                 $e_copyrights = (self::getElementsByClass(self::$dom, 'div', 'copyright'));
                 /** @var DOMElement $e_copyright */
                 foreach ($e_copyrights as $e_copyright) {
+                    $copyright = str_replace('##YEAR##', date('Y'), $copyright);
                     $e_copyright->getElementsByTagName('p')->item(0)->nodeValue = $copyright;
                 }
             }
