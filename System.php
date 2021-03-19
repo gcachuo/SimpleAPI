@@ -1679,6 +1679,7 @@ html
                             if ((empty($module_list[$module] ?? null) && !empty(MODULES[$module]) && (MODULES[$module]['permissions'] ?? null) === false)) {
                                 throw new CoreException($module_file, HTTPStatusCodes::Forbidden);
                             }
+                            $module_list[$module]['modules'] = $module_list[$module]['modules'] ?? [$action => null];
                             if ($action) {
                                 switch (true) {
                                     case $module_list[$module]['modules'][$action]:
