@@ -29,4 +29,5 @@ wget -O ../../favicon.png https://picsum.photos/16/16;
 
 #cd assets/src && ln -s ../../core/web/assets/src/defaults.ts
 cp -avR ../web/assets/* ../../assets/;
+cp ../web/assets/.gitignore ../../assets/;
 cd ../../assets/src && yarn && yarn webpack:build:prod;
