@@ -11,7 +11,9 @@ mkdir -p ../../Logs;
 
 mkdir -p ../../themes/default;
 touch ../../themes/default/index.html;
+echo '<div id="view"></div>' >> ../../themes/default/index.html
 touch ../../themes/default/error.html;
+echo '<div id="project-error-code"></div><div id="project-error-message"></div>' >> ../../themes/default/error.html
 
 cp ../web/index.php ../../;
 cp ../web/config.json ../../;
@@ -27,4 +29,4 @@ wget -O ../../favicon.png https://picsum.photos/16/16;
 
 #cd assets/src && ln -s ../../core/web/assets/src/defaults.ts
 cp -avR ../web/assets/* ../../assets/;
-cd ../../assets/src && yarn && yarn webpack:build;
+cd ../../assets/src && yarn && yarn webpack:build:prod;

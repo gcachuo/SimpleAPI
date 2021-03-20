@@ -1453,7 +1453,7 @@ class System
             libxml_use_internal_errors(true);
             self::$dom->loadHTMLFile($dir . $file);
 
-            if (self::$dom->getElementsByTagName('html')[0]->getAttribute("lang")) {
+            if (self::$dom->getElementsByTagName('html')[0] && self::$dom->getElementsByTagName('html')[0]->getAttribute("lang")) {
                 session_start();
                 $lang = ($_GET['lang'] ?? null) ? $_GET['lang'] : ($_SESSION['lang'] ?? self::$dom->getElementsByTagName('html')[0]->getAttribute("lang"));
                 $_SESSION['lang'] = $lang;
