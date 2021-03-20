@@ -27,8 +27,13 @@ export class Defaults {
     private static settings: ISettings;
     public static global: ISettings & { [name: string]: any } = Defaults.getSettings();
     private static $buttonHTML;
+    private static code: string;
+    private static user_token: string;
 
     public static init() {
+        this.code = ($("#tag-code").length ? $("#tag-code").attr('content').toString() : '');
+        this.user_token = ($("#tag-user-token").length ? $("#tag-user-token").attr('content').toString() : '');
+
         Defaults.ajaxSettings();
 
         Defaults.overwriteFormSubmit();
@@ -58,7 +63,7 @@ export class Defaults {
                         url: $(element).data('url'),
                         dataType: 'json',
                         processResults: function ({data}) {
-                            if($(element).data('items')) {
+                            if ($(element).data('items')) {
                                 let items = data[$(element).data('items')];
                                 items = items.map((item) => {
                                     return {id: item.id, text: item.name};
@@ -89,7 +94,7 @@ export class Defaults {
 
     private static datatableSettings(): void {
         if ($.fn.dataTable) {
-            $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn';
+            $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn btn-sm';
             $.extend($.fn.dataTable.ext.classes, {
                 sFilterInput: "form-control",
                 sLengthSelect: "form-control",
@@ -106,8 +111,8 @@ export class Defaults {
                         return ({status, code, data, error}) => data[name]
                     },
                     headers: {
-                        'X-Client': $('#tag-code').attr('content').toString(),
-                        Authorization: 'Bearer ' + ($("#tag-user-token").attr('content').toString() || '')
+                        'X-Client': this.code,
+                        Authorization: 'Bearer ' + this.user_token
                     }
                 },
                 pageLength: 25,
@@ -235,8 +240,8 @@ export class Defaults {
                 $.ajax({
                     url, method, data: data,
                     headers: {
-                        'X-Client': $('#tag-code').attr('content').toString(),
-                        Authorization: 'Bearer ' + ($("#tag-user-token").attr('content').toString() || '')
+                        'X-Client': this.code,
+                        Authorization: 'Bearer ' + this.user_token
                     }
                 }).done((result) => {
                     if (window[callback]) {
@@ -315,6 +320,9 @@ export class Defaults {
     }
 
     static Alert(message, type = 'success') {
+        if (!message) {
+            return;
+        }
         toastr.clear();
         toastr[type](message);
     }

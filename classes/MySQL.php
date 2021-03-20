@@ -52,7 +52,7 @@ class MySQL
                 $host = $config['host'];
                 $username = $config['username'];
                 $passwd = $config['passwd'];
-                $config['dbname'] = $dbname ?: self::$dbname ?: (getenv('DATABASE') ?: $config['dbname']);
+                $config['dbname'] = $dbname ?: self::$dbname ?: (getenv('DATABASE') ?: $config['dbname'] ?? (defined('DATABASE') ? DATABASE : null));
 
                 System::check_value_empty($config, ['host', 'username', 'passwd', 'dbname'], 'Missing data in config file.', HTTPStatusCodes::InternalServerError);
 
@@ -205,17 +205,19 @@ sql
 
             return $this;
         } catch (PDOException $exception) {
-            $code = $exception->getCode();
-            $message = $exception->getMessage();
-            System::query_log(self::interpolate_query($sql, $params, false));
+            [$pdoerror, $code, $message] = $exception->errorInfo;
+
+            $message = $message ?: $exception->getMessage();
+
+            System::query_log(self::interpolate_query($sql, $params));
             System::query_log('#' . $message);
 
             $trace = $exception->getTrace();
             foreach ($params as $key => &$val) {
                 $this->parseValue($val);
             }
-            $parsed_sql = self::interpolate_query($sql, $params, false);
-            throw new CoreException($message, HTTPStatusCodes::InternalServerError, compact('trace', 'params', 'sql', 'parsed_sql'));
+            $parsed_sql = self::interpolate_query($sql, $params);
+            throw new CoreException($message, HTTPStatusCodes::InternalServerError, compact('code', 'pdoerror', 'trace', 'params', 'sql', 'parsed_sql'));
         }
     }
 
@@ -326,6 +328,27 @@ sql
         return $result;
     }
 
+    private function parsed_sql_column($column)
+    {
+        switch ($column->type) {
+            case ColumnTypes::TIMESTAMP:
+            case ColumnTypes::BIGINT:
+            case ColumnTypes::INTEGER:
+            case ColumnTypes::BIT:
+                $default = $column->default;
+                break;
+            default:
+                $default = "'$column->default'";
+                break;
+        }
+        return $column->name . " " .
+            $column->type . ($column->type_size ? "($column->type_size)" : '') . " " .
+            ($column->default ? "default " . $default : '') . " " .
+            ($column->auto_increment ? 'auto_increment' : '') . " " .
+            ($column->primary_key ? 'primary key' : '') . " " .
+            ($column->not_null ? 'not null' : '') . ',';
+    }
+
     /**
      * @param string $table
      * @param TableColumn[] $columns
@@ -334,29 +357,13 @@ sql
      */
     function create_table($table, $columns, $extra_sql = '')
     {
-        $result = array_flip(array_column($this->prepare2("show tables;")->fetchAll(PDO::FETCH_NUM), 0))[$table];
+        $table_exists = array_flip(array_column($this->prepare2("show tables;")->fetchAll(PDO::FETCH_NUM), 0))[$table];
 
-        if (!$result) {
+        if (!$table_exists) {
             $sql_columns = "";
             foreach ($columns as $column) {
-                switch ($column->type) {
-                    case ColumnTypes::TIMESTAMP:
-                    case ColumnTypes::BIGINT:
-                    case ColumnTypes::INTEGER:
-                    case ColumnTypes::BIT:
-                        $default = $column->default;
-                        break;
-                    default:
-                        $default = "'$column->default'";
-                        break;
-                }
-                $sql_columns .=
-                    $column->name . " " .
-                    $column->type . ($column->type_size ? "($column->type_size)" : '') . " " .
-                    ($column->default ? "default " . $default : '') . " " .
-                    ($column->auto_increment ? 'auto_increment' : '') . " " .
-                    ($column->primary_key ? 'primary key' : '') . " " .
-                    ($column->not_null ? 'not null' : '') . ',';
+                $sql_column = $this->parsed_sql_column($column);
+                $sql_columns .= $sql_column;
             }
             $sql_columns = trim($sql_columns, ',');
 
@@ -370,9 +377,29 @@ sql;
             } catch (PDOException $exception) {
                 $sql .= $extra_sql;
             }
-            $result = $this->prepare2($sql);
+            $this->prepare2($sql);
             return false;
+        } else {
+            try {
+                $sql_columns = implode(',', array_column($columns, 'name'));
+                $this->prepare2("select $sql_columns from $table");
+            } catch (CoreException $exception) {
+                $code = $exception->getData('code');
+                $message = $exception->getMessage();
+                switch ($code) {
+                    case 1054:
+                        preg_match('/Unknown column \'(.+)\' in \'field list\'/', $message, $matches);
+                        [$message, $column_name] = $matches;
+                        $index = array_search($column_name, array_column($columns, 'name'));
+                        $sql_column = trim($this->parsed_sql_column($columns[$index]), ',');
+                        $this->prepare2("ALTER TABLE $table ADD $sql_column;");
+                        break;
+                    default:
+                        throw $exception;
+                }
+            }
         }
+
         return true;
     }
 
@@ -507,6 +534,11 @@ sql;
     public function fetchAll($fetch_style = null)
     {
         return $this->stmt->fetchAll($fetch_style ?: PDO::FETCH_ASSOC);
+    }
+
+    public function fetchColumn(string $column)
+    {
+        return $this->stmt->fetchColumn($column);
     }
 
     public function convertEncoding(string $table, string $field)

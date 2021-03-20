@@ -1,0 +1,8 @@
+{
+  "experimentalSourceRewriting": false,
+  "chromeWebSecurity": false,
+  "baseUrl": "",
+  "env": {
+    "apiUrl": ""
+  }
+}

@@ -1,9 +1,12 @@
+const path = require('path');
 module.exports = {
     mode: "development", //production | development
+    devtool: 'source-map',
     entry: ["./index.ts", "./index.scss"],
     output: {
-        path: __dirname + '/../dist',
-        filename: 'bundle.js'
+        path: path.resolve(__dirname, '../dist'),
+        filename: 'bundle.[contenthash].js',
+        clean: true,
     },
     resolve: {
         extensions: [".js", ".ts"],
