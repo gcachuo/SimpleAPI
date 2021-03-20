@@ -14,7 +14,8 @@
     "file": "error.html",
     "button": "",
     "messages": {
-      "404": "Not Found"
+      "404": "Not Found",
+      "500": "An error ocurred"
     }
   },
   "modules": {
