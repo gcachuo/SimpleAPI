@@ -1055,7 +1055,7 @@ class System
                         }
                     });
                     $log = array_values(array_filter($log));
-                    JsonResponse::sendResponse('Logs', HTTPStatusCodes::OK, compact('log'));
+                    JsonResponse::sendResponse('Logs', compact('log'));
                     break;
                 case "decodeToken":
                     if (REQUEST_METHOD === 'POST') {
