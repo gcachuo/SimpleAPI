@@ -336,9 +336,10 @@ class System
     }
 
     /**
-     * @param string|null $json
+     * @param string|null $json_string
      * @param bool $assoc
      * @return object|array
+     * @throws CoreException
      */
     public static function json_decode(string $json_string = null, bool $assoc = true): ?array
     {
@@ -354,7 +355,6 @@ class System
             case 4:
                 //Syntax Error
                 throw new CoreException('Syntax Error', 500);
-                break;
             case 5:
                 //Malformed UTF-8 characters, possibly incorrectly encoded
                 array_walk_recursive($array, function (&$item) {
@@ -363,7 +363,7 @@ class System
                 $json = json_decode($json, $assoc);
                 break;
             default:
-                $json = json_last_error_msg();
+                $json = [json_last_error_msg()];
                 break;
         }
         return $json;
@@ -987,12 +987,12 @@ class System
     {
         switch (REQUEST_METHOD) {
             case 'OPTIONS':
-                JsonResponse::sendResponse('Completed.', HTTPStatusCodes::OK);
+                JsonResponse::sendResponse('Completed.');
                 break;
             case 'PATCH':
                 global $_PATCH;
                 if (empty($id)) {
-                    JsonResponse::sendResponse('Request Method PATCH needs an ID to work', HTTPStatusCodes::BadRequest);
+                    throw new CoreException('Request Method PATCH needs an ID to work', HTTPStatusCodes::BadRequest);
                 }
                 break;
         }
@@ -1042,7 +1042,7 @@ class System
                             }
                             $value = trim($value, '[] ');
                             if (self::isJson($value)) {
-                                $value = self::json_decode($value, true);
+                                $value = self::json_decode($value);
                             }
                         });
                         $entry = array_values(array_filter($entry));
@@ -1055,7 +1055,7 @@ class System
                         }
                     });
                     $log = array_values(array_filter($log));
-                    JsonResponse::sendResponse('Logs', HTTPStatusCodes::OK, compact('log'));
+                    JsonResponse::sendResponse('Logs', compact('log'));
                     break;
                 case "decodeToken":
                     if (REQUEST_METHOD === 'POST') {
@@ -1160,8 +1160,8 @@ class System
 
     private static function isJson($string)
     {
-        json_decode($string);
-        $isJson = (json_last_error() == JSON_ERROR_NONE);
+        $decoded = json_decode($string, true);
+        $isJson = (json_last_error() == JSON_ERROR_NONE && is_array($decoded));
         if (!$isJson) {
             $error = json_last_error_msg();
         }
