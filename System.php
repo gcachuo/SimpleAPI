@@ -341,7 +341,7 @@ class System
      * @return object|array
      * @throws CoreException
      */
-    public static function json_decode(string $json_string = null, bool $assoc = true): ?array
+    public static function json_decode(string $json_string = null, bool $assoc = true)
     {
         if (!$json_string) {
             return null;
