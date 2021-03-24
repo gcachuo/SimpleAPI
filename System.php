@@ -341,7 +341,7 @@ class System
      * @return object|array
      * @throws CoreException
      */
-    public static function json_decode(string $json_string = null, bool $assoc = true)
+    public static function json_decode(string $json_string = null, bool $assoc = true): ?array
     {
         if (!$json_string) {
             return null;
@@ -1160,8 +1160,8 @@ class System
 
     private static function isJson($string)
     {
-        json_decode($string);
-        $isJson = (json_last_error() == JSON_ERROR_NONE);
+        $decoded = json_decode($string, true);
+        $isJson = (json_last_error() == JSON_ERROR_NONE && is_array($decoded));
         if (!$isJson) {
             $error = json_last_error_msg();
         }
