@@ -28,7 +28,7 @@ class System
 
     public static function is_email($email): bool
     {
-        preg_match('/^([\w-]+(?:\.[+\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i', $email, $matches);
+        preg_match('/^([áéíóúñ\w-]+(?:\.[áéíóúñ+\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i', $email, $matches);
         return !!($matches);
     }
 
