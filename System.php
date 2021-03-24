@@ -336,9 +336,10 @@ class System
     }
 
     /**
-     * @param string|null $json
+     * @param string|null $json_string
      * @param bool $assoc
      * @return object|array
+     * @throws CoreException
      */
     public static function json_decode(string $json_string = null, bool $assoc = true): ?array
     {
@@ -354,7 +355,6 @@ class System
             case 4:
                 //Syntax Error
                 throw new CoreException('Syntax Error', 500);
-                break;
             case 5:
                 //Malformed UTF-8 characters, possibly incorrectly encoded
                 array_walk_recursive($array, function (&$item) {
@@ -363,7 +363,7 @@ class System
                 $json = json_decode($json, $assoc);
                 break;
             default:
-                $json = json_last_error_msg();
+                $json = [json_last_error_msg()];
                 break;
         }
         return $json;
@@ -1042,7 +1042,7 @@ class System
                             }
                             $value = trim($value, '[] ');
                             if (self::isJson($value)) {
-                                $value = self::json_decode($value, true);
+                                $value = self::json_decode($value);
                             }
                         });
                         $entry = array_values(array_filter($entry));
