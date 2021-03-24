@@ -1467,6 +1467,10 @@ class System
             /** @var DOMElement $link */
             foreach (self::$dom->getElementsByTagName('a') as $link) {
                 $old_link = $link->getAttribute("href");
+
+                if (strpos($old_link, 'tel:') !== false) {
+                    continue;
+                }
                 if (strpos($old_link, 'http') !== false) {
                     continue;
                 }
