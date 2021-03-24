@@ -987,12 +987,12 @@ class System
     {
         switch (REQUEST_METHOD) {
             case 'OPTIONS':
-                JsonResponse::sendResponse('Completed.', HTTPStatusCodes::OK);
+                JsonResponse::sendResponse('Completed.');
                 break;
             case 'PATCH':
                 global $_PATCH;
                 if (empty($id)) {
-                    JsonResponse::sendResponse('Request Method PATCH needs an ID to work', HTTPStatusCodes::BadRequest);
+                    throw new CoreException('Request Method PATCH needs an ID to work', HTTPStatusCodes::BadRequest);
                 }
                 break;
         }
