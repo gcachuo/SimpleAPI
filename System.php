@@ -1439,6 +1439,9 @@ class System
                 'keywords' => $keywords,
                 'author' => $author,
                 'copyright' => $copyright,
+                'address' => $address,
+                'phone' => $phone,
+                'email' => $email,
                 'entry' => $entry,
                 'error' => $error_file,
                 'theme' => $dir,
@@ -1604,6 +1607,49 @@ html
                 $favicon->setAttribute('href', BASENAME . $logo);
             }
 
+            if (self::getElementsByClass(self::$dom, 'p', 'project-description')) {
+                $e_description = (self::getElementsByClass(self::$dom, 'p', 'project-description'));
+                /** @var DOMElement $element */
+                foreach ($e_description as $element) {
+                    $element->nodeValue = $description;
+                }
+            }
+
+            if (self::getElementsByClass(self::$dom, 'div', 'project-address')) {
+                $e_address = (self::getElementsByClass(self::$dom, 'div', 'project-address'));
+                /** @var DOMElement $element */
+                foreach ($e_address as $element) {
+                    $element->nodeValue = $address;
+                }
+            }
+
+            if (self::getElementsByClass(self::$dom, 'a', 'project-address')) {
+                $e_address = (self::getElementsByClass(self::$dom, 'a', 'project-address'));
+                /** @var DOMElement $element */
+                foreach ($e_address as $element) {
+                    $element->nodeValue = $address;
+                    $element->setAttribute('href', 'https://www.google.com/maps/search/?api=1&query=' . str_replace('#', ' ', $address));
+                }
+            }
+
+            if (self::getElementsByClass(self::$dom, 'a', 'project-phone')) {
+                $e_phone = (self::getElementsByClass(self::$dom, 'a', 'project-phone'));
+                /** @var DOMElement $element */
+                foreach ($e_phone as $element) {
+                    $element->nodeValue = $phone;
+                    $element->setAttribute('href', 'tel:' . $phone);
+                }
+            }
+
+            if (self::getElementsByClass(self::$dom, 'a', 'project-email')) {
+                $e_email = (self::getElementsByClass(self::$dom, 'a', 'project-email'));
+                /** @var DOMElement $element */
+                foreach ($e_email as $element) {
+                    $element->nodeValue = $email;
+                    $element->setAttribute('href', 'mailto:' . $email);
+                }
+            }
+
             if (self::getElementsByClass(self::$dom, 'div', 'copyright')) {
                 $e_copyrights = (self::getElementsByClass(self::$dom, 'div', 'copyright'));
                 /** @var DOMElement $e_copyright */
@@ -1621,6 +1667,32 @@ html
                     $logo = BASENAME . 'logo.png';
                     if (file_exists(__DIR__ . '/../settings/' . $env . '/img/logo.png')) {
                         $logo = BASENAME . 'settings/' . $env . '/img/logo.png';
+                    }
+                    $img->setAttribute('src', $logo);
+
+                    $old_links = $img->getAttribute("srcset");
+                    if ($old_links) {
+                        $new_links = [];
+                        foreach (explode(', ', $old_links) as $old_link) {
+                            if (strpos($old_link, 'http') !== false) {
+                                $new_links[] = $old_link;
+                                continue;
+                            }
+                            $new_links[] = $logo;
+                        }
+                        $img->setAttribute('srcset', implode(', ', $new_links));
+                    }
+                }
+            }
+
+            if (self::getElementsByClass(self::$dom, 'img', 'project-img-small')) {
+                $imgs = (self::getElementsByClass(self::$dom, 'img', 'project-img-small'));
+                $config = WEBCONFIG;
+                foreach ($imgs as $img) {
+                    $env = $config['code'];
+                    $logo = BASENAME . 'logo-small.png';
+                    if (file_exists(__DIR__ . '/../settings/' . $env . '/img/logo-small.png')) {
+                        $logo = BASENAME . 'settings/' . $env . '/img/logo-small.png';
                     }
                     $img->setAttribute('src', $logo);
 
