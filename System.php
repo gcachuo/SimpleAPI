@@ -1868,7 +1868,7 @@ html
         $nav_icon
         <span class="nav-text">$name</span>
     </a>
-    <ul class="nav-sub">
+    <ul class="sub-menu">
         $children_html
     </ul>
 </li>
