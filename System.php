@@ -1874,10 +1874,16 @@ html
 </li>
 html;
                     } else {
-                        $href = BASENAME . $href;
+
+                        $target = '';
+                        if (strpos($href, 'http') !== false) {
+                            $target = '_blank';
+                        } else {
+                            $href = BASENAME . $href;
+                        }
                         $html = !$hidden ? <<<html
 <li>
-    <a href="$href" class="$disabled" style="display: flex; align-items: center" onclick="$onclick">
+    <a target="$target" href="$href" class="$disabled" style="display: flex; align-items: center" onclick="$onclick">
         $nav_icon
         <span class="nav-text">$name</span>
     </a>
