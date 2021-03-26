@@ -1446,7 +1446,11 @@ class System
                 'error' => $error_file,
                 'theme' => $dir,
                 'modules' => $module_list,
-            ] = WEBCONFIG;
+            ] = WEBCONFIG + [
+                'address' => '',
+                'phone' => '',
+                'email' => '',
+            ];
 
             if (!file_exists($dir . $file)) {
                 die($dir . $file . ' does not exist');
