@@ -1785,6 +1785,8 @@ html
                     $href = $module['href'] ?? null;
                     $name = $module['name'] ?? null;
                     $icon = $module['icon'] ?? null;
+                    $className = $module['className'] ?? [];
+                    $styles = $module['styles'] ?? [];
                     $children = $module['modules'] ?? null;
                     $onclick = $module['onclick'] ?? null;
                     $onlogin = $module['onlogin'] ?? null;
@@ -1885,9 +1887,12 @@ html;
                         } else {
                             $href = BASENAME . $href;
                         }
+                        $className = $className + ['li' => null, 'a' => null];
+                        $styles_li = implode('; ', ($styles['li'] ?? []));
+                        $styles_a = implode('; ', ($styles['a'] ?? []));
                         $html = !$hidden ? <<<html
-<li>
-    <a target="$target" href="$href" class="$disabled" style="display: flex; align-items: center" onclick="$onclick">
+<li class="$className[li]" style="$styles_li">
+    <a target="$target" href="$href" class="$disabled $className[a]" style="display: flex; align-items: center; $styles_a" onclick="$onclick">
         $nav_icon
         <span class="nav-text">$name</span>
     </a>
