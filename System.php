@@ -2090,12 +2090,13 @@ html
      */
     private static function createElement(string $element, string $html)
     {
-        $fragment = new DOMDocument();
-        $fragment->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'), 8192 | 4);
-
         $module = self::$dom->createElement($element);
-        $module->appendChild(self::$dom->importNode($fragment->documentElement, true));
+        if (!empty(trim($html))) {
+            $fragment = new DOMDocument();
+            $fragment->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'), 8192 | 4);
 
+            $module->appendChild(self::$dom->importNode($fragment->documentElement, true));
+        }
         return $module;
     }
 
