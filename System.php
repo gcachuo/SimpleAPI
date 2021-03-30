@@ -2006,15 +2006,17 @@ html;
             $module_name = ucfirst(strtolower(($o_module['name'] ?? null) ?: $o_module['breadcrumbs'] ?? ''));
         }
 
-        $breadcrumbs = 'none';
+        $breadcrumbs = '';
         if (BREADCRUMBS && !($o_module['modal'] ?? false)) {
-            $breadcrumbs = 'unset';
+            $breadcrumbs = <<<html
+<p class="text-left breadcrumbs" style="">
+        <span class="text-muted">Usted se encuentra en:</span> <span>$module_name</span>
+</p>
+html;
         }
 
         $module = self::createElement('div', <<<html
-    <p class="text-left breadcrumbs $breadcrumbs" style="display: $breadcrumbs">
-        <span class="text-muted">Usted se encuentra en:</span> <span>$module_name</span>
-    </p>
+    $breadcrumbs
     $contents
 html
         );
