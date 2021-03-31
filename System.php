@@ -1481,6 +1481,9 @@ class System
                 if (strpos($old_link, 'http') !== false) {
                     continue;
                 }
+                if (($old_link[0] ?? null) == '?' || ($old_link[0] ?? null) == '#') {
+                    $old_link = $module_file . $old_link;
+                }
 
                 $link->setAttribute('href', BASENAME . trim($old_link, '/'));
             }
