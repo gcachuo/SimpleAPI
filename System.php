@@ -1442,6 +1442,7 @@ class System
                 'address' => $address,
                 'phone' => $phone,
                 'email' => $email,
+                'social_media' => $social_media,
                 'entry' => $entry,
                 'error' => $error_file,
                 'theme' => $dir,
@@ -1636,6 +1637,30 @@ html
                 foreach ($e_address as $element) {
                     $element->nodeValue = $address;
                     $element->setAttribute('href', 'https://www.google.com/maps/search/?api=1&query=' . str_replace('#', ' ', $address));
+                }
+            }
+
+            if (self::getElementsByClass(self::$dom, 'a', 'social_media:facebook')) {
+                $e_media = (self::getElementsByClass(self::$dom, 'a', 'social_media:facebook'));
+                /** @var DOMElement $element */
+                foreach ($e_media as $element) {
+                    $element->setAttribute('href', $social_media['facebook']);
+                }
+            }
+
+            if (self::getElementsByClass(self::$dom, 'a', 'social_media:twitter')) {
+                $e_media = (self::getElementsByClass(self::$dom, 'a', 'social_media:twitter'));
+                /** @var DOMElement $element */
+                foreach ($e_media as $element) {
+                    $element->setAttribute('href', $social_media['twitter']);
+                }
+            }
+
+            if (self::getElementsByClass(self::$dom, 'a', 'social_media:instagram')) {
+                $e_media = (self::getElementsByClass(self::$dom, 'a', 'social_media:instagram'));
+                /** @var DOMElement $element */
+                foreach ($e_media as $element) {
+                    $element->setAttribute('href', $social_media['instagram']);
                 }
             }
 
