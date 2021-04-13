@@ -17,7 +17,6 @@
     "@types/datatables.net-buttons": "^1.4.3",
     "@types/jquery": "^3.5.1",
     "@types/node": "^14.10.1",
-    "@types/toastr": "^2.1.38",
     "css-loader": "^4.3.0",
     "cypress": "^6.7.1",
     "expose-loader": "^1.0.0",
