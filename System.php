@@ -45,8 +45,8 @@ class System
 
     public static function sessionCheck(string $name, string $token = null)
     {
-        if (ENVIRONMENT !== 'www') {
-            throw new CoreException('sessionCheck can only be used on web.');
+        if (ENVIRONMENT !== 'www' || !defined('WEBCONFIG')) {
+            throw new CoreException('sessionCheck can only be used on web pages.',500);
         }
         session_start();
         $check = $_SESSION[$name] ?? $token ?? null;
@@ -670,7 +670,7 @@ class System
             $pathLib = DIR . "/Lib/vendor/autoload.php";
             $path = DIR . "/vendor/autoload.php";
             if (!file_exists($pathLib)) {
-                JsonResponse::sendResponse('Composer is not installed on Lib.', HTTPStatusCodes::InternalServerError);
+                throw new CoreException('Composer is not installed on Lib.', HTTPStatusCodes::InternalServerError);
             }
             if (!file_exists($path)) {
                 JsonResponse::sendResponse('Composer is not installed.', HTTPStatusCodes::InternalServerError);
