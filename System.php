@@ -522,7 +522,7 @@ class System
         self::load_composer();
         try {
             if (empty($jwt)) {
-                JsonResponse::sendResponse('The token sent is empty.');
+                throw new CoreException('The token sent is empty.', 500);
             }
 
             $jwt_key = self::get_jwt_key();
@@ -530,17 +530,17 @@ class System
             $time = time();
             $decoded = JWT::decode($jwt, $jwt_key, ['HS256']);
             if (!empty($decoded->exp) && $decoded->exp <= $time) {
-                JsonResponse::sendResponse('The token has expired.');
+                throw new CoreException('The token has expired.', 500);
             }
             return json_decode(json_encode($decoded), true)['data'];
         } catch (Firebase\JWT\ExpiredException $ex) {
-            JsonResponse::sendResponse($ex->getMessage());
+            throw new CoreException($ex->getMessage(), 500);
         } catch (Firebase\JWT\SignatureInvalidException $ex) {
-            JsonResponse::sendResponse($ex->getMessage());
+            throw new CoreException($ex->getMessage(), 500);
         } catch (UnexpectedValueException $ex) {
-            JsonResponse::sendResponse('Invalid token.');
+            throw new CoreException('Invalid token.', 500);
         } catch (DomainException $ex) {
-            JsonResponse::sendResponse('Invalid token.');
+            throw new CoreException('Invalid token.', 500);
         }
     }
 
@@ -849,8 +849,8 @@ class System
                 }
                 if (!defined('DATABASE')) define('DATABASE', $headers['X-Database']);
             } else {
-                if (($headers['Authorization'] ?? null) and !defined('USER_TOKEN')) {
-                    $user_token = trim(strstr($headers['Authorization'], ' '));
+                $user_token = trim(strstr($headers['Authorization'], ' '));
+                if (($user_token) and !defined('USER_TOKEN')) {
                     $user = System::decode_token($user_token);
                     if ($user) {
                         define('USER_TOKEN', $user_token);
