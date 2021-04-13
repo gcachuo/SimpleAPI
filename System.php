@@ -1020,7 +1020,7 @@ class System
                 case "version":
                     $name = CONFIG['project']['name'];
                     $version = VERSION;
-                    JsonResponse::sendResponse('Completed.', HTTPStatusCodes::OK, compact('name', 'version'));
+                    JsonResponse::sendResponse('Completed.', compact('name', 'version'));
                     break;
                 case "logs":
                     $path = DIR . '/Logs/' . CONFIG['project']['code'] . '/' . date('Y-m-d', strtotime(System::isset_get($_GET['date'], date('Y-m-d')))) . '.log';
