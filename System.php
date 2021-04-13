@@ -46,7 +46,7 @@ class System
     public static function sessionCheck(string $name, string $token = null)
     {
         if (ENVIRONMENT !== 'www' || !defined('WEBCONFIG')) {
-            throw new CoreException('sessionCheck can only be used on web pages.',500);
+            throw new CoreException('sessionCheck can only be used on web pages.', 500);
         }
         session_start();
         $check = $_SESSION[$name] ?? $token ?? null;
@@ -505,9 +505,9 @@ class System
     {
         if (empty(JWT_KEY)) {
             if (!file_exists(DIR . '/Config/.jwt_key')) {
-                throw new CoreException('Missing file .jwt_key');
+                throw new CoreException('Missing file .jwt_key', 500);
             }
-            throw new CoreException('JWT key is empty');
+            throw new CoreException('JWT key is empty', 500);
         }
         return JWT_KEY;
     }
