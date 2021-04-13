@@ -1451,6 +1451,7 @@ class System
                 'address' => '',
                 'phone' => '',
                 'email' => '',
+                'social_media' => []
             ];
 
             if (!file_exists($dir . $file)) {
