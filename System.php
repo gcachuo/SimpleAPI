@@ -849,7 +849,7 @@ class System
                 }
                 if (!defined('DATABASE')) define('DATABASE', $headers['X-Database']);
             } else {
-                $user_token = trim(strstr($headers['Authorization'], ' '));
+                $user_token = trim(strstr($headers['Authorization'] ?? '', ' '));
                 if (($user_token) and !defined('USER_TOKEN')) {
                     $user = System::decode_token($user_token);
                     if ($user) {
