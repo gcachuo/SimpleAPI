@@ -673,7 +673,7 @@ class System
                 throw new CoreException('Composer is not installed on Lib.', HTTPStatusCodes::InternalServerError);
             }
             if (!file_exists($path)) {
-                JsonResponse::sendResponse('Composer is not installed.', HTTPStatusCodes::InternalServerError);
+                throw new CoreException('Composer is not installed.', HTTPStatusCodes::InternalServerError);
             }
             require_once($pathLib);
             require_once($path);
