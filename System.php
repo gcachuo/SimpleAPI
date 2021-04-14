@@ -2060,7 +2060,7 @@ html
             $html->setAttribute('class', WEBCONFIG['code']);
 
             if (is_array($href)) {
-                $module->setAttribute('class', $class . ' ' . $href[0] . '-' . $href[1]);
+                $module->setAttribute('class', $class . ' ' . $href[0] . ' ' . $href[1]);
                 $body->setAttribute('id', $href[0] . '-' . $href[1]);
             } else {
                 $module->setAttribute('class', $class . ' ' . $href);
