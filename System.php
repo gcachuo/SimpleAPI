@@ -244,7 +244,7 @@ class System
     public static function curl($options, $select = null)
     {
         if (ENVIRONMENT !== 'www') {
-            throw new CoreException('curl can only be used on web');
+            throw new CoreException('curl can only be used on web', 500);
         }
         $settings = self::getSettings();
 
@@ -288,7 +288,7 @@ class System
         $result = ['data' => []];
 
         if ($error) {
-            JsonResponse::sendResponse($error, HTTPStatusCodes::InternalServerError);
+            throw new CoreException($error, 500);
         } elseif ($json) {
             if (!self::isJson($json)) {
                 if ($info['http_code'] >= 500) {
@@ -312,7 +312,7 @@ class System
                 }
             }
         } else {
-            JsonResponse::sendResponse('Empty response: ' . $options['url'], HTTPStatusCodes::ServiceUnavailable);
+            throw new CoreException('Empty response: ' . $options['url'], HTTPStatusCodes::ServiceUnavailable);
         }
 
         if ($select && key_exists($select, $result['data'])) {
