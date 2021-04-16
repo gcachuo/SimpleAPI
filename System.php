@@ -659,6 +659,10 @@ class System
     public function startup()
     {
         define('ENVIRONMENT', 'init');
+        $classes = glob(__DIR__ . "/classes/*.php");
+        foreach ($classes as $class) {
+            require_once($class);
+        }
         self::define_constants(['DIR' => __DIR__ . '/']);
         self::load_php_functions();
         self::create_directories();
@@ -714,7 +718,7 @@ class System
                             if (ob_get_contents()) ob_clean();
 
                             $status = 'error';
-                            $code = HTTPStatusCodes::InternalServerError;
+                            $code = 500;
                             $response = ['message' => $error['message']];
                             http_response_code($code);
 
@@ -803,7 +807,7 @@ class System
 
         shell_exec('cd .. && composer install && cd .. && composer install');
 
-        JsonResponse::sendResponse('', HTTPStatusCodes::OK);
+        JsonResponse::sendResponse('');
     }
 
     private static function define_constants($config)
@@ -834,7 +838,7 @@ class System
             define('BASENAME', dirname($_SERVER['SCRIPT_NAME']));
         }
 
-        if (ENVIRONMENT !== 'www') {
+        if (ENVIRONMENT === 'web') {
             $headers = apache_request_headers();
             if ($headers['X-Client'] ?? null) {
                 if (!defined('PROJECT')) define('PROJECT', $headers['X-Client']);
@@ -857,7 +861,8 @@ class System
                     }
                 }
             }
-
+        }
+        if (ENVIRONMENT !== 'www') {
             $project = defined('PROJECT') ? PROJECT : getenv('PROJECT');
             if (empty($project)) {
                 $project_config = file_exists(DIR . '/Config/default.json')
@@ -911,37 +916,37 @@ class System
                     die(json_encode(['message' => "Config not found for project '$project'"]));
                 }
             }
-        }
 
-        $entry = (file_get_contents('php://input'));
-        if (!empty($entry)) {
-            if (self::isJson($entry)) {
-                $entry = http_build_query(json_decode($entry, true));
-            }
+            $entry = (file_get_contents('php://input'));
+            if (!empty($entry)) {
+                if (self::isJson($entry)) {
+                    $entry = http_build_query(json_decode($entry, true));
+                }
 
-            parse_str($entry, ${'_' . REQUEST_METHOD});
-            if (REQUEST_METHOD === 'POST') {
-                parse_str($entry, $_POST);
-                if (!empty($_POST['form'])) {
-                    parse_str($_POST["form"], $_POST["form"]);
-                    $_POST = array_merge($_POST, $_POST["form"]);
-                    unset($_POST["form"]);
-                }
-                if (!empty($_POST['aside'])) {
-                    parse_str($_POST["aside"], $_POST["aside"]);
-                    $_POST = array_merge($_POST, $_POST["aside"]);
-                    unset($_POST["aside"]);
-                }
-                if (!empty($_POST['post'])) {
-                    if (is_string($_POST['post'])) {
-                        parse_str($_POST["post"], $_POST["post"]);
+                parse_str($entry, ${'_' . REQUEST_METHOD});
+                if (REQUEST_METHOD === 'POST') {
+                    parse_str($entry, $_POST);
+                    if (!empty($_POST['form'])) {
+                        parse_str($_POST["form"], $_POST["form"]);
+                        $_POST = array_merge($_POST, $_POST["form"]);
+                        unset($_POST["form"]);
                     }
-                    $_POST = array_merge($_POST, $_POST["post"]);
-                    unset($_POST["post"]);
+                    if (!empty($_POST['aside'])) {
+                        parse_str($_POST["aside"], $_POST["aside"]);
+                        $_POST = array_merge($_POST, $_POST["aside"]);
+                        unset($_POST["aside"]);
+                    }
+                    if (!empty($_POST['post'])) {
+                        if (is_string($_POST['post'])) {
+                            parse_str($_POST["post"], $_POST["post"]);
+                        }
+                        $_POST = array_merge($_POST, $_POST["post"]);
+                        unset($_POST["post"]);
+                    }
                 }
-            }
-            if (REQUEST_METHOD === 'GET') {
-                parse_str($entry, $_GET);
+                if (REQUEST_METHOD === 'GET') {
+                    parse_str($entry, $_GET);
+                }
             }
         }
     }
