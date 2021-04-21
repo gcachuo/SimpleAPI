@@ -1892,7 +1892,7 @@ html;
 
                             $children_html .= !$child_hidden ? <<<html
 <li>
-    <a href="$child_href" class="$child_disabled" style="display: flex; align-items: center" onclick="$child_onclick">
+    <a href="$child_href" class="$child_disabled" onclick="$child_onclick">
         $child_nav_icon
         <span class="nav-text">$child_name</span>
     </a>
@@ -1903,11 +1903,11 @@ html
                         $html = <<<html
 <li>
     <a class="parent-module">
+        $nav_icon
+        <span class="nav-text">$name</span>
         <span class="nav-caret">
             <i class="fas fa-caret-down"></i>
         </span>
-        $nav_icon
-        <span class="nav-text">$name</span>
     </a>
     <ul class="sub-menu">
         $children_html
@@ -1927,7 +1927,7 @@ html;
                         $styles_a = implode('; ', ($styles['a'] ?? []));
                         $html = !$hidden ? <<<html
 <li class="$className[li]" style="$styles_li">
-    <a target="$target" href="$href" class="$disabled $className[a]" style="display: flex; align-items: center; $styles_a" onclick="$onclick">
+    <a target="$target" href="$href" class="$disabled $className[a]" style="$styles_a" onclick="$onclick">
         $nav_icon
         <span class="nav-text">$name</span>
     </a>
