@@ -213,7 +213,7 @@ class System
         // Save the PDF
         if (!$pdf->saveAs($output)) {
             $error = $pdf->getError();
-            JsonResponse::sendResponse($error, HTTPStatusCodes::InternalServerError);
+            throw new CoreException($error, HTTPStatusCodes::InternalServerError);
         }
     }
 
