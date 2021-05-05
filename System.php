@@ -1430,7 +1430,11 @@ class System
             $module_file = implode('/', $module_file_intersect);
         }
 
-        $file = $module_list[$module_file]['file'] ?? $entry;
+        $list = $module_list;
+        foreach (explode('/', $module_file) as $item) {
+            $list = $list[$item] ?? $list['modules'][$item] ?? [];
+            $file = $list['file'] ?? $entry;
+        }
 
         self::formatDocument($file, $module_file);
     }
@@ -1961,7 +1965,7 @@ html
                     $nav->parentNode->replaceChild($clone, $nav);
                 }
 
-                if ($module_file && $file === $entry) {
+                if ($module_file) {
                     self::load_module($module_file);
                 }
             }
