@@ -1800,9 +1800,7 @@ html
                             });
                         if ($module_file !== 'dashboard' && !($module_list[$module_file] ?? null)) {
                             @list($module, $action) = explode('/', $module_file);
-                            if ((empty($module_list[$module] ?? null) && !empty(MODULES[$module]) && (MODULES[$module]['permissions'] ?? null) === false)) {
-                                throw new CoreException($module_file, HTTPStatusCodes::Forbidden);
-                            }
+
                             $module_list[$module]['modules'] = $module_list[$module]['modules'] ?? [$action => null];
                             if ($action) {
                                 switch (true) {
