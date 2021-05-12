@@ -52,8 +52,12 @@ class System
         $check = $_SESSION[$name] ?? $token ?? null;
 
         $module_name = ($_GET['module'] ?? WEBCONFIG['default']);
-        $module_name = strstr($module_name, '/', true) ?: $module_name;
-        $module = MODULES[$module_name] ?? null;
+
+        $modules = MODULES;
+        foreach (explode("/", $module_name) as $module_name) {
+            $module = $modules[$module_name];
+            $modules = $module['modules'] ?? $modules;
+        }
 
         if (!$check && (($module['onlogin'] ?? null) !== false)) {
             System::redirect('login');
