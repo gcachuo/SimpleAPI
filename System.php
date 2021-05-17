@@ -1077,10 +1077,10 @@ class System
                             $data = System::decode_token($_POST['token']);
                             JsonResponse::sendResponse('Completed.', $data);
                         }
+                        throw new CoreException("Missing token", 400);
                     } else {
                         throw new CoreException("Endpoint not found.  [$namespace]", 400);
                     }
-                    break;
                 case "backup":
                     $mysql = new MySQL();
                     $data = $mysql->backupDB();
