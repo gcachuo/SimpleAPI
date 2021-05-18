@@ -45,6 +45,7 @@ class System
 
     public static function sessionCheck(string $name, string $token = null)
     {
+        System::get_web_config();
         if (ENVIRONMENT !== 'www' || !defined('WEBCONFIG')) {
             throw new CoreException('sessionCheck can only be used on web pages.', 500);
         }
@@ -53,9 +54,9 @@ class System
 
         $module_name = ($_GET['module'] ?? WEBCONFIG['default']);
 
-        $modules = MODULES;
+        $modules = defined('MODULES') ? MODULES : [];
         foreach (explode("/", $module_name) as $module_name) {
-            $module = $modules[$module_name];
+            $module = $modules[$module_name] ?? [];
             $modules = $module['modules'] ?? $modules;
         }
 
@@ -839,6 +840,8 @@ class System
 
         if (!defined('DIR'))
             define('DIR', $config['DIR'] ?? '');
+        if (!defined('WEBDIR'))
+            define('WEBDIR', $config['DIR'] ?? '');
 
         if (!defined('JWT_KEY'))
             define('JWT_KEY', file_exists(DIR . '/Config/.jwt_key') ? file_get_contents(DIR . '/Config/.jwt_key') : null);
