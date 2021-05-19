@@ -2004,23 +2004,29 @@ html;
 
     public static function load_module($file)
     {
-        $pathinfo = pathinfo($file);//['extension'];
+        $pathinfo = pathinfo($file);
         if (!($pathinfo['extension'] ?? null)) {
             if ($file[strlen($file) - 1] === '/') {
                 $file .= 'index';
             }
+        }
+        $module_path = WEBDIR . '/modules/';
+        if (!file_exists($module_path . $file . '.php')) {
+            if (!file_exists($module_path . $file . '/index.php')) {
+                $code = HTTPStatusCodes::NotFound;
+                $status = 'error';
+                $response = [
+                    'message' => "File not found [" . $module_path . $file . "]"
+                ];
+                System::log_error(compact('status', 'code', 'response'));
+                throw new CoreException('Not found', 404);
+            } else {
+                $file .= '/index.php';
+            }
+        } else {
             $file .= '.php';
         }
-        $module_path = WEBDIR . '/modules/' . $file;
-        if (!file_exists($module_path)) {
-            $code = HTTPStatusCodes::NotFound;
-            $status = 'error';
-            $response = [
-                'message' => "File not found [$module_path]"
-            ];
-            System::log_error(compact('status', 'code', 'response'));
-            throw new CoreException('Not found', 404);
-        }
+        $module_path = $module_path . $file;
 
         ob_start();
         define('MODULE', $pathinfo['basename']);
@@ -2101,6 +2107,10 @@ html
             }
 
             if ($o_module['action'] ?? null) {
+                if (end($href) == 'index') {
+                    array_pop($href);
+                }
+
                 $o_action = $o_module['action'];
                 $href = is_array($href) ? implode('/', $href) : $href;
                 $o_action['href'] = BASENAME . $href . '/' . $o_action['href'];
