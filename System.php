@@ -1690,8 +1690,8 @@ html
                 $e_phone = (self::getElementsByClass(self::$dom, 'a', 'project-phone'));
                 /** @var DOMElement $element */
                 foreach ($e_phone as $element) {
-                    $element->nodeValue = $phone;
-                    $element->setAttribute('href', 'tel:' . $phone);
+                    $element->nodeValue = is_array($phone) ? implode(', ', $phone) : $phone;
+                    $element->setAttribute('href', (is_array($phone) ? '#' : 'tel:' . $phone));
                 }
             }
 
