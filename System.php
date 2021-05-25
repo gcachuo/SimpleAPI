@@ -2107,8 +2107,10 @@ html
             }
 
             if ($o_module['action'] ?? null) {
-                if (end($href) == 'index') {
-                    array_pop($href);
+                if (is_array($href)) {
+                    if (end($href) == 'index') {
+                        array_pop($href);
+                    }
                 }
 
                 $o_action = $o_module['action'];
