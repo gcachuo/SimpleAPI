@@ -2244,4 +2244,16 @@ html
     {
         return array_fill_keys($keys, $value);
     }
+
+    static function filePond(string $FILE, string $path): string
+    {
+        $FILE = System::json_decode($FILE);
+        $data = base64_decode($FILE['data']);
+
+        $path = $path . urlencode(str_replace(['(', ')'], '', $FILE['name']));
+        is_dir(dirname($path)) || @mkdir(dirname($path));
+        file_put_contents($path, $data);
+
+        return $path;
+    }
 }
