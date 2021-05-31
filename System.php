@@ -1686,12 +1686,19 @@ html
                 }
             }
 
-            if (self::getElementsByClass(self::$dom, 'a', 'project-phone')) {
-                $e_phone = (self::getElementsByClass(self::$dom, 'a', 'project-phone'));
+            if (self::getElementsByClass(self::$dom, 'div', 'project-phone')) {
+                $e_phone = (self::getElementsByClass(self::$dom, 'div', 'project-phone'));
                 /** @var DOMElement $element */
                 foreach ($e_phone as $element) {
-                    $element->nodeValue = is_array($phone) ? implode(', ', $phone) : $phone;
-                    $element->setAttribute('href', (is_array($phone) ? '#' : 'tel:' . $phone));
+                    foreach ($phone as $item) {
+                        $fragment = self::createElement('span', <<<html
+<a href="tel:$item">$item</a><span>, </span>
+html
+                        );
+                        $element->appendChild($fragment);
+                    }
+                    //$element->nodeValue = is_array($phone) ? implode(', ', $phone) : $phone;
+                    //$element->setAttribute('href', (is_array($phone) ? '#' : 'tel:' . $phone));
                 }
             }
 
