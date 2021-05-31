@@ -1686,6 +1686,14 @@ html
                 }
             }
 
+            if (self::getElementsByClass(self::$dom, 'a', 'social_media:website')) {
+                $e_media = (self::getElementsByClass(self::$dom, 'a', 'social_media:website'));
+                /** @var DOMElement $element */
+                foreach ($e_media as $element) {
+                    $element->setAttribute('href', $social_media['website']);
+                }
+            }
+
             if (self::getElementsByClass(self::$dom, 'div', 'project-phone')) {
                 $e_phone = (self::getElementsByClass(self::$dom, 'div', 'project-phone'));
                 /** @var DOMElement $element */
