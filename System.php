@@ -1690,7 +1690,14 @@ html
                 $e_media = (self::getElementsByClass(self::$dom, 'a', 'social_media:website'));
                 /** @var DOMElement $element */
                 foreach ($e_media as $element) {
-                    $element->setAttribute('href', $social_media['website']);
+                    $icon = self::createElement('span', <<<html
+<i class="fas fa-globe"></i>
+html
+                    );
+                    $element->appendChild($icon);
+                    $element->appendChild(self::createElement('span', ' <span>' . $social_media['website']['title'] . '</span>'));
+                    $element->setAttribute('href', $social_media['website']['href']);
+                    $element->setAttribute('title', $social_media['website']['description']);
                 }
             }
 
