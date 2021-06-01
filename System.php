@@ -86,7 +86,9 @@ class System
         }
         session_write_close();
 
-        $user = array_filter($user);
+        $user = array_filter($user, function ($item) {
+            return $item !== null;
+        });
         return $user;
     }
 
@@ -1827,20 +1829,25 @@ html
                         $module_list = ($_SESSION['modules'] ?? []) + array_filter(MODULES, function ($module) {
                                 return ($module['permissions'] ?? true) === false;
                             });
-                        if ($module_file !== 'dashboard' && !($module_list[$module_file] ?? null)) {
+                        if ($module_file !== WEBCONFIG['default'] && !($module_list[$module_file] ?? null)) {
                             @list($module, $action) = explode('/', $module_file);
 
-                            $module_list[$module]['modules'] = $module_list[$module]['modules'] ?? [$action => null];
+                            $found = MODULES[$module] ?? false;
+                            $permission = $module_list[$module] ?? false;
+
                             if ($action) {
-                                switch (true) {
-                                    case $module_list[$module]['modules'][$action]:
-                                    case $module_list[$module]['action']['href'] === $action:
-                                        break;
-                                    case !MODULES[$module]['modules'][$action]:
-                                        throw new CoreException($module_file, HTTPStatusCodes::NotFound);
-                                    default:
-                                        throw new CoreException($module_file, HTTPStatusCodes::Forbidden);
+                                $found = MODULES[$module]['modules'][$action] ?? false;
+                                $permission = $module_list[$module]['modules'][$action] ?? false;
+                                if (!$found) {
+                                    $found = $module_list[$module]['action']['href'] === $action;
                                 }
+                            }
+
+                            if (!$found) {
+                                throw new CoreException($module_file, HTTPStatusCodes::NotFound);
+                            }
+                            if (!$permission) {
+                                throw new CoreException($module_file, HTTPStatusCodes::Forbidden);
                             }
                         }
                     }
