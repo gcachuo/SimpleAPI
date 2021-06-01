@@ -22,7 +22,7 @@ class TableColumn
      * @param bool $auto_increment
      * @param bool $primary_key
      */
-    public function __construct($name, $type, $type_size = 0, $not_null = false, $default = null, $auto_increment = false, $primary_key = false)
+    public function __construct(string $name, string $type, string $type_size = '0', bool $not_null = false, string $default = null, bool $auto_increment = false, bool $primary_key = false)
     {
         $this->name = $name;
         $this->type = $type;
