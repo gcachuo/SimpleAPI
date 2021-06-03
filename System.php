@@ -2279,10 +2279,24 @@ html
         $FILE = System::json_decode($FILE);
         $data = base64_decode($FILE['data']);
 
-        $path = $path . urlencode(str_replace(['(', ')'], '', $FILE['name']));
+        $path = $path . '/' . urlencode(str_replace(['(', ')'], '', $FILE['name']));
         is_dir(dirname($path)) || @mkdir(dirname($path));
         file_put_contents($path, $data);
 
         return $path;
+    }
+
+    static function loadFilePond(string $path)
+    {
+        if (file_exists($path)) {
+            $mime_content_type = mime_content_type($path);
+            header('Content-Disposition: inline; filename="' . basename($path) . '"');
+            header('Content-Type: ' . $mime_content_type);
+            header('Content-Length: ' . filesize($path));
+            readfile($path);
+        } else {
+            header($_SERVER["SERVER_PROTOCOL"] . " 404 Not Found");
+        }
+        exit;
     }
 }
