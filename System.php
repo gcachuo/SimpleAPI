@@ -1697,7 +1697,7 @@ html
 html
                     );
                     $element->appendChild($icon);
-                    $element->appendChild(self::createElement('span', ' <span>' . $social_media['website']['title'] . '</span>'));
+                    $element->appendChild(self::createElement('span', '<span style="margin-left: 4px">' . $social_media['website']['title'] . '</span>'));
                     $element->setAttribute('href', $social_media['website']['href']);
                     $element->setAttribute('title', $social_media['website']['description']);
                 }
