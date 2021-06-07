@@ -23,7 +23,8 @@
     "neitanod/forceutf8": "^2.0",
     "cboden/ratchet": "^0.4.3",
     "textalk/websocket": "^1.4",
-    "camcima/php-mysql-diff": "^1.2"
+    "camcima/php-mysql-diff": "^1.2",
+    "shuchkin/simplexlsx": "^0.8.24"
   },
   "require-dev": {
     "phpunit/phpunit": "^8"

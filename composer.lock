@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "884ee1ea20ff56ae7538ba354bb6c464",
+    "content-hash": "a185048d11def11d72b7a84cc85a76b3",
     "packages": [
         {
             "name": "camcima/php-mysql-diff",
@@ -1199,6 +1199,57 @@
                 "source": "https://github.com/reactphp/stream/tree/v1.1.1"
             },
             "time": "2020-05-04T10:17:57+00:00"
+        },
+        {
+            "name": "shuchkin/simplexlsx",
+            "version": "0.8.24",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/shuchkin/simplexlsx.git",
+                "reference": "1581dbed25a846f8fee4303849ab58a14f528518"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/shuchkin/simplexlsx/zipball/1581dbed25a846f8fee4303849ab58a14f528518",
+                "reference": "1581dbed25a846f8fee4303849ab58a14f528518",
+                "shasum": ""
+            },
+            "require": {
+                "ext-libxml": "*",
+                "ext-simplexml": "*",
+                "ext-zlib": "*"
+            },
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    "src/SimpleXLSX.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Sergey Shuchkin (SMSPILOT)",
+                    "email": "sergey.shuchkin@gmail.com",
+                    "homepage": "http://www.shuchkin.ru/"
+                }
+            ],
+            "description": "Parse and retrieve data from Excel XLSx files. MS Excel 2007 workbooks PHP reader.",
+            "homepage": "https://github.com/shuchkin/simplexlsx",
+            "keywords": [
+                "backend",
+                "excel",
+                "parser",
+                "php",
+                "xlsx"
+            ],
+            "support": {
+                "issues": "https://github.com/shuchkin/simplexlsx/issues",
+                "source": "https://github.com/shuchkin/simplexlsx/tree/0.8.24"
+            },
+            "time": "2021-05-18T11:49:49+00:00"
         },
         {
             "name": "symfony/console",

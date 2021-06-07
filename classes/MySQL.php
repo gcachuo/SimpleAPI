@@ -122,7 +122,7 @@ sql
                 }
             }
         } catch (mysqli_sql_exception $exception) {
-            JsonResponse::sendResponse($exception->getMessage(), HTTPStatusCodes::InternalServerError);
+            throw new CoreException($exception->getMessage(), HTTPStatusCodes::InternalServerError);
         }
     }
 

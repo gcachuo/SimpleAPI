@@ -458,7 +458,7 @@ class System
                 JsonResponse::sendResponse('Directory could not be created.', HTTPStatusCodes::InternalServerError);
             }
             if (!chmod(dirname($destination), 0777)) {
-                JsonResponse::sendResponse('Directory could not be changed permissions.', HTTPStatusCodes::InternalServerError);
+                throw new CoreException('Directory could not be changed permissions.', HTTPStatusCodes::InternalServerError, compact('destination'));
             }
         }
 
