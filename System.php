@@ -1461,6 +1461,7 @@ class System
                 'description' => $description,
                 'keywords' => $keywords,
                 'author' => $author,
+                'image' => $image,
                 'copyright' => $copyright,
                 'address' => $address,
                 'phone' => $phone,
@@ -1609,6 +1610,9 @@ html
             }
             if (self::$dom->getElementById('tag-author')) {
                 self::$dom->getElementById('tag-author')->setAttribute('content', $author);
+            }
+            if (self::$dom->getElementById('tag-image')) {
+                self::$dom->getElementById('tag-image')->setAttribute('content', $image);
             }
             if (self::$dom->getElementById('project-title')) {
                 self::$dom->getElementById('project-title')->nodeValue = $project;
