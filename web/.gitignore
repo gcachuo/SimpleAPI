@@ -8,5 +8,7 @@
 /offline
 .phpunit.result.cache
 error.log
+error_log
 *.dev.json
 *.css
+*.backup.json
