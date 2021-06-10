@@ -1738,7 +1738,9 @@ html
                 /** @var DOMElement $e_copyright */
                 foreach ($e_copyrights as $e_copyright) {
                     $copyright = str_replace('##YEAR##', date('Y'), $copyright);
-                    $e_copyright->getElementsByTagName('p')->item(0)->nodeValue = $copyright;
+                    if ($e_copyright->getElementsByTagName('p')->item(0)) {
+                        $e_copyright->getElementsByTagName('p')->item(0)->nodeValue = $copyright;
+                    }
                 }
             }
 
@@ -1901,10 +1903,6 @@ html;
 
                     $disabled = System::isset_get($module['disabled']) ? 'disabled' : '';
                     $hidden = System::isset_get($module['hidden']) ? true : false;
-
-                    if (System::isset_get($module['file'], $entry) != $entry) {
-                        continue;
-                    }
 
                     if (!$href && $children) {
                         $children_html = '';
@@ -2196,6 +2194,9 @@ html
 
     public static function print_page()
     {
+        echo <<<html
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+html;
         echo self::$dom->saveHTML();
     }
 
