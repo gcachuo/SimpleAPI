@@ -1472,6 +1472,7 @@ class System
                 'theme' => $dir,
                 'modules' => $module_list,
             ] = WEBCONFIG + [
+                'image' => '',
                 'address' => '',
                 'phone' => '',
                 'email' => '',
