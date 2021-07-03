@@ -2291,11 +2291,18 @@ html;
             throw new CoreException('El archivo no tiene el formato correcto. Descarge el formato de nuevo.', 400, compact('diff'));
         }
 
-        array_splice($rows, 0, 1);
+        array_shift($rows);
 
-        array_walk($rows, function (&$row) use ($headers) {
-            $row = array_combine($headers, $row);
-        });
+        $combined = [];
+        foreach ($rows as $rindex => $row) {
+            foreach ($headers as $hindex => $key) {
+                if (empty($key)) {
+                    continue;
+                }
+                $combined[$rindex][$key] = $combined[$rindex][$key] ?? $row[$hindex];
+            }
+        }
+        $rows = $combined;
 
         return compact('headers', 'rows');
     }
