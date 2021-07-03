@@ -43,6 +43,12 @@ class System
         return $_SERVER['REMOTE_ADDR'];
     }
 
+    /**
+     * @param string $name
+     * @param string|null $token
+     * @return array|mixed
+     * @throws CoreException
+     */
     public static function sessionCheck(string $name, string $token = null)
     {
         System::get_web_config();
@@ -92,6 +98,12 @@ class System
         return $user;
     }
 
+    /**
+     * @param string $name
+     * @param $value
+     * @return array|mixed
+     * @throws CoreException
+     */
     public static function sessionSet(string $name, $value)
     {
         session_start();
