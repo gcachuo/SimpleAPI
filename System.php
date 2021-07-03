@@ -2242,25 +2242,50 @@ html;
         return compact('chart', 'chl');
     }
 
-    static function parseRows($name, $path, $template): array
+    /**
+     * @param $name
+     * @param $path
+     * @param $template
+     * @return array
+     * @throws CoreException
+     */
+    static function parseRows($name, $path, $template, $skip = 0, $page = 0): array
     {
-        $parse = SimpleXLSX::parse($path);
+        $ext = pathinfo($path, PATHINFO_EXTENSION);
 
+        /** @var SimpleXLSX|SimpleXLS $class */
+        switch ($ext) {
+            case 'xlsx':
+                $class = SimpleXLSX::class;
+                break;
+            case "xls":
+                $class = SimpleXLS::class;
+                break;
+            default:
+                throw new CoreException('Unsupported file', 400, compact('ext'));
+        }
+
+        $parse = $class::parse($path);
         if (!$parse) {
-            $error = SimpleXLSX::parseError();
+            $error = $class::parseError();
             throw new CoreException($error . ': ' . $name, 400, compact('name', 'path'));
         }
 
-        $rows = $parse->rows();
+        $rows = $parse->rows($page);
+        $rows = array_slice($rows, $skip);
         $headers = $rows[0];
 
         //Validar headers
-        $template = SimpleXLSX::parse($template);
+        $template = $class::parse($template);
         if (!$template) {
-            $error = SimpleXLSX::parseError();
+            $error = $class::parseError();
             throw new CoreException($error . ': ' . $name, 400, compact('name', 'path'));
         }
-        $template_headers = $template->rows()[0];
+
+        $template_headers = $template->rows($page);
+        $template_headers = array_slice($template_headers, $skip);
+        $template_headers = $template_headers[0];
+
         $diff = array_diff($template_headers, $headers);
         if (!empty($diff)) {
             throw new CoreException('El archivo no tiene el formato correcto. Descarge el formato de nuevo.', 400, compact('diff'));
