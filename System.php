@@ -1378,7 +1378,12 @@ class System
         }
 
         if ($env) {
-            $env_config = file_get_contents(WEBDIR . "/settings/$env/" . "config.json");
+            $path = WEBDIR . "/settings/$env/" . 'config.json';
+            if (!file_exists($path)) {
+                self::load_php_functions();
+                throw new CoreException('Missing config file: settings/' . $env . '/config.json', 500, compact('path'));
+            }
+            $env_config = file_get_contents($path);
             $env_config = json_decode($env_config, true);
             $env_config = array_merge($config, $env_config);
         }
@@ -1540,6 +1545,9 @@ class System
                     }
                     $link->setAttribute('href', $new_link);
                 } else {
+                    if (!defined('BASENAME')) {
+                        define('BASENAME', '');
+                    }
                     $link->setAttribute('href', BASENAME . $dir . $old_link);
                 }
             }
