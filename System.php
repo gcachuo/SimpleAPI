@@ -2345,7 +2345,10 @@ html;
         $data = base64_decode($FILE['data']);
 
         $path = $path . '/' . urlencode(str_replace(['(', ')'], '', $FILE['name']));
-        is_dir(dirname($path)) || @mkdir(dirname($path));
+        is_dir(dirname($path)) || mkdir(dirname($path), 0777, true);
+        if (!is_dir(dirname($path))) {
+            throw new CoreException('Error. Failed to create dir. ' . dirname($path), 500, compact('FILE', 'path'));
+        }
         file_put_contents($path, $data);
 
         return $path;
