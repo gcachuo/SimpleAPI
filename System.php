@@ -1378,6 +1378,12 @@ class System
         }
 
         if ($env) {
+            $env_dev_config = [];
+            $path_dev = WEBDIR . "/settings/$env/" . 'config.dev.json';
+            if (file_exists($path_dev)) {
+                $env_dev_config = file_get_contents($path_dev);
+                $env_dev_config = json_decode($env_dev_config, true);
+            }
             $path = WEBDIR . "/settings/$env/" . 'config.json';
             if (!file_exists($path)) {
                 self::load_php_functions();
@@ -1386,6 +1392,7 @@ class System
             $env_config = file_get_contents($path);
             $env_config = json_decode($env_config, true);
             $env_config = array_merge($config, $env_config);
+            $env_config = $env_dev_config + $env_config;
         }
         if ($env_config ?? null) {
             $config = $env_config;
