@@ -1547,10 +1547,10 @@ class System
                 if ($old_link === 'manifest.json') {
                     $env = 'settings/' . WEBCONFIG['code'] . '/';
                     $new_link = $env . $old_link;
-                    if (!file_exists($new_link)) {
-                        $new_link = $old_link;
+                    if (file_exists($new_link)) {
+                        file_put_contents($old_link,file_get_contents($new_link));
                     }
-                    $link->setAttribute('href', BASENAME . $new_link);
+                    $link->setAttribute('href', BASENAME . $old_link);
                 } else {
                     if (!defined('BASENAME')) {
                         define('BASENAME', '');
