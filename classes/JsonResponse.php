@@ -9,34 +9,28 @@ class JsonResponse
      * @param string $message
      * @param int $code
      * @param array $data
-     * @throws CoreException
      */
-    public static function sendResponse(string $message, array $data = [], $code = 200)
+    public static function sendResponse(string $message, array $data = [], int $code = 200)
     {
-        if ($code) {
-            http_response_code($code);
-        } else {
+        if (!$code) {
             $code = http_response_code();
         }
+        http_response_code($code);
 
         $response = compact('data');
         $data = self::encode_items($data);
         $response = compact('message', 'code', 'data', 'response');
 
-        if ($code < HTTPStatusCodes::BadRequest) {
-            ob_clean();
-            header('Content-Type: application/json');
-            die(json_encode($response, JSON_UNESCAPED_SLASHES));
-        } else {
+        if ($code >= 400) {
             $status = 'error';
             $error = error_get_last();
-
             if (defined('FILE')) unlink(FILE);
-
             System::log_error(compact('status', 'code', 'response', 'error'));
-
-            throw new CoreException($response['message'] ?? $response['error'], $code, $data);
         }
+
+        ob_clean();
+        header('Content-Type: application/json');
+        die(json_encode($response, JSON_UNESCAPED_SLASHES));
     }
 
     private function json_encode()
