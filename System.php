@@ -258,7 +258,8 @@ class System
 
     /**
      * @param $options
-     * @return mixed
+     * @param null $select
+     * @return array
      * @throws CoreException
      */
     public static function curl($options, $select = null)
@@ -315,9 +316,9 @@ class System
         } elseif ($json) {
             if (!self::isJson($json)) {
                 if ($info['http_code'] >= 500) {
-                    JsonResponse::sendResponse('', $info['http_code']);
+                    JsonResponse::sendResponse('', [], $info['http_code']);
                 } elseif ($info['http_code'] >= 400) {
-                    JsonResponse::sendResponse('', $info['http_code']);
+                    JsonResponse::sendResponse('', [], $info['http_code']);
                 } else {
                     throw new CoreException('', $info['http_code'], ['data' => $json]);
                 }
@@ -1548,7 +1549,7 @@ class System
                     $env = 'settings/' . WEBCONFIG['code'] . '/';
                     $new_link = $env . $old_link;
                     if (file_exists($new_link)) {
-                        file_put_contents($old_link,file_get_contents($new_link));
+                        file_put_contents($old_link, file_get_contents($new_link));
                     }
                     $link->setAttribute('href', BASENAME . $old_link);
                 } else {
