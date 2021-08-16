@@ -1855,7 +1855,7 @@ html
                 System::redirect('login');
             }
 
-            if (self::$dom->getElementsByTagName('nav')) {
+            if (self::getElementsByClass(self::$dom, 'nav', 'project-nav')) {
                 $fragment = self::$dom->createDocumentFragment();
 
                 if (defined('SESSIONCHECK') && SESSIONCHECK && pathinfo($module_file, PATHINFO_EXTENSION) !== 'js') {
@@ -2017,7 +2017,7 @@ html
                     $modules->appendChild($fragment);
                 }
 
-                $navs = self::$dom->getElementsByTagName('nav');
+                $navs = self::getElementsByClass(self::$dom, 'nav', 'project-nav');
                 while ($navs->length) {
                     /** @var DOMElement $nav */
                     $nav = $navs->item(0);
