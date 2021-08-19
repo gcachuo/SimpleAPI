@@ -1541,7 +1541,7 @@ class System
             }
             foreach (self::$dom->getElementsByTagName('link') as $link) {
                 $old_link = $link->getAttribute("href");
-                if (strpos($old_link, 'http') !== false) {
+                if (strpos($old_link, '//') !== false) {
                     continue;
                 }
 
@@ -1601,7 +1601,7 @@ class System
             foreach (self::$dom->getElementsByTagName('script') as $link) {
                 $old_link = $link->getAttribute("src");
                 if ($old_link) {
-                    if (strpos($old_link, 'http') !== false) {
+                    if (strpos($old_link, '//') !== false) {
                         continue;
                     }
                     $link->setAttribute('src', BASENAME . $dir . $old_link);
@@ -2018,9 +2018,7 @@ html
                 }
 
                 $navs = self::getElementsByClass(self::$dom, 'nav', 'project-nav');
-                while ($navs->length) {
-                    /** @var DOMElement $nav */
-                    $nav = $navs->item(0);
+                foreach ($navs as $nav) {
                     [$id, $class] = [$nav->getAttribute('id'), $nav->getAttribute('class')];
 
                     $clone = $modules->cloneNode(true);
@@ -2047,7 +2045,13 @@ html;
         }
     }
 
-    public static function getElementsByClass(&$parentNode, $tagName, $className)
+    /**
+     * @param $parentNode
+     * @param $tagName
+     * @param $className
+     * @return array
+     */
+    public static function getElementsByClass(&$parentNode, $tagName, $className): array
     {
         $nodes = array();
 
