@@ -1342,7 +1342,7 @@ class System
         self::$error_code = $code;
 
         self::get_web_config();
-        self::$error_message = WEBCONFIG['error']['messages'][$code];
+        self::$error_message = WEBCONFIG['error']['messages'][$code] ?? '';
         switch ($code) {
             case 404:
                 parse_str($_SERVER['QUERY_STRING'], $query_string);
