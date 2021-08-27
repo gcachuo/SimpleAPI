@@ -1566,13 +1566,32 @@ class System
                     $link->setAttribute('ui-include', "'" . BASENAME . $dir . $old_link . "'");
                 }
             }
+            foreach (self::$dom->getElementsByTagName('div') as $link) {
+                $old_link = $link->getAttribute('data-image');
+                if ($old_link) {
+                    if (strpos($old_link, 'http') !== false) {
+                        continue;
+                    }
+                    $link->setAttribute('data-image', BASENAME . $dir . $old_link);
+                }
+            }
+            foreach (self::$dom->getElementsByTagName('section') as $link) {
+                $old_link = $link->getAttribute('data-image');
+                if ($old_link) {
+                    if (strpos($old_link, 'http') !== false) {
+                        continue;
+                    }
+                    $link->setAttribute('data-image', BASENAME . $dir . $old_link);
+                }
+            }
             foreach (self::$dom->getElementsByTagName('img') as $link) {
                 $old_link = $link->getAttribute("src");
                 if ($old_link) {
                     if (strpos($old_link, 'http') !== false) {
                         continue;
                     }
-                    $link->setAttribute('src', BASENAME . $dir . $old_link);
+                    $new_link = BASENAME . $dir . $old_link;
+                    $link->setAttribute('src', $new_link);
                 }
                 $old_link = $link->getAttribute("data-src");
                 if ($old_link) {
@@ -2027,10 +2046,10 @@ html
 
                     $nav->parentNode->replaceChild($clone, $nav);
                 }
+            }
 
-                if ($module_file) {
-                    self::load_module($module_file);
-                }
+            if ($module_file) {
+                self::load_module($module_file);
             }
 
             libxml_clear_errors();
