@@ -11,6 +11,12 @@ import * as toastr from "toastr";
 import 'datatables.net';
 import 'datatables.net-dt';
 import 'datatables.net-buttons';
+import 'datatables.net-buttons/js/buttons.html5';
+
+import pdfmake from 'pdfmake';
+import pdfFonts from "pdfmake/build/vfs_fonts";
+pdfmake.vfs = pdfFonts.pdfMake.vfs;
+$.fn.dataTable.Buttons['pdfMake'](pdfmake);
 
 import '@fortawesome/fontawesome-free/js/fontawesome';
 import '@fortawesome/fontawesome-free/js/solid';
@@ -198,7 +204,7 @@ export class Defaults {
                 e.preventDefault();
                 $(e.currentTarget).attr('triggered', 'true');
 
-                const $button = $(`button[type='submit']`);
+                const $button = $(`button[type='submit'][clicked=true]`);
                 this.$buttonHTML = $button.html();
                 $button.prop('disabled', true).prepend('<i class="fa fa-spinner fa-spin"></i>' + ' ');
 
