@@ -1162,14 +1162,14 @@ class System
      * @param int $code
      * @throws CoreException
      */
-    public static function check_value_empty($array, $required, $message = 'Missing Data.', $code = 400)
+    public static function check_value_empty(array $array, array $required, string $message = 'Missing Data.', int $code = 400)
     {
         $required = array_flip($required);
         $intersect = array_intersect_key($array ?: $required, $required);
         $empty_values = '';
 
         foreach ($required as $key => $value) {
-            if (!isset($array[$key]) || empty($array[$key]) && $array[$key] !== 0) {
+            if (!isset($array[$key]) || empty($array[$key]) && $array[$key] != 0) {
                 $empty_values .= $key . ', ';
             }
         }
