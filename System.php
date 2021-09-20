@@ -92,10 +92,9 @@ class System
         }
         session_write_close();
 
-        $user = array_filter($user, function ($item) {
+        return array_filter($user, function ($item) {
             return $item !== null;
         });
-        return $user;
     }
 
     /**
@@ -113,7 +112,7 @@ class System
         return self::sessionCheck($name);
     }
 
-    public static function decrypt(string $value_encrypted)
+    public static function decrypt(string $value_encrypted): string
     {
         $value_encrypted = html_entity_decode($value_encrypted);
         return trim(strstr(openssl_decrypt($value_encrypted, "AES-256-CBC", CONFIG['seed'], 0, str_pad(CONFIG['seed'], 16, 'X', STR_PAD_LEFT)), 'º'), 'º');
@@ -216,11 +215,14 @@ class System
         return Encoding::toUTF8($value);
     }
 
-    public static function getHost()
+    public static function getHost(): string
     {
         return $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . BASENAME;
     }
 
+    /**
+     * @throws CoreException
+     */
     public static function generatePDF(array $pages, string $output)
     {
         $pdf = new Pdf();
@@ -239,13 +241,16 @@ class System
     public static function getTemplate(string $filename, $data)
     {
         ob_start();
-        include_once __DIR__ . '/../templates/' . $filename . '.php';
+        include_once __DIR__ . "/../templates/$filename.php";
         $contents = ob_get_contents();
         ob_end_clean();
 
         return $contents;
     }
 
+    /**
+     * @throws CoreException
+     */
     public static function getSettings()
     {
         $path = __DIR__ . '/../settings.dev.json';
@@ -253,7 +258,7 @@ class System
             $path = __DIR__ . '/../settings.json';
         }
 
-        return self::json_decode(file_get_contents($path), true);
+        return self::json_decode(file_get_contents($path));
     }
 
     /**
@@ -262,7 +267,7 @@ class System
      * @return array
      * @throws CoreException
      */
-    public static function curl($options, $select = null)
+    public static function curl($options, $select = null): array
     {
         if (ENVIRONMENT !== 'www') {
             throw new CoreException('curl can only be used on web', 500);
@@ -381,7 +386,7 @@ class System
                 throw new CoreException('Syntax Error', 500);
             case 5:
                 //Malformed UTF-8 characters, possibly incorrectly encoded
-                array_walk_recursive($array, function (&$item) {
+                array_walk_recursive($json, function (&$item) {
                     $item = utf8_encode($item);
                 });
                 $json = json_decode($json, $assoc);
@@ -413,11 +418,11 @@ class System
         if (!file_exists($ruta)) {
             $ruta = $path . "/config.$env.json";
             if (!file_exists($ruta)) {
-                JsonResponse::sendResponse("No existe el archivo de configuración $ruta", HTTPStatusCodes::InternalServerError);
+                JsonResponse::sendResponse("No existe el archivo de configuración $ruta", [], HTTPStatusCodes::InternalServerError);
             }
         }
         $json = file_get_contents($ruta);
-        return json_decode($json, false);
+        return json_decode($json);
     }
 
     public static function set_language(stdClass $idioma)
@@ -425,7 +430,7 @@ class System
         self::$idioma = $idioma;
     }
 
-    public static function encode_id($id)
+    public static function encode_id($id): string
     {
         return base64_encode(rand(10000, 99999) . '=' . $id);
     }
@@ -460,6 +465,9 @@ class System
         return strftime($format, strtotime($value));
     }
 
+    /**
+     * @throws CoreException
+     */
     public static function upload_file(array $file, string $destination): bool
     {
         if (empty($file['tmp_name'])) {
@@ -468,7 +476,7 @@ class System
 
         if (!file_exists(dirname($destination))) {
             if (!mkdir(dirname($destination), 0777, true)) {
-                JsonResponse::sendResponse('Directory could not be created.', HTTPStatusCodes::InternalServerError);
+                JsonResponse::sendResponse('Directory could not be created.', [], HTTPStatusCodes::InternalServerError);
             }
             if (!chmod(dirname($destination), 0777)) {
                 throw new CoreException('Directory could not be changed permissions.', HTTPStatusCodes::InternalServerError, compact('destination'));
@@ -476,7 +484,7 @@ class System
         }
 
         if (!copy($file['tmp_name'], $destination)) {
-            JsonResponse::sendResponse('File could not be moved.', HTTPStatusCodes::InternalServerError);
+            JsonResponse::sendResponse('File could not be moved.', [], HTTPStatusCodes::InternalServerError);
         }
 
         define('FILE', $destination);
@@ -502,7 +510,10 @@ class System
         return $return;
     }
 
-    public static function encode_token(array $data, array $options = [])
+    /**
+     * @throws CoreException
+     */
+    public static function encode_token(array $data, array $options = []): ?string
     {
         try {
             $jwt_key = self::get_jwt_key();
@@ -521,10 +532,14 @@ class System
 
             return JWT::encode($payload, $jwt_key);
         } catch (DomainException $ex) {
-            JsonResponse::sendResponse($ex->getMessage(), HTTPStatusCodes::InternalServerError);
+            JsonResponse::sendResponse($ex->getMessage(), [], HTTPStatusCodes::InternalServerError);
+            return null;
         }
     }
 
+    /**
+     * @throws CoreException
+     */
     private static function get_jwt_key()
     {
         if (empty(JWT_KEY)) {
@@ -537,7 +552,7 @@ class System
     }
 
     /**
-     * @param string $jwt
+     * @param string|null $jwt
      * @return mixed
      * @throws CoreException
      */
@@ -557,13 +572,9 @@ class System
                 throw new CoreException('The token has expired.', 500);
             }
             return json_decode(json_encode($decoded), true)['data'];
-        } catch (Firebase\JWT\ExpiredException $ex) {
+        } catch (Firebase\JWT\ExpiredException | Firebase\JWT\SignatureInvalidException $ex) {
             throw new CoreException($ex->getMessage(), 500);
-        } catch (Firebase\JWT\SignatureInvalidException $ex) {
-            throw new CoreException($ex->getMessage(), 500);
-        } catch (UnexpectedValueException $ex) {
-            throw new CoreException('Invalid token.', 500);
-        } catch (DomainException $ex) {
+        } catch (UnexpectedValueException | DomainException $ex) {
             throw new CoreException('Invalid token.', 500);
         }
     }
@@ -590,6 +601,9 @@ class System
         }
     }
 
+    /**
+     * @throws CoreException
+     */
     public static function init($config)
     {
         set_exception_handler(function ($exception) {
@@ -655,7 +669,7 @@ class System
      * @param string|null $module
      * @return string
      */
-    public static function translate(string $string, string $module = null)
+    public static function translate(string $string, string $module = null): string
     {
         $string = mb_strtolower($string);
         $lang = LANG[$module ?: MODULE] ?? [];
@@ -681,6 +695,9 @@ class System
         file_put_contents($filename, json_encode($data));
     }
 
+    /**
+     * @throws CoreException
+     */
     public function startup()
     {
         define('ENVIRONMENT', 'init');
@@ -693,6 +710,9 @@ class System
         self::create_directories();
     }
 
+    /**
+     * @throws CoreException
+     */
     private static function load_composer()
     {
         if (ENVIRONMENT !== 'www') {
@@ -709,6 +729,9 @@ class System
         }
     }
 
+    /**
+     * @throws CoreException
+     */
     private static function load_php_functions($config = [])
     {
         ob_start();
@@ -803,12 +826,8 @@ class System
         function createConfig()
         {
             file_put_contents(DIR . '/../Config/.jwt_key', '');
-//            file_put_contents(DIR . '/../Config/database.json', json_encode(["host" => "", "username" => "", "passwd" => "", "dbname" => ""]));
             file_put_contents(DIR . '/../Config/.gitignore', join("\n", ['.jwt_key', 'database.json', '*.json', '!default.json']));
-//            copy(DIR . '/../Config/database.json', DIR . '/../Config/database.prod.json');
             @chmod(DIR . '/../Config/.jwt_key', 0777);
-//            @chmod(DIR . '/../Config/database.json', 0777);
-//            @chmod(DIR . '/../Config/database.prod.json', 0777);
             @chmod(DIR . '/../Config/.gitignore', 0777);
         }
 
@@ -835,10 +854,12 @@ class System
         JsonResponse::sendResponse('');
     }
 
+    /**
+     * @throws CoreException
+     */
     private static function define_constants($config)
     {
         global $_PATCH, $_PUT, $_DELETE;
-
 
         if (!defined('ENVIRONMENT')) {
             if ($config['ENV'] ?? null)
@@ -991,7 +1012,7 @@ class System
         if (strpos($request, '?') !== false) {
             $request = stristr($request, '?', true);
         }
-        preg_match_all('/\/?\b([a-z-]+?)\/+([a-z-]+)(?:\W+(.+))?/i', $request, $request, PREG_SET_ORDER, 0);
+        preg_match_all('/\/?\b([a-z-]+?)\/+([a-z-]+)(?:\W+(.+))?/i', $request, $request, PREG_SET_ORDER);
         if (!empty($request)) {
             $request = array_splice($request[0], 1);
             [$controller, $action] = $request;
@@ -1015,6 +1036,9 @@ class System
         define('ENDPOINT', $request[0] . '/' . $request[1]);
     }
 
+    /**
+     * @throws CoreException
+     */
     private static function call_action($controller, $action, $id)
     {
         switch (REQUEST_METHOD) {
@@ -1066,7 +1090,7 @@ class System
                     $errors = !!($_GET['errors'] ?? null);
 
                     array_walk($log, function (&$entry) use ($errors) {
-                        $entry = preg_split('/\] \[|] |^\[/m', $entry);
+                        $entry = preg_split('/] \[|] |^\[/m', $entry);
                         $entry = array_values(array_filter($entry));
                         array_walk($entry, function (&$value) use ($entry) {
                             if (System::isset_get($_GET['errors']) === 'true' && count($entry) < 5) {
@@ -1102,7 +1126,7 @@ class System
                 case "backup":
                     $mysql = new MySQL();
                     $data = $mysql->backupDB();
-                    JsonResponse::sendResponse('Completed.', HTTPStatusCodes::OK, $data);
+                    JsonResponse::sendResponse('Completed.', $data, HTTPStatusCodes::OK);
                     break;
                 case "endpoints":
                     $files = glob(__DIR__ . '/../Controller/*.{php}', GLOB_BRACE);
@@ -1132,20 +1156,19 @@ class System
                     ];
                     $host = $_SERVER['SERVER_NAME'];
                     $basePath = BASENAME;
-                    JsonResponse::sendResponse('Endpoints', HTTPStatusCodes::OK, compact('swagger', 'info', 'host', 'basePath', 'paths'));
+                    JsonResponse::sendResponse('Endpoints', compact('swagger', 'info', 'host', 'basePath', 'paths'), HTTPStatusCodes::OK);
                     break;
                 case "webhook":
                     if (REQUEST_METHOD === 'POST' && $id) {
                         include_once __DIR__ . '/classes/Webhook.php';
                         new Webhook($id);
-                        JsonResponse::sendResponse('Webhook', 200, $_POST);
+                        JsonResponse::sendResponse('Webhook', $_POST);
                     } else {
                         $method = REQUEST_METHOD;
                         throw new CoreException("Endpoint not found.  [$controller/$action]", 404, compact('method', 'controller', 'action'));
                     }
                     break;
                 case "socket":
-                    new \Controller\Notifications();
                     break;
             }
         } else {
@@ -1186,11 +1209,11 @@ class System
         }
         $empty_values = trim($empty_values, ', ');
         if (!empty($empty_values)) {
-            JsonResponse::sendResponse($message . ' ' . "[$empty_values]", $code);
+            JsonResponse::sendResponse($message . ' ' . "[$empty_values]", [], $code);
         }
     }
 
-    private static function isJson($string)
+    private static function isJson($string): bool
     {
         $decoded = json_decode($string, true);
         $isJson = (json_last_error() == JSON_ERROR_NONE && is_array($decoded));
@@ -1244,7 +1267,7 @@ class System
                 $error = [
                     'message' => "Error creating dir [$dir]"
                 ];
-                JsonResponse::sendResponse("Error creating dir [$dir]", $code, compact('status', 'code', 'response', 'error'));
+                JsonResponse::sendResponse("Error creating dir [$dir]", compact('status', 'code', 'error'), $code);
             }
             @chmod($dir, 0777);
         }
@@ -1286,9 +1309,6 @@ class System
                     'PUT' => $_PUT,
                     'PATCH' => $_PATCH,
                 ][REQUEST_METHOD] ?? ENVIRONMENT) . '] ';
-        /* if ($response['error'] ?? null) {
-             $data .= '[' . json_encode($response['error']) . '] ';
-         }*/
 
         if (!is_dir(__DIR__ . '/../Logs/')) {
             mkdir(__DIR__ . '/../Logs/', 0777, true);
@@ -1324,6 +1344,9 @@ class System
         }
     }
 
+    /**
+     * @throws CoreException
+     */
     private static function set_web_exception($exception)
     {
         ob_clean();
@@ -1367,9 +1390,10 @@ class System
     }
 
     /**
-     * @return array
+     * @return void
+     * @throws CoreException
      */
-    private static function get_web_config()
+    private static function get_web_config(): void
     {
         $config = System::readJsonFile(WEBDIR . '/config.json');
 
@@ -1394,13 +1418,13 @@ class System
             $env_config = json_decode($env_config, true);
             $env_config = array_merge($config, $env_config);
             $env_config = $env_dev_config + $env_config;
-        }
-        if ($env_config ?? null) {
-            $config = $env_config;
+
+            if ($env_config ?? null) {
+                $config = $env_config;
+            }
         }
 
         if (!defined('WEBCONFIG')) define('WEBCONFIG', $config);
-        return $config;
     }
 
     /**
@@ -1464,6 +1488,7 @@ class System
             $module_file = implode('/', $module_file_intersect);
         }
 
+        $file = '';
         $list = $module_list;
         foreach (explode('/', $module_file) as $item) {
             $list = $list[$item] ?? $list['modules'][$item] ?? [];
@@ -1492,8 +1517,6 @@ class System
                 'phone' => $phone,
                 'email' => $email,
                 'social_media' => $social_media,
-                'entry' => $entry,
-                'error' => $error_file,
                 'theme' => $dir,
                 'modules' => $module_list,
             ] = WEBCONFIG + [
@@ -1949,7 +1972,7 @@ html;
                     }
 
                     $disabled = System::isset_get($module['disabled']) ? 'disabled' : '';
-                    $hidden = System::isset_get($module['hidden']) ? true : false;
+                    $hidden = (bool)System::isset_get($module['hidden']);
 
                     if (!$href && $children) {
                         $children_html = '';
@@ -1966,9 +1989,9 @@ html;
                             }
 
                             $child_disabled = System::isset_get($child['disabled']) ? 'disabled' : '';
-                            $child_hidden = System::isset_get($child['hidden']) ? true : false;
+                            $child_hidden = (bool)System::isset_get($child['hidden']);
 
-                            preg_match_all('/###(.+)###/m', $child_href, $matches, PREG_SET_ORDER, 0);
+                            preg_match_all('/###(.+)###/m', $child_href, $matches, PREG_SET_ORDER);
                             foreach ($matches as $match) {
                                 $match = $match[1];
                                 $child_href = str_replace('###' . $match . '###', $settings[$match], $child_href);
@@ -2070,7 +2093,7 @@ html;
      * @param $className
      * @return array
      */
-    public static function getElementsByClass(&$parentNode, $tagName, $className): array
+    public static function getElementsByClass($parentNode, $tagName, $className): array
     {
         $nodes = array();
 
@@ -2085,6 +2108,9 @@ html;
         return $nodes;
     }
 
+    /**
+     * @throws CoreException
+     */
     public static function load_module($file)
     {
         $pathinfo = pathinfo($file);
@@ -2201,7 +2227,9 @@ html
                 $o_action['href'] = BASENAME . $href . '/' . $o_action['href'];
                 if (self::$dom->getElementById('project-action')) {
                     $action = self::$dom->getElementById('project-action');
-                    $class = ($action->childNodes->item(1))->getAttribute('class');
+                    /** @var DOMElement $item */
+                    $item = $action->childNodes->item(1);
+                    $class = $item->getAttribute('class');
 
                     $icon = $o_action['icon'] ?? 'add_circle';
                     $module = self::createElement('div', <<<html
@@ -2231,7 +2259,7 @@ html
      * @param string $html
      * @return DOMElement
      */
-    private static function createElement(string $element, string $html)
+    private static function createElement(string $element, string $html): DOMElement
     {
         $module = self::$dom->createElement($element);
         if (!empty(trim($html))) {
@@ -2251,10 +2279,13 @@ html;
         echo self::$dom->saveHTML();
     }
 
-    public static function getPermissions(array $permission_list = null)
+    /**
+     * @throws CoreException
+     */
+    public static function getPermissions(array $permission_list = null): array
     {
         if (ENVIRONMENT !== 'www') {
-            throw new CoreException('getPermissions can only be used on web.');
+            throw new CoreException('getPermissions can only be used on web.', 500);
         }
         if (session_id() == '') {
             session_start();
@@ -2262,7 +2293,7 @@ html;
         $user = self::curlDecodeToken($_SESSION['user_token']);
         session_write_close();
 
-        $permissions = self::json_decode($user['permissions'] ?? '[]', true);
+        $permissions = self::json_decode($user['permissions'] ?? '[]');
 
         $permissions = array_flip($permissions);
 
@@ -2279,7 +2310,7 @@ html;
         return $permissions;
     }
 
-    static function getQR(string $chl)
+    static function getQR(string $chl): array
     {
         $url = http_build_query([
             'chl' => $chl,
@@ -2297,10 +2328,12 @@ html;
      * @param $name
      * @param $path
      * @param $template
+     * @param int $skip
+     * @param int $page
      * @return array
      * @throws CoreException
      */
-    static function parseRows($name, $path, $template, $skip = 0, $page = 0): array
+    static function parseRows($name, $path, $template, int $skip = 0, int $page = 0): array
     {
         $ext = pathinfo($path, PATHINFO_EXTENSION);
 
@@ -2363,6 +2396,9 @@ html;
         return array_fill_keys($keys, $value);
     }
 
+    /**
+     * @throws CoreException
+     */
     static function filePond(string $FILE, string $path): string
     {
         $FILE = System::json_decode($FILE);
@@ -2378,6 +2414,9 @@ html;
         return $path;
     }
 
+    /**
+     * @param string $path
+     */
     static function loadFilePond(string $path)
     {
         if (file_exists($path)) {
