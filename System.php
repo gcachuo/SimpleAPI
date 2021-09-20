@@ -513,7 +513,7 @@ class System
     /**
      * @throws CoreException
      */
-    public static function encode_token(array $data, array $options = []): ?string
+    public static function encode_token(array $data, array $options = ['exp_hours' => 24]): ?string
     {
         try {
             $jwt_key = self::get_jwt_key();
@@ -526,7 +526,7 @@ class System
 
             if (!empty($options['exp_hours'])) {
                 $hours = $options['exp_hours'];
-                $expiration = (60 * 60) * $hours; //12 Hours
+                $expiration = (60 * 60) * $hours;
                 $payload['exp'] = $time + $expiration;
             }
 
