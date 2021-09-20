@@ -1903,9 +1903,9 @@ html
                 if (defined('SESSIONCHECK') && SESSIONCHECK && pathinfo($module_file, PATHINFO_EXTENSION) !== 'js') {
                     $user = System::sessionCheck("user_token");
                     if (($user['permissions'] ?? null) !== null) {
-                        $module_list = ($_SESSION['modules'] ?? []) + array_filter(MODULES, function ($module) {
-                                return ($module['permissions'] ?? true) === false;
-                            });
+                        $module_list = array_merge(array_filter(MODULES, function ($module) {
+                            return ($module['permissions'] ?? true) === false;
+                        }), ($_SESSION['modules'] ?? []));
                         if ($module_file !== WEBCONFIG['default'] && !($module_list[$module_file] ?? null)) {
                             @list($module, $action) = explode('/', $module_file);
 
