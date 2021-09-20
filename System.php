@@ -454,7 +454,7 @@ class System
         return date($format, $value);
     }
 
-    public static function format_date_locale(string $format, $locale, $value)
+    public static function format_date_locale(string $format, string $value, string $locale = 'es_ES')
     {
         setlocale(LC_TIME, $locale);
         return strftime($format, strtotime($value));
