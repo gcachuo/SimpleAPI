@@ -11,8 +11,29 @@ module.exports = {
     resolve: {
         extensions: [".js", ".ts"],
     },
+    target: ['web', 'es5'],
     module: {
         rules: [
+            {
+                test: /\.ts$/,
+                exclude: /(node_modules|bower_components)/,
+                use: {
+                    loader: 'babel-loader',
+                    options: {
+                        babelrc: true,
+                        presets: [
+                            [
+                                '@babel/preset-env',
+                                {
+                                    targets: {
+                                        "ie": "11"
+                                    }
+                                }
+                            ]
+                        ]
+                    }
+                }
+            },
             {
                 test: /\.tsx?$/,
                 use: 'ts-loader',
@@ -31,6 +52,10 @@ module.exports = {
             },
             {
                 test: /\.(svg|eot|woff|woff2|ttf)$/,
+                use: ['file-loader']
+            },
+            {
+                test: /\.(jpg|png)$/,
                 use: ['file-loader']
             },
         ],
