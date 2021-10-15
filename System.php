@@ -1763,6 +1763,14 @@ html
                 }
             }
 
+            if (self::getElementsByClass(self::$dom, 'a', 'social_media:whatsapp')) {
+                $e_media = (self::getElementsByClass(self::$dom, 'a', 'social_media:whatsapp'));
+                /** @var DOMElement $element */
+                foreach ($e_media as $element) {
+                    $element->setAttribute('href', $social_media['whatsapp']);
+                }
+            }
+
             if (self::getElementsByClass(self::$dom, 'a', 'social_media:website')) {
                 $e_media = (self::getElementsByClass(self::$dom, 'a', 'social_media:website'));
                 /** @var DOMElement $element */
