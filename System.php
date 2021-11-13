@@ -2438,4 +2438,13 @@ html;
         }
         exit;
     }
+
+    static function objectToObject(stdClass $instance, string $className) {
+        return unserialize(sprintf(
+            'O:%d:"%s"%s',
+            strlen($className),
+            $className,
+            strstr(strstr(serialize($instance), '"'), ':')
+        ));
+    }
 }
