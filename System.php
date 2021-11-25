@@ -2159,18 +2159,18 @@ html;
         $modules = MODULES;
         if (is_array($href)) {
             $o_module = $modules[$href[0]] ?? [];
-            $module_name = ucfirst(strtolower($o_module['name'] ?? ''));
-            if (!!($href[1] ?? null) && !!($o_module['modules'] ?? null)) {
-                $module_name .= ' / ' . ($o_module['modules'][$href[1]]['name'] ?? '');
+            $module_name = "";
+            if ($href[1] == "index") {
+                unset($href[1]);
             }
-            foreach ($href as $item) {
+            foreach ($href as $key => $item) {
                 $o_module['action'] = $o_module['action'] ?? [];
                 if (($o_module['action']['href'] ?? null) == $item) {
                     $o_module = $o_module['action'];
-                    $module_name .= ' / ' . ($o_module['name'] ?? '');
                 } else {
                     $o_module = $o_module['modules'][$item] ?? $o_module;
                 }
+                $module_name .= $o_module['name'] . ":" . ($key == 0 ? "" : $item) . " / ";
             }
         } else {
             $o_module = $modules[$href] ?? '';
@@ -2179,16 +2179,40 @@ html;
 
         $breadcrumbs = '';
         if (BREADCRUMBS && !($o_module['modal'] ?? false)) {
+            $module_names = explode(" / ", rtrim($module_name, " / "));
+            $last_index = array_key_last($module_names);
+            array_walk($module_names, function (&$module_name, $index) use ($last_index) {
+                if ($index == $last_index) {
+                    $module_name = explode(':', $module_name);
+                    $module_name = <<<html
+<li class="breadcrumb-item active">
+    $module_name[0]
+</li>
+html;
+                } else {
+                    $module_name = explode(":", $module_name);
+                    $module_name = <<<html
+<li class="breadcrumb-item">
+    <a href="../$module_name[1]">$module_name[0]</a>
+</li>
+html;
+                }
+            });
+            $module_name = implode("", $module_names);
             $breadcrumbs = <<<html
-<p class="text-left breadcrumbs" style="">
-        <span class="text-muted">Usted se encuentra en:</span> <span>$module_name</span>
-</p>
+<nav aria-label="breadcrumb" class="breadcrumbs">
+  <ol class="breadcrumb">
+    $module_name  
+  </ol>
+</nav>
 html;
         }
 
         $module = self::createElement('div', <<<html
+<section>
     $breadcrumbs
     $contents
+</section>
 html
         );
 
@@ -2202,8 +2226,8 @@ html
             $html->setAttribute('class', WEBCONFIG['code']);
 
             if (is_array($href)) {
-                $module->setAttribute('class', $class . ' ' . $href[0] . ' ' . $href[1]);
-                $body->setAttribute('id', $href[0] . '-' . $href[1]);
+                $module->setAttribute('class', $class . ' ' . $href[0] . ' ' . ($href[1] ?? 'index'));
+                $body->setAttribute('id', $href[0] . '-' . ($href[1] ?? "index"));
             } else {
                 $module->setAttribute('class', $class . ' ' . $href);
                 $body->setAttribute('id', $href);
@@ -2439,7 +2463,8 @@ html;
         exit;
     }
 
-    static function objectToObject(stdClass $instance, string $className) {
+    static function objectToObject(stdClass $instance, string $className)
+    {
         return unserialize(sprintf(
             'O:%d:"%s"%s',
             strlen($className),
