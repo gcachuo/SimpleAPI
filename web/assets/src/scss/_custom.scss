@@ -3,6 +3,11 @@ $spacer: 0;
 $white: 'white';
 $gray-300: 'gray';
 
+.nav-icon {
+  align-items: center;
+  display: flex;
+}
+
 body {
   overflow-y: auto;
 }

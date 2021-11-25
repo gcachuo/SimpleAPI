@@ -28,7 +28,7 @@ class System
 
     public static function is_email($email): bool
     {
-        preg_match('/^([\w-]+(?:\.[+\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i', $email, $matches);
+        preg_match('/^([áéíóúñ\w-]+(?:\.[áéíóúñ+\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i', $email, $matches);
         return !!($matches);
     }
 
@@ -43,17 +43,28 @@ class System
         return $_SERVER['REMOTE_ADDR'];
     }
 
+    /**
+     * @param string $name
+     * @param string|null $token
+     * @return array|mixed
+     * @throws CoreException
+     */
     public static function sessionCheck(string $name, string $token = null)
     {
-        if (ENVIRONMENT !== 'www') {
-            throw new CoreException('sessionCheck can only be used on web.');
+        System::get_web_config();
+        if (ENVIRONMENT !== 'www' || !defined('WEBCONFIG')) {
+            throw new CoreException('sessionCheck can only be used on web pages.', 500);
         }
         session_start();
         $check = $_SESSION[$name] ?? $token ?? null;
 
         $module_name = ($_GET['module'] ?? WEBCONFIG['default']);
-        $module_name = strstr($module_name, '/', true) ?: $module_name;
-        $module = MODULES[$module_name] ?? null;
+
+        $modules = defined('MODULES') ? MODULES : [];
+        foreach (explode("/", $module_name) as $module_name) {
+            $module = $modules[$module_name] ?? [];
+            $modules = $module['modules'] ?? $modules;
+        }
 
         if (!$check && (($module['onlogin'] ?? null) !== false)) {
             System::redirect('login');
@@ -81,10 +92,17 @@ class System
         }
         session_write_close();
 
-        $user = array_filter($user);
-        return $user;
+        return array_filter($user, function ($item) {
+            return $item !== null;
+        });
     }
 
+    /**
+     * @param string $name
+     * @param $value
+     * @return array|mixed
+     * @throws CoreException
+     */
     public static function sessionSet(string $name, $value)
     {
         session_start();
@@ -94,7 +112,7 @@ class System
         return self::sessionCheck($name);
     }
 
-    public static function decrypt(string $value_encrypted)
+    public static function decrypt(string $value_encrypted): string
     {
         $value_encrypted = html_entity_decode($value_encrypted);
         return trim(strstr(openssl_decrypt($value_encrypted, "AES-256-CBC", CONFIG['seed'], 0, str_pad(CONFIG['seed'], 16, 'X', STR_PAD_LEFT)), 'º'), 'º');
@@ -193,14 +211,18 @@ class System
             $value = utf8_decode($value);
         }
 
+        include_once __DIR__ . "/vendor/neitanod/forceutf8/src/ForceUTF8/Encoding.php";
         return Encoding::toUTF8($value);
     }
 
-    public static function getHost()
+    public static function getHost(): string
     {
         return $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . BASENAME;
     }
 
+    /**
+     * @throws CoreException
+     */
     public static function generatePDF(array $pages, string $output)
     {
         $pdf = new Pdf();
@@ -212,20 +234,23 @@ class System
         // Save the PDF
         if (!$pdf->saveAs($output)) {
             $error = $pdf->getError();
-            JsonResponse::sendResponse($error, HTTPStatusCodes::InternalServerError);
+            throw new CoreException($error, HTTPStatusCodes::InternalServerError);
         }
     }
 
     public static function getTemplate(string $filename, $data)
     {
         ob_start();
-        include_once __DIR__ . '/../templates/' . $filename . '.php';
+        include_once __DIR__ . "/../templates/$filename.php";
         $contents = ob_get_contents();
         ob_end_clean();
 
         return $contents;
     }
 
+    /**
+     * @throws CoreException
+     */
     public static function getSettings()
     {
         $path = __DIR__ . '/../settings.dev.json';
@@ -233,18 +258,19 @@ class System
             $path = __DIR__ . '/../settings.json';
         }
 
-        return self::json_decode(file_get_contents($path), true);
+        return self::json_decode(file_get_contents($path));
     }
 
     /**
      * @param $options
-     * @return mixed
+     * @param null $select
+     * @return array
      * @throws CoreException
      */
-    public static function curl($options, $select = null)
+    public static function curl($options, $select = null): array
     {
         if (ENVIRONMENT !== 'www') {
-            throw new CoreException('curl can only be used on web');
+            throw new CoreException('curl can only be used on web', 500);
         }
         $settings = self::getSettings();
 
@@ -254,8 +280,11 @@ class System
             "Cookie: XDEBUG_SESSION=PHPSTORM",
             "X-Client: " . WEBCONFIG['code']
         ];
-        if ($_SESSION['user_token'] ?? null) {
-            $headers[] = "Authorization: Bearer " . $_SESSION['user_token'];
+        if (($_SESSION['user_token'] ?? null) && ($options['session'] ?? true) !== false) {
+            $user = System::curlDecodeToken($_SESSION['user_token']);
+            if ($user) {
+                $headers[] = "Authorization: Bearer " . $_SESSION['user_token'];
+            }
         }
         $options['method'] = mb_strtoupper($options['method'] ?? 'get');
 
@@ -288,13 +317,13 @@ class System
         $result = ['data' => []];
 
         if ($error) {
-            JsonResponse::sendResponse($error, HTTPStatusCodes::InternalServerError);
+            throw new CoreException($error, 500);
         } elseif ($json) {
             if (!self::isJson($json)) {
                 if ($info['http_code'] >= 500) {
-                    JsonResponse::sendResponse('', $info['http_code']);
+                    JsonResponse::sendResponse('', [], $info['http_code']);
                 } elseif ($info['http_code'] >= 400) {
-                    JsonResponse::sendResponse('', $info['http_code']);
+                    JsonResponse::sendResponse('', [], $info['http_code']);
                 } else {
                     throw new CoreException('', $info['http_code'], ['data' => $json]);
                 }
@@ -312,7 +341,7 @@ class System
                 }
             }
         } else {
-            JsonResponse::sendResponse('Empty response: ' . $options['url'], HTTPStatusCodes::ServiceUnavailable);
+            throw new CoreException('Empty response: ' . $options['url'], HTTPStatusCodes::ServiceUnavailable);
         }
 
         if ($select && key_exists($select, $result['data'])) {
@@ -336,9 +365,10 @@ class System
     }
 
     /**
-     * @param string|null $json
+     * @param string|null $json_string
      * @param bool $assoc
      * @return object|array
+     * @throws CoreException
      */
     public static function json_decode(string $json_string = null, bool $assoc = true): ?array
     {
@@ -354,16 +384,15 @@ class System
             case 4:
                 //Syntax Error
                 throw new CoreException('Syntax Error', 500);
-                break;
             case 5:
                 //Malformed UTF-8 characters, possibly incorrectly encoded
-                array_walk_recursive($array, function (&$item) {
+                array_walk_recursive($json, function (&$item) {
                     $item = utf8_encode($item);
                 });
                 $json = json_decode($json, $assoc);
                 break;
             default:
-                $json = json_last_error_msg();
+                $json = [json_last_error_msg()];
                 break;
         }
         return $json;
@@ -389,11 +418,11 @@ class System
         if (!file_exists($ruta)) {
             $ruta = $path . "/config.$env.json";
             if (!file_exists($ruta)) {
-                JsonResponse::sendResponse("No existe el archivo de configuración $ruta", HTTPStatusCodes::InternalServerError);
+                JsonResponse::sendResponse("No existe el archivo de configuración $ruta", [], HTTPStatusCodes::InternalServerError);
             }
         }
         $json = file_get_contents($ruta);
-        return json_decode($json, false);
+        return json_decode($json);
     }
 
     public static function set_language(stdClass $idioma)
@@ -401,7 +430,7 @@ class System
         self::$idioma = $idioma;
     }
 
-    public static function encode_id($id)
+    public static function encode_id($id): string
     {
         return base64_encode(rand(10000, 99999) . '=' . $id);
     }
@@ -430,12 +459,15 @@ class System
         return date($format, $value);
     }
 
-    public static function format_date_locale(string $format, $locale, $value)
+    public static function format_date_locale(string $format, string $value, string $locale = 'es_ES')
     {
         setlocale(LC_TIME, $locale);
         return strftime($format, strtotime($value));
     }
 
+    /**
+     * @throws CoreException
+     */
     public static function upload_file(array $file, string $destination): bool
     {
         if (empty($file['tmp_name'])) {
@@ -444,15 +476,15 @@ class System
 
         if (!file_exists(dirname($destination))) {
             if (!mkdir(dirname($destination), 0777, true)) {
-                JsonResponse::sendResponse('Directory could not be created.', HTTPStatusCodes::InternalServerError);
+                JsonResponse::sendResponse('Directory could not be created.', [], HTTPStatusCodes::InternalServerError);
             }
             if (!chmod(dirname($destination), 0777)) {
-                JsonResponse::sendResponse('Directory could not be changed permissions.', HTTPStatusCodes::InternalServerError);
+                throw new CoreException('Directory could not be changed permissions.', HTTPStatusCodes::InternalServerError, compact('destination'));
             }
         }
 
         if (!copy($file['tmp_name'], $destination)) {
-            JsonResponse::sendResponse('File could not be moved.', HTTPStatusCodes::InternalServerError);
+            JsonResponse::sendResponse('File could not be moved.', [], HTTPStatusCodes::InternalServerError);
         }
 
         define('FILE', $destination);
@@ -478,7 +510,10 @@ class System
         return $return;
     }
 
-    public static function encode_token(array $data, array $options = [])
+    /**
+     * @throws CoreException
+     */
+    public static function encode_token(array $data, array $options = ['exp_hours' => 24]): ?string
     {
         try {
             $jwt_key = self::get_jwt_key();
@@ -491,29 +526,33 @@ class System
 
             if (!empty($options['exp_hours'])) {
                 $hours = $options['exp_hours'];
-                $expiration = (60 * 60) * $hours; //12 Hours
+                $expiration = (60 * 60) * $hours;
                 $payload['exp'] = $time + $expiration;
             }
 
             return JWT::encode($payload, $jwt_key);
         } catch (DomainException $ex) {
-            JsonResponse::sendResponse($ex->getMessage(), HTTPStatusCodes::InternalServerError);
+            JsonResponse::sendResponse($ex->getMessage(), [], HTTPStatusCodes::InternalServerError);
+            return null;
         }
     }
 
+    /**
+     * @throws CoreException
+     */
     private static function get_jwt_key()
     {
         if (empty(JWT_KEY)) {
             if (!file_exists(DIR . '/Config/.jwt_key')) {
-                throw new CoreException('Missing file .jwt_key');
+                throw new CoreException('Missing file .jwt_key', 500);
             }
-            throw new CoreException('JWT key is empty');
+            throw new CoreException('JWT key is empty', 500);
         }
         return JWT_KEY;
     }
 
     /**
-     * @param string $jwt
+     * @param string|null $jwt
      * @return mixed
      * @throws CoreException
      */
@@ -522,7 +561,7 @@ class System
         self::load_composer();
         try {
             if (empty($jwt)) {
-                JsonResponse::sendResponse('The token sent is empty.');
+                throw new CoreException('The token sent is empty.', 500);
             }
 
             $jwt_key = self::get_jwt_key();
@@ -530,17 +569,13 @@ class System
             $time = time();
             $decoded = JWT::decode($jwt, $jwt_key, ['HS256']);
             if (!empty($decoded->exp) && $decoded->exp <= $time) {
-                JsonResponse::sendResponse('The token has expired.');
+                throw new CoreException('The token has expired.', 500);
             }
             return json_decode(json_encode($decoded), true)['data'];
-        } catch (Firebase\JWT\ExpiredException $ex) {
-            JsonResponse::sendResponse($ex->getMessage());
-        } catch (Firebase\JWT\SignatureInvalidException $ex) {
-            JsonResponse::sendResponse($ex->getMessage());
-        } catch (UnexpectedValueException $ex) {
-            JsonResponse::sendResponse('Invalid token.');
-        } catch (DomainException $ex) {
-            JsonResponse::sendResponse('Invalid token.');
+        } catch (Firebase\JWT\ExpiredException | Firebase\JWT\SignatureInvalidException $ex) {
+            throw new CoreException($ex->getMessage(), 500);
+        } catch (UnexpectedValueException | DomainException $ex) {
+            throw new CoreException('Invalid token.', 500);
         }
     }
 
@@ -554,7 +589,8 @@ class System
                 return System::curl([
                     'url' => 'api/decodeToken',
                     'method' => 'POST',
-                    'data' => ['token' => $token]
+                    'data' => ['token' => $token],
+                    'session' => false
                 ]);
             } catch (CoreException $exception) {
                 unset($_SESSION['user_token']);
@@ -565,6 +601,9 @@ class System
         }
     }
 
+    /**
+     * @throws CoreException
+     */
     public static function init($config)
     {
         set_exception_handler(function ($exception) {
@@ -630,7 +669,7 @@ class System
      * @param string|null $module
      * @return string
      */
-    public static function translate(string $string, string $module = null)
+    public static function translate(string $string, string $module = null): string
     {
         $string = mb_strtolower($string);
         $lang = LANG[$module ?: MODULE] ?? [];
@@ -656,30 +695,43 @@ class System
         file_put_contents($filename, json_encode($data));
     }
 
+    /**
+     * @throws CoreException
+     */
     public function startup()
     {
         define('ENVIRONMENT', 'init');
+        $classes = glob(__DIR__ . "/classes/*.php");
+        foreach ($classes as $class) {
+            require_once($class);
+        }
         self::define_constants(['DIR' => __DIR__ . '/']);
         self::load_php_functions();
         self::create_directories();
     }
 
+    /**
+     * @throws CoreException
+     */
     private static function load_composer()
     {
         if (ENVIRONMENT !== 'www') {
             $pathLib = DIR . "/Lib/vendor/autoload.php";
             $path = DIR . "/vendor/autoload.php";
             if (!file_exists($pathLib)) {
-                JsonResponse::sendResponse('Composer is not installed on Lib.', HTTPStatusCodes::InternalServerError);
+                throw new CoreException('Composer is not installed on Lib.', HTTPStatusCodes::InternalServerError);
             }
             if (!file_exists($path)) {
-                JsonResponse::sendResponse('Composer is not installed.', HTTPStatusCodes::InternalServerError);
+                throw new CoreException('Composer is not installed.', HTTPStatusCodes::InternalServerError);
             }
             require_once($pathLib);
             require_once($path);
         }
     }
 
+    /**
+     * @throws CoreException
+     */
     private static function load_php_functions($config = [])
     {
         ob_start();
@@ -714,7 +766,7 @@ class System
                             if (ob_get_contents()) ob_clean();
 
                             $status = 'error';
-                            $code = HTTPStatusCodes::InternalServerError;
+                            $code = 500;
                             $response = ['message' => $error['message']];
                             http_response_code($code);
 
@@ -774,12 +826,8 @@ class System
         function createConfig()
         {
             file_put_contents(DIR . '/../Config/.jwt_key', '');
-//            file_put_contents(DIR . '/../Config/database.json', json_encode(["host" => "", "username" => "", "passwd" => "", "dbname" => ""]));
             file_put_contents(DIR . '/../Config/.gitignore', join("\n", ['.jwt_key', 'database.json', '*.json', '!default.json']));
-//            copy(DIR . '/../Config/database.json', DIR . '/../Config/database.prod.json');
             @chmod(DIR . '/../Config/.jwt_key', 0777);
-//            @chmod(DIR . '/../Config/database.json', 0777);
-//            @chmod(DIR . '/../Config/database.prod.json', 0777);
             @chmod(DIR . '/../Config/.gitignore', 0777);
         }
 
@@ -803,13 +851,15 @@ class System
 
         shell_exec('cd .. && composer install && cd .. && composer install');
 
-        JsonResponse::sendResponse('', HTTPStatusCodes::OK);
+        JsonResponse::sendResponse('');
     }
 
+    /**
+     * @throws CoreException
+     */
     private static function define_constants($config)
     {
         global $_PATCH, $_PUT, $_DELETE;
-
 
         if (!defined('ENVIRONMENT')) {
             if ($config['ENV'] ?? null)
@@ -826,6 +876,8 @@ class System
 
         if (!defined('DIR'))
             define('DIR', $config['DIR'] ?? '');
+        if (!defined('WEBDIR'))
+            define('WEBDIR', $config['DIR'] ?? '');
 
         if (!defined('JWT_KEY'))
             define('JWT_KEY', file_exists(DIR . '/Config/.jwt_key') ? file_get_contents(DIR . '/Config/.jwt_key') : null);
@@ -834,10 +886,10 @@ class System
             define('BASENAME', dirname($_SERVER['SCRIPT_NAME']));
         }
 
-        if (ENVIRONMENT !== 'www') {
+        if (ENVIRONMENT === 'web') {
             $headers = apache_request_headers();
             if ($headers['X-Client'] ?? null) {
-                if (!defined('PROJECT')) define('PROJECT', $headers['X-Client']);
+                if (!defined('PROJECT')) define('PROJECT', System::utf8($headers['X-Client']));
             }
             if ($headers['X-Database'] ?? null) {
                 if (($headers['Authorization'] ?? null) and !defined('USER_TOKEN')) {
@@ -849,15 +901,16 @@ class System
                 }
                 if (!defined('DATABASE')) define('DATABASE', $headers['X-Database']);
             } else {
-                if (($headers['Authorization'] ?? null) and !defined('USER_TOKEN')) {
-                    $user_token = trim(strstr($headers['Authorization'], ' '));
+                $user_token = trim(strstr($headers['Authorization'] ?? '', ' '));
+                if (($user_token) and !defined('USER_TOKEN')) {
                     $user = System::decode_token($user_token);
                     if ($user) {
                         define('USER_TOKEN', $user_token);
                     }
                 }
             }
-
+        }
+        if (ENVIRONMENT !== 'www') {
             $project = defined('PROJECT') ? PROJECT : getenv('PROJECT');
             if (empty($project)) {
                 $project_config = file_exists(DIR . '/Config/default.json')
@@ -865,7 +918,7 @@ class System
                     : null;
                 if ($project_config) {
                     $project_config = json_decode($project_config, true);
-                    if (!defined('PROJECT')) define('PROJECT', $project_config['project']['code']);
+                    if (!defined('PROJECT')) define('PROJECT', System::utf8($project_config['project']['code']));
                     self::define_constants($config);
                 } else {
                     $project_config = [
@@ -911,37 +964,37 @@ class System
                     die(json_encode(['message' => "Config not found for project '$project'"]));
                 }
             }
-        }
 
-        $entry = (file_get_contents('php://input'));
-        if (!empty($entry)) {
-            if (self::isJson($entry)) {
-                $entry = http_build_query(json_decode($entry, true));
-            }
+            $entry = (file_get_contents('php://input'));
+            if (!empty($entry)) {
+                if (self::isJson($entry)) {
+                    $entry = http_build_query(json_decode($entry, true));
+                }
 
-            parse_str($entry, ${'_' . REQUEST_METHOD});
-            if (REQUEST_METHOD === 'POST') {
-                parse_str($entry, $_POST);
-                if (!empty($_POST['form'])) {
-                    parse_str($_POST["form"], $_POST["form"]);
-                    $_POST = array_merge($_POST, $_POST["form"]);
-                    unset($_POST["form"]);
-                }
-                if (!empty($_POST['aside'])) {
-                    parse_str($_POST["aside"], $_POST["aside"]);
-                    $_POST = array_merge($_POST, $_POST["aside"]);
-                    unset($_POST["aside"]);
-                }
-                if (!empty($_POST['post'])) {
-                    if (is_string($_POST['post'])) {
-                        parse_str($_POST["post"], $_POST["post"]);
+                parse_str($entry, ${'_' . REQUEST_METHOD});
+                if (REQUEST_METHOD === 'POST') {
+                    parse_str($entry, $_POST);
+                    if (!empty($_POST['form'])) {
+                        parse_str($_POST["form"], $_POST["form"]);
+                        $_POST = array_merge($_POST, $_POST["form"]);
+                        unset($_POST["form"]);
                     }
-                    $_POST = array_merge($_POST, $_POST["post"]);
-                    unset($_POST["post"]);
+                    if (!empty($_POST['aside'])) {
+                        parse_str($_POST["aside"], $_POST["aside"]);
+                        $_POST = array_merge($_POST, $_POST["aside"]);
+                        unset($_POST["aside"]);
+                    }
+                    if (!empty($_POST['post'])) {
+                        if (is_string($_POST['post'])) {
+                            parse_str($_POST["post"], $_POST["post"]);
+                        }
+                        $_POST = array_merge($_POST, $_POST["post"]);
+                        unset($_POST["post"]);
+                    }
                 }
-            }
-            if (REQUEST_METHOD === 'GET') {
-                parse_str($entry, $_GET);
+                if (REQUEST_METHOD === 'GET') {
+                    parse_str($entry, $_GET);
+                }
             }
         }
     }
@@ -959,7 +1012,7 @@ class System
         if (strpos($request, '?') !== false) {
             $request = stristr($request, '?', true);
         }
-        preg_match_all('/\/?\b([a-z-]+?)\/+([a-z-]+)(?:\W+(.+))?/i', $request, $request, PREG_SET_ORDER, 0);
+        preg_match_all('/\/?\b([a-z-]+?)\/+([a-z-]+)(?:\W+(.+))?/i', $request, $request, PREG_SET_ORDER);
         if (!empty($request)) {
             $request = array_splice($request[0], 1);
             [$controller, $action] = $request;
@@ -983,16 +1036,19 @@ class System
         define('ENDPOINT', $request[0] . '/' . $request[1]);
     }
 
+    /**
+     * @throws CoreException
+     */
     private static function call_action($controller, $action, $id)
     {
         switch (REQUEST_METHOD) {
             case 'OPTIONS':
-                JsonResponse::sendResponse('Completed.', HTTPStatusCodes::OK);
+                JsonResponse::sendResponse('Completed.');
                 break;
             case 'PATCH':
                 global $_PATCH;
                 if (empty($id)) {
-                    JsonResponse::sendResponse('Request Method PATCH needs an ID to work', HTTPStatusCodes::BadRequest);
+                    throw new CoreException('Request Method PATCH needs an ID to work', HTTPStatusCodes::BadRequest);
                 }
                 break;
         }
@@ -1020,7 +1076,7 @@ class System
                 case "version":
                     $name = CONFIG['project']['name'];
                     $version = VERSION;
-                    JsonResponse::sendResponse('Completed.', HTTPStatusCodes::OK, compact('name', 'version'));
+                    JsonResponse::sendResponse('Completed.', compact('name', 'version'));
                     break;
                 case "logs":
                     $path = DIR . '/Logs/' . CONFIG['project']['code'] . '/' . date('Y-m-d', strtotime(System::isset_get($_GET['date'], date('Y-m-d')))) . '.log';
@@ -1034,7 +1090,7 @@ class System
                     $errors = !!($_GET['errors'] ?? null);
 
                     array_walk($log, function (&$entry) use ($errors) {
-                        $entry = preg_split('/\] \[|] |^\[/m', $entry);
+                        $entry = preg_split('/] \[|] |^\[/m', $entry);
                         $entry = array_values(array_filter($entry));
                         array_walk($entry, function (&$value) use ($entry) {
                             if (System::isset_get($_GET['errors']) === 'true' && count($entry) < 5) {
@@ -1042,7 +1098,7 @@ class System
                             }
                             $value = trim($value, '[] ');
                             if (self::isJson($value)) {
-                                $value = self::json_decode($value, true);
+                                $value = self::json_decode($value);
                             }
                         });
                         $entry = array_values(array_filter($entry));
@@ -1055,7 +1111,7 @@ class System
                         }
                     });
                     $log = array_values(array_filter($log));
-                    JsonResponse::sendResponse('Logs', HTTPStatusCodes::OK, compact('log'));
+                    JsonResponse::sendResponse('Logs', compact('log'));
                     break;
                 case "decodeToken":
                     if (REQUEST_METHOD === 'POST') {
@@ -1063,14 +1119,14 @@ class System
                             $data = System::decode_token($_POST['token']);
                             JsonResponse::sendResponse('Completed.', $data);
                         }
+                        throw new CoreException("Missing token", 400);
                     } else {
                         throw new CoreException("Endpoint not found.  [$namespace]", 400);
                     }
-                    break;
                 case "backup":
                     $mysql = new MySQL();
                     $data = $mysql->backupDB();
-                    JsonResponse::sendResponse('Completed.', HTTPStatusCodes::OK, $data);
+                    JsonResponse::sendResponse('Completed.', $data, HTTPStatusCodes::OK);
                     break;
                 case "endpoints":
                     $files = glob(__DIR__ . '/../Controller/*.{php}', GLOB_BRACE);
@@ -1100,20 +1156,19 @@ class System
                     ];
                     $host = $_SERVER['SERVER_NAME'];
                     $basePath = BASENAME;
-                    JsonResponse::sendResponse('Endpoints', HTTPStatusCodes::OK, compact('swagger', 'info', 'host', 'basePath', 'paths'));
+                    JsonResponse::sendResponse('Endpoints', compact('swagger', 'info', 'host', 'basePath', 'paths'), HTTPStatusCodes::OK);
                     break;
                 case "webhook":
                     if (REQUEST_METHOD === 'POST' && $id) {
                         include_once __DIR__ . '/classes/Webhook.php';
                         new Webhook($id);
-                        JsonResponse::sendResponse('Webhook', 200, $_POST);
+                        JsonResponse::sendResponse('Webhook', $_POST);
                     } else {
                         $method = REQUEST_METHOD;
                         throw new CoreException("Endpoint not found.  [$controller/$action]", 404, compact('method', 'controller', 'action'));
                     }
                     break;
                 case "socket":
-                    new \Controller\Notifications();
                     break;
             }
         } else {
@@ -1130,14 +1185,14 @@ class System
      * @param int $code
      * @throws CoreException
      */
-    public static function check_value_empty($array, $required, $message = 'Missing Data.', $code = 400)
+    public static function check_value_empty(array $array, array $required, string $message = 'Missing Data.', int $code = 400)
     {
         $required = array_flip($required);
         $intersect = array_intersect_key($array ?: $required, $required);
         $empty_values = '';
 
         foreach ($required as $key => $value) {
-            if (!isset($array[$key]) || empty($array[$key]) && $array[$key] !== 0) {
+            if (!isset($array[$key]) || empty($array[$key]) && $array[$key] != 0) {
                 $empty_values .= $key . ', ';
             }
         }
@@ -1154,14 +1209,14 @@ class System
         }
         $empty_values = trim($empty_values, ', ');
         if (!empty($empty_values)) {
-            JsonResponse::sendResponse($message . ' ' . "[$empty_values]", $code);
+            JsonResponse::sendResponse($message . ' ' . "[$empty_values]", [], $code);
         }
     }
 
-    private static function isJson($string)
+    private static function isJson($string): bool
     {
-        json_decode($string);
-        $isJson = (json_last_error() == JSON_ERROR_NONE);
+        $decoded = json_decode($string, true);
+        $isJson = (json_last_error() == JSON_ERROR_NONE && is_array($decoded));
         if (!$isJson) {
             $error = json_last_error_msg();
         }
@@ -1212,7 +1267,7 @@ class System
                 $error = [
                     'message' => "Error creating dir [$dir]"
                 ];
-                JsonResponse::sendResponse("Error creating dir [$dir]", $code, compact('status', 'code', 'response', 'error'));
+                JsonResponse::sendResponse("Error creating dir [$dir]", compact('status', 'code', 'error'), $code);
             }
             @chmod($dir, 0777);
         }
@@ -1254,9 +1309,6 @@ class System
                     'PUT' => $_PUT,
                     'PATCH' => $_PATCH,
                 ][REQUEST_METHOD] ?? ENVIRONMENT) . '] ';
-        /* if ($response['error'] ?? null) {
-             $data .= '[' . json_encode($response['error']) . '] ';
-         }*/
 
         if (!is_dir(__DIR__ . '/../Logs/')) {
             mkdir(__DIR__ . '/../Logs/', 0777, true);
@@ -1292,6 +1344,9 @@ class System
         }
     }
 
+    /**
+     * @throws CoreException
+     */
     private static function set_web_exception($exception)
     {
         ob_clean();
@@ -1310,7 +1365,7 @@ class System
         self::$error_code = $code;
 
         self::get_web_config();
-        self::$error_message = WEBCONFIG['error']['messages'][$code];
+        self::$error_message = WEBCONFIG['error']['messages'][$code] ?? '';
         switch ($code) {
             case 404:
                 parse_str($_SERVER['QUERY_STRING'], $query_string);
@@ -1335,9 +1390,10 @@ class System
     }
 
     /**
-     * @return array
+     * @return void
+     * @throws CoreException
      */
-    private static function get_web_config()
+    private static function get_web_config(): void
     {
         $config = System::readJsonFile(WEBDIR . '/config.json');
 
@@ -1347,16 +1403,28 @@ class System
         }
 
         if ($env) {
-            $env_config = file_get_contents(WEBDIR . "/settings/$env/" . "config.json");
+            $env_dev_config = [];
+            $path_dev = WEBDIR . "/settings/$env/" . 'config.dev.json';
+            if (file_exists($path_dev)) {
+                $env_dev_config = file_get_contents($path_dev);
+                $env_dev_config = json_decode($env_dev_config, true);
+            }
+            $path = WEBDIR . "/settings/$env/" . 'config.json';
+            if (!file_exists($path)) {
+                self::load_php_functions();
+                throw new CoreException('Missing config file: settings/' . $env . '/config.json', 500, compact('path'));
+            }
+            $env_config = file_get_contents($path);
             $env_config = json_decode($env_config, true);
             $env_config = array_merge($config, $env_config);
-        }
-        if ($env_config ?? null) {
-            $config = $env_config;
+            $env_config = $env_dev_config + $env_config;
+
+            if ($env_config ?? null) {
+                $config = $env_config;
+            }
         }
 
         if (!defined('WEBCONFIG')) define('WEBCONFIG', $config);
-        return $config;
     }
 
     /**
@@ -1420,7 +1488,12 @@ class System
             $module_file = implode('/', $module_file_intersect);
         }
 
-        $file = $module_list[$module_file]['file'] ?? $entry;
+        $file = '';
+        $list = $module_list;
+        foreach (explode('/', $module_file) as $item) {
+            $list = $list[$item] ?? $list['modules'][$item] ?? [];
+            $file = $list['file'] ?? $entry;
+        }
 
         self::formatDocument($file, $module_file);
     }
@@ -1438,12 +1511,21 @@ class System
                 'description' => $description,
                 'keywords' => $keywords,
                 'author' => $author,
+                'image' => $image,
                 'copyright' => $copyright,
-                'entry' => $entry,
-                'error' => $error_file,
+                'address' => $address,
+                'phone' => $phone,
+                'email' => $email,
+                'social_media' => $social_media,
                 'theme' => $dir,
                 'modules' => $module_list,
-            ] = WEBCONFIG;
+            ] = WEBCONFIG + [
+                'image' => '',
+                'address' => '',
+                'phone' => '',
+                'email' => '',
+                'social_media' => []
+            ];
 
             if (!file_exists($dir . $file)) {
                 die($dir . $file . ' does not exist');
@@ -1453,40 +1535,50 @@ class System
             libxml_use_internal_errors(true);
             self::$dom->loadHTMLFile($dir . $file);
 
-            if (self::$dom->getElementsByTagName('html')[0]->getAttribute("lang")) {
+            if (self::$dom->getElementsByTagName('html')[0] && self::$dom->getElementsByTagName('html')[0]->getAttribute("lang")) {
                 session_start();
                 $lang = ($_GET['lang'] ?? null) ? $_GET['lang'] : ($_SESSION['lang'] ?? self::$dom->getElementsByTagName('html')[0]->getAttribute("lang"));
                 $_SESSION['lang'] = $lang;
                 session_write_close();
                 self::$dom->getElementsByTagName('html')[0]->setAttribute('lang', $lang);
                 if (file_exists(WEBDIR . '/lang.json')) {
-                    if (!defined('LANG')) define('LANG', self::json_decode(file_get_contents(WEBDIR . '/lang.json'))[$lang]);
+                    if (!defined('LANG')) define('LANG', self::json_decode(file_get_contents(WEBDIR . '/lang.json'))[$lang] ?? []);
                 }
             }
 
             /** @var DOMElement $link */
             foreach (self::$dom->getElementsByTagName('a') as $link) {
                 $old_link = $link->getAttribute("href");
+
+                if (strpos($old_link, 'tel:') !== false) {
+                    continue;
+                }
                 if (strpos($old_link, 'http') !== false) {
                     continue;
+                }
+                if (($old_link[0] ?? null) == '?' || ($old_link[0] ?? null) == '#') {
+                    $old_link = $module_file . $old_link;
                 }
 
                 $link->setAttribute('href', BASENAME . trim($old_link, '/'));
             }
             foreach (self::$dom->getElementsByTagName('link') as $link) {
                 $old_link = $link->getAttribute("href");
-                if (strpos($old_link, 'http') !== false) {
+                if (strpos($old_link, '//') !== false) {
                     continue;
                 }
 
                 if ($old_link === 'manifest.json') {
                     $env = 'settings/' . WEBCONFIG['code'] . '/';
-                    $new_link = BASENAME . $env . $old_link;
-                    if (!file_exists($new_link)) {
-                        $new_link = BASENAME . $old_link;
+                    $new_link = $env . $old_link;
+                    if (file_exists($new_link)) {
+                        file_put_contents($old_link, file_get_contents($new_link));
                     }
-                    $link->setAttribute('href', $new_link);
+                    $link->setAttribute('href', BASENAME . $old_link);
                 } else {
+                    if (!defined('BASENAME')) {
+                        define('BASENAME', '');
+                    }
                     $link->setAttribute('href', BASENAME . $dir . $old_link);
                 }
             }
@@ -1497,13 +1589,32 @@ class System
                     $link->setAttribute('ui-include', "'" . BASENAME . $dir . $old_link . "'");
                 }
             }
+            foreach (self::$dom->getElementsByTagName('div') as $link) {
+                $old_link = $link->getAttribute('data-image');
+                if ($old_link) {
+                    if (strpos($old_link, 'http') !== false) {
+                        continue;
+                    }
+                    $link->setAttribute('data-image', BASENAME . $dir . $old_link);
+                }
+            }
+            foreach (self::$dom->getElementsByTagName('section') as $link) {
+                $old_link = $link->getAttribute('data-image');
+                if ($old_link) {
+                    if (strpos($old_link, 'http') !== false) {
+                        continue;
+                    }
+                    $link->setAttribute('data-image', BASENAME . $dir . $old_link);
+                }
+            }
             foreach (self::$dom->getElementsByTagName('img') as $link) {
                 $old_link = $link->getAttribute("src");
                 if ($old_link) {
                     if (strpos($old_link, 'http') !== false) {
                         continue;
                     }
-                    $link->setAttribute('src', BASENAME . $dir . $old_link);
+                    $new_link = BASENAME . $dir . $old_link;
+                    $link->setAttribute('src', $new_link);
                 }
                 $old_link = $link->getAttribute("data-src");
                 if ($old_link) {
@@ -1532,7 +1643,7 @@ class System
             foreach (self::$dom->getElementsByTagName('script') as $link) {
                 $old_link = $link->getAttribute("src");
                 if ($old_link) {
-                    if (strpos($old_link, 'http') !== false) {
+                    if (strpos($old_link, '//') !== false) {
                         continue;
                     }
                     $link->setAttribute('src', BASENAME . $dir . $old_link);
@@ -1571,6 +1682,9 @@ html
             if (self::$dom->getElementById('tag-author')) {
                 self::$dom->getElementById('tag-author')->setAttribute('content', $author);
             }
+            if (self::$dom->getElementById('tag-image')) {
+                self::$dom->getElementById('tag-image')->setAttribute('content', $image);
+            }
             if (self::$dom->getElementById('project-title')) {
                 self::$dom->getElementById('project-title')->nodeValue = $project;
             }
@@ -1600,12 +1714,111 @@ html
                 $favicon->setAttribute('href', BASENAME . $logo);
             }
 
+            if (self::getElementsByClass(self::$dom, 'p', 'project-description')) {
+                $e_description = (self::getElementsByClass(self::$dom, 'p', 'project-description'));
+                /** @var DOMElement $element */
+                foreach ($e_description as $element) {
+                    $element->nodeValue = $description;
+                }
+            }
+
+            if (self::getElementsByClass(self::$dom, 'div', 'project-address')) {
+                $e_address = (self::getElementsByClass(self::$dom, 'div', 'project-address'));
+                /** @var DOMElement $element */
+                foreach ($e_address as $element) {
+                    $element->nodeValue = $address;
+                }
+            }
+
+            if (self::getElementsByClass(self::$dom, 'a', 'project-address')) {
+                $e_address = (self::getElementsByClass(self::$dom, 'a', 'project-address'));
+                /** @var DOMElement $element */
+                foreach ($e_address as $element) {
+                    $element->nodeValue = $address;
+                    $element->setAttribute('href', 'https://www.google.com/maps/search/?api=1&query=' . str_replace('#', ' ', $address));
+                }
+            }
+
+            if (self::getElementsByClass(self::$dom, 'a', 'social_media:facebook')) {
+                $e_media = (self::getElementsByClass(self::$dom, 'a', 'social_media:facebook'));
+                /** @var DOMElement $element */
+                foreach ($e_media as $element) {
+                    $element->setAttribute('href', $social_media['facebook']);
+                }
+            }
+
+            if (self::getElementsByClass(self::$dom, 'a', 'social_media:twitter')) {
+                $e_media = (self::getElementsByClass(self::$dom, 'a', 'social_media:twitter'));
+                /** @var DOMElement $element */
+                foreach ($e_media as $element) {
+                    $element->setAttribute('href', $social_media['twitter']);
+                }
+            }
+
+            if (self::getElementsByClass(self::$dom, 'a', 'social_media:instagram')) {
+                $e_media = (self::getElementsByClass(self::$dom, 'a', 'social_media:instagram'));
+                /** @var DOMElement $element */
+                foreach ($e_media as $element) {
+                    $element->setAttribute('href', $social_media['instagram']);
+                }
+            }
+
+            if (self::getElementsByClass(self::$dom, 'a', 'social_media:whatsapp')) {
+                $e_media = (self::getElementsByClass(self::$dom, 'a', 'social_media:whatsapp'));
+                /** @var DOMElement $element */
+                foreach ($e_media as $element) {
+                    $element->setAttribute('href', $social_media['whatsapp']);
+                }
+            }
+
+            if (self::getElementsByClass(self::$dom, 'a', 'social_media:website')) {
+                $e_media = (self::getElementsByClass(self::$dom, 'a', 'social_media:website'));
+                /** @var DOMElement $element */
+                foreach ($e_media as $element) {
+                    $icon = self::createElement('span', <<<html
+<i class="fas fa-globe"></i>
+html
+                    );
+                    $element->appendChild($icon);
+                    $element->appendChild(self::createElement('span', '<span style="margin-left: 4px">' . $social_media['website']['title'] . '</span>'));
+                    $element->setAttribute('href', $social_media['website']['href']);
+                    $element->setAttribute('title', $social_media['website']['description']);
+                }
+            }
+
+            if (self::getElementsByClass(self::$dom, 'div', 'project-phone')) {
+                $e_phone = (self::getElementsByClass(self::$dom, 'div', 'project-phone'));
+                /** @var DOMElement $element */
+                foreach ($e_phone as $element) {
+                    foreach ($phone as $item) {
+                        $fragment = self::createElement('span', <<<html
+<a href="tel:$item">$item</a><span>, </span>
+html
+                        );
+                        $element->appendChild($fragment);
+                    }
+                    //$element->nodeValue = is_array($phone) ? implode(', ', $phone) : $phone;
+                    //$element->setAttribute('href', (is_array($phone) ? '#' : 'tel:' . $phone));
+                }
+            }
+
+            if (self::getElementsByClass(self::$dom, 'a', 'project-email')) {
+                $e_email = (self::getElementsByClass(self::$dom, 'a', 'project-email'));
+                /** @var DOMElement $element */
+                foreach ($e_email as $element) {
+                    $element->nodeValue = $email;
+                    $element->setAttribute('href', 'mailto:' . $email);
+                }
+            }
+
             if (self::getElementsByClass(self::$dom, 'div', 'copyright')) {
                 $e_copyrights = (self::getElementsByClass(self::$dom, 'div', 'copyright'));
                 /** @var DOMElement $e_copyright */
                 foreach ($e_copyrights as $e_copyright) {
                     $copyright = str_replace('##YEAR##', date('Y'), $copyright);
-                    $e_copyright->getElementsByTagName('p')->item(0)->nodeValue = $copyright;
+                    if ($e_copyright->getElementsByTagName('p')->item(0)) {
+                        $e_copyright->getElementsByTagName('p')->item(0)->nodeValue = $copyright;
+                    }
                 }
             }
 
@@ -1617,6 +1830,32 @@ html
                     $logo = BASENAME . 'logo.png';
                     if (file_exists(__DIR__ . '/../settings/' . $env . '/img/logo.png')) {
                         $logo = BASENAME . 'settings/' . $env . '/img/logo.png';
+                    }
+                    $img->setAttribute('src', $logo);
+
+                    $old_links = $img->getAttribute("srcset");
+                    if ($old_links) {
+                        $new_links = [];
+                        foreach (explode(', ', $old_links) as $old_link) {
+                            if (strpos($old_link, 'http') !== false) {
+                                $new_links[] = $old_link;
+                                continue;
+                            }
+                            $new_links[] = $logo;
+                        }
+                        $img->setAttribute('srcset', implode(', ', $new_links));
+                    }
+                }
+            }
+
+            if (self::getElementsByClass(self::$dom, 'img', 'project-img-small')) {
+                $imgs = (self::getElementsByClass(self::$dom, 'img', 'project-img-small'));
+                $config = WEBCONFIG;
+                foreach ($imgs as $img) {
+                    $env = $config['code'];
+                    $logo = BASENAME . 'logo-small.png';
+                    if (file_exists(__DIR__ . '/../settings/' . $env . '/img/logo-small.png')) {
+                        $logo = BASENAME . 'settings/' . $env . '/img/logo-small.png';
                     }
                     $img->setAttribute('src', $logo);
 
@@ -1666,31 +1905,34 @@ html
                 System::redirect('login');
             }
 
-            if (self::$dom->getElementsByTagName('nav')) {
+            if (self::getElementsByClass(self::$dom, 'ul', 'project-nav')) {
                 $fragment = self::$dom->createDocumentFragment();
 
                 if (defined('SESSIONCHECK') && SESSIONCHECK && pathinfo($module_file, PATHINFO_EXTENSION) !== 'js') {
                     $user = System::sessionCheck("user_token");
                     if (($user['permissions'] ?? null) !== null) {
-                        $module_list = ($_SESSION['modules'] ?? []) + array_filter(MODULES, function ($module) {
-                                return ($module['permissions'] ?? true) === false;
-                            });
-                        if ($module_file !== 'dashboard' && !($module_list[$module_file] ?? null)) {
+                        $module_list = array_merge(array_filter(MODULES, function ($module) {
+                            return ($module['permissions'] ?? true) === false;
+                        }), ($_SESSION['modules'] ?? []));
+                        if ($module_file !== WEBCONFIG['default'] && !($module_list[$module_file] ?? null)) {
                             @list($module, $action) = explode('/', $module_file);
-                            if ((empty($module_list[$module] ?? null) && !empty(MODULES[$module]) && (MODULES[$module]['permissions'] ?? null) === false)) {
-                                throw new CoreException($module_file, HTTPStatusCodes::Forbidden);
-                            }
-                            $module_list[$module]['modules'] = $module_list[$module]['modules'] ?? [$action => null];
+
+                            $found = MODULES[$module] ?? false;
+                            $permission = $module_list[$module] ?? false;
+
                             if ($action) {
-                                switch (true) {
-                                    case $module_list[$module]['modules'][$action]:
-                                    case $module_list[$module]['action']['href'] === $action:
-                                        break;
-                                    case !MODULES[$module]['modules'][$action]:
-                                        throw new CoreException($module_file, HTTPStatusCodes::NotFound);
-                                    default:
-                                        throw new CoreException($module_file, HTTPStatusCodes::Forbidden);
+                                $found = MODULES[$module]['modules'][$action] ?? false;
+                                $permission = $module_list[$module]['modules'][$action] ?? false;
+                                if (!$found) {
+                                    $found = $module_list[$module]['action']['href'] === $action;
                                 }
+                            }
+
+                            if (!$found) {
+                                throw new CoreException($module_file, HTTPStatusCodes::NotFound);
+                            }
+                            if (!$permission) {
+                                throw new CoreException($module_file, HTTPStatusCodes::Forbidden);
                             }
                         }
                     }
@@ -1705,6 +1947,8 @@ html
                     $href = $module['href'] ?? null;
                     $name = $module['name'] ?? null;
                     $icon = $module['icon'] ?? null;
+                    $className = $module['className'] ?? [];
+                    $styles = $module['styles'] ?? [];
                     $children = $module['modules'] ?? null;
                     $onclick = $module['onclick'] ?? null;
                     $onlogin = $module['onlogin'] ?? null;
@@ -1736,11 +1980,7 @@ html;
                     }
 
                     $disabled = System::isset_get($module['disabled']) ? 'disabled' : '';
-                    $hidden = System::isset_get($module['hidden']) ? true : false;
-
-                    if (System::isset_get($module['file'], $entry) != $entry) {
-                        continue;
-                    }
+                    $hidden = (bool)System::isset_get($module['hidden']);
 
                     if (!$href && $children) {
                         $children_html = '';
@@ -1757,9 +1997,9 @@ html;
                             }
 
                             $child_disabled = System::isset_get($child['disabled']) ? 'disabled' : '';
-                            $child_hidden = System::isset_get($child['hidden']) ? true : false;
+                            $child_hidden = (bool)System::isset_get($child['hidden']);
 
-                            preg_match_all('/###(.+)###/m', $child_href, $matches, PREG_SET_ORDER, 0);
+                            preg_match_all('/###(.+)###/m', $child_href, $matches, PREG_SET_ORDER);
                             foreach ($matches as $match) {
                                 $match = $match[1];
                                 $child_href = str_replace('###' . $match . '###', $settings[$match], $child_href);
@@ -1775,7 +2015,7 @@ html;
 
                             $children_html .= !$child_hidden ? <<<html
 <li>
-    <a href="$child_href" class="$child_disabled" style="display: flex; align-items: center" onclick="$child_onclick">
+    <a href="$child_href" class="$child_disabled" onclick="$child_onclick">
         $child_nav_icon
         <span class="nav-text">$child_name</span>
     </a>
@@ -1786,22 +2026,31 @@ html
                         $html = <<<html
 <li>
     <a class="parent-module">
+        $nav_icon
+        <span class="nav-text">$name</span>
         <span class="nav-caret">
             <i class="fas fa-caret-down"></i>
         </span>
-        $nav_icon
-        <span class="nav-text">$name</span>
     </a>
-    <ul class="nav-sub">
+    <ul class="sub-menu">
         $children_html
     </ul>
 </li>
 html;
                     } else {
-                        $href = BASENAME . $href;
+
+                        $target = '';
+                        if (strpos($href, 'http') !== false) {
+                            $target = '_blank';
+                        } else {
+                            $href = BASENAME . $href;
+                        }
+                        $className = $className + ['li' => null, 'a' => null];
+                        $styles_li = implode('; ', ($styles['li'] ?? []));
+                        $styles_a = implode('; ', ($styles['a'] ?? []));
                         $html = !$hidden ? <<<html
-<li>
-    <a href="$href" class="$disabled" style="display: flex; align-items: center" onclick="$onclick">
+<li class="$className[li]" style="$styles_li">
+    <a target="$target" href="$href" class="$disabled $className[a]" style="$styles_a" onclick="$onclick">
         $nav_icon
         <span class="nav-text">$name</span>
     </a>
@@ -1818,10 +2067,8 @@ html
                     $modules->appendChild($fragment);
                 }
 
-                $navs = self::$dom->getElementsByTagName('nav');
-                while ($navs->length) {
-                    /** @var DOMElement $nav */
-                    $nav = $navs->item(0);
+                $navs = self::getElementsByClass(self::$dom, 'ul', 'project-nav');
+                foreach ($navs as $nav) {
                     [$id, $class] = [$nav->getAttribute('id'), $nav->getAttribute('class')];
 
                     $clone = $modules->cloneNode(true);
@@ -1830,10 +2077,10 @@ html
 
                     $nav->parentNode->replaceChild($clone, $nav);
                 }
+            }
 
-                if ($module_file && $file === $entry) {
-                    self::load_module($module_file);
-                }
+            if ($module_file) {
+                self::load_module($module_file);
             }
 
             libxml_clear_errors();
@@ -1848,7 +2095,13 @@ html;
         }
     }
 
-    public static function getElementsByClass(&$parentNode, $tagName, $className)
+    /**
+     * @param $parentNode
+     * @param $tagName
+     * @param $className
+     * @return array
+     */
+    public static function getElementsByClass($parentNode, $tagName, $className): array
     {
         $nodes = array();
 
@@ -1863,25 +2116,34 @@ html;
         return $nodes;
     }
 
+    /**
+     * @throws CoreException
+     */
     public static function load_module($file)
     {
-        $pathinfo = pathinfo($file);//['extension'];
+        $pathinfo = pathinfo($file);
         if (!($pathinfo['extension'] ?? null)) {
             if ($file[strlen($file) - 1] === '/') {
                 $file .= 'index';
             }
+        }
+        $module_path = WEBDIR . '/modules/';
+        if (!file_exists($module_path . $file . '.php')) {
+            if (!file_exists($module_path . $file . '/index.php')) {
+                $code = HTTPStatusCodes::NotFound;
+                $status = 'error';
+                $response = [
+                    'message' => "File not found [" . $module_path . $file . "]"
+                ];
+                System::log_error(compact('status', 'code', 'response'));
+                throw new CoreException('Not found', 404);
+            } else {
+                $file .= '/index.php';
+            }
+        } else {
             $file .= '.php';
         }
-        $module_path = WEBDIR . '/modules/' . $file;
-        if (!file_exists($module_path)) {
-            $code = HTTPStatusCodes::NotFound;
-            $status = 'error';
-            $response = [
-                'message' => "File not found [$module_path]"
-            ];
-            System::log_error(compact('status', 'code', 'response'));
-            throw new CoreException('Not found', 404);
-        }
+        $module_path = $module_path . $file;
 
         ob_start();
         define('MODULE', $pathinfo['basename']);
@@ -1896,7 +2158,7 @@ html;
 
         $modules = MODULES;
         if (is_array($href)) {
-            $o_module = $modules[$href[0]] ?? '';
+            $o_module = $modules[$href[0]] ?? [];
             $module_name = ucfirst(strtolower($o_module['name'] ?? ''));
             if (!!($href[1] ?? null) && !!($o_module['modules'] ?? null)) {
                 $module_name .= ' / ' . ($o_module['modules'][$href[1]]['name'] ?? '');
@@ -1915,15 +2177,17 @@ html;
             $module_name = ucfirst(strtolower(($o_module['name'] ?? null) ?: $o_module['breadcrumbs'] ?? ''));
         }
 
-        $breadcrumbs = 'none';
+        $breadcrumbs = '';
         if (BREADCRUMBS && !($o_module['modal'] ?? false)) {
-            $breadcrumbs = 'unset';
+            $breadcrumbs = <<<html
+<p class="text-left breadcrumbs" style="">
+        <span class="text-muted">Usted se encuentra en:</span> <span>$module_name</span>
+</p>
+html;
         }
 
         $module = self::createElement('div', <<<html
-    <p class="text-left breadcrumbs $breadcrumbs" style="display: $breadcrumbs">
-        <span class="text-muted">Usted se encuentra en:</span> <span>$module_name</span>
-    </p>
+    $breadcrumbs
     $contents
 html
         );
@@ -1938,7 +2202,7 @@ html
             $html->setAttribute('class', WEBCONFIG['code']);
 
             if (is_array($href)) {
-                $module->setAttribute('class', $class . ' ' . $href[0] . '-' . $href[1]);
+                $module->setAttribute('class', $class . ' ' . $href[0] . ' ' . $href[1]);
                 $body->setAttribute('id', $href[0] . '-' . $href[1]);
             } else {
                 $module->setAttribute('class', $class . ' ' . $href);
@@ -1960,12 +2224,20 @@ html
             }
 
             if ($o_module['action'] ?? null) {
+                if (is_array($href)) {
+                    if (end($href) == 'index') {
+                        array_pop($href);
+                    }
+                }
+
                 $o_action = $o_module['action'];
                 $href = is_array($href) ? implode('/', $href) : $href;
                 $o_action['href'] = BASENAME . $href . '/' . $o_action['href'];
                 if (self::$dom->getElementById('project-action')) {
                     $action = self::$dom->getElementById('project-action');
-                    $class = ($action->childNodes->item(1))->getAttribute('class');
+                    /** @var DOMElement $item */
+                    $item = $action->childNodes->item(1);
+                    $class = $item->getAttribute('class');
 
                     $icon = $o_action['icon'] ?? 'add_circle';
                     $module = self::createElement('div', <<<html
@@ -1995,26 +2267,33 @@ html
      * @param string $html
      * @return DOMElement
      */
-    private static function createElement(string $element, string $html)
+    private static function createElement(string $element, string $html): DOMElement
     {
-        $fragment = new DOMDocument();
-        $fragment->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'), 8192 | 4);
-
         $module = self::$dom->createElement($element);
-        $module->appendChild(self::$dom->importNode($fragment->documentElement, true));
+        if (!empty(trim($html))) {
+            $fragment = new DOMDocument();
+            $fragment->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'), 8192 | 4);
 
+            $module->appendChild(self::$dom->importNode($fragment->documentElement, true));
+        }
         return $module;
     }
 
     public static function print_page()
     {
+        echo <<<html
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+html;
         echo self::$dom->saveHTML();
     }
 
-    public static function getPermissions(array $permission_list = null)
+    /**
+     * @throws CoreException
+     */
+    public static function getPermissions(array $permission_list = null): array
     {
         if (ENVIRONMENT !== 'www') {
-            throw new CoreException('getPermissions can only be used on web.');
+            throw new CoreException('getPermissions can only be used on web.', 500);
         }
         if (session_id() == '') {
             session_start();
@@ -2022,7 +2301,7 @@ html
         $user = self::curlDecodeToken($_SESSION['user_token']);
         session_write_close();
 
-        $permissions = self::json_decode($user['permissions'] ?? '[]', true);
+        $permissions = self::json_decode($user['permissions'] ?? '[]');
 
         $permissions = array_flip($permissions);
 
@@ -2039,7 +2318,7 @@ html
         return $permissions;
     }
 
-    static function getQR(string $chl)
+    static function getQR(string $chl): array
     {
         $url = http_build_query([
             'chl' => $chl,
@@ -2053,35 +2332,69 @@ html
         return compact('chart', 'chl');
     }
 
-    static function parseRows($name, $path, $template): array
+    /**
+     * @param $name
+     * @param $path
+     * @param $template
+     * @param int $skip
+     * @param int $page
+     * @return array
+     * @throws CoreException
+     */
+    static function parseRows($name, $path, $template, int $skip = 0, int $page = 0): array
     {
-        $parse = SimpleXLSX::parse($path);
+        $ext = pathinfo($path, PATHINFO_EXTENSION);
 
+        /** @var SimpleXLSX|SimpleXLS $class */
+        switch ($ext) {
+            case 'xlsx':
+                $class = SimpleXLSX::class;
+                break;
+            case "xls":
+                $class = SimpleXLS::class;
+                break;
+            default:
+                throw new CoreException('Unsupported file', 400, compact('ext'));
+        }
+
+        $parse = $class::parse($path);
         if (!$parse) {
-            $error = SimpleXLSX::parseError();
+            $error = $class::parseError();
             throw new CoreException($error . ': ' . $name, 400, compact('name', 'path'));
         }
 
-        $rows = $parse->rows();
+        $rows = $parse->rows($page);
+        $rows = array_slice($rows, $skip);
         $headers = $rows[0];
 
         //Validar headers
-        $template = SimpleXLSX::parse($template);
+        $template = $class::parse($template);
         if (!$template) {
-            $error = SimpleXLSX::parseError();
+            $error = $class::parseError();
             throw new CoreException($error . ': ' . $name, 400, compact('name', 'path'));
         }
-        $template_headers = $template->rows()[0];
+
+        $template_headers = $template->rows($page);
+        $template_headers = array_slice($template_headers, $skip);
+        $template_headers = $template_headers[0];
+
         $diff = array_diff($template_headers, $headers);
         if (!empty($diff)) {
             throw new CoreException('El archivo no tiene el formato correcto. Descarge el formato de nuevo.', 400, compact('diff'));
         }
 
-        array_splice($rows, 0, 1);
+        array_shift($rows);
 
-        array_walk($rows, function (&$row) use ($headers) {
-            $row = array_combine($headers, $row);
-        });
+        $combined = [];
+        foreach ($rows as $rindex => $row) {
+            foreach ($headers as $hindex => $key) {
+                if (empty($key)) {
+                    continue;
+                }
+                $combined[$rindex][$key] = $combined[$rindex][$key] ?? $row[$hindex];
+            }
+        }
+        $rows = $combined;
 
         return compact('headers', 'rows');
     }
@@ -2089,5 +2402,49 @@ html
     static function array_fill(array $keys, $value = null): array
     {
         return array_fill_keys($keys, $value);
+    }
+
+    /**
+     * @throws CoreException
+     */
+    static function filePond(string $FILE, string $path): string
+    {
+        $FILE = System::json_decode($FILE);
+        $data = base64_decode($FILE['data']);
+
+        $path = $path . '/' . urlencode(str_replace(['(', ')'], '', $FILE['name']));
+        is_dir(dirname($path)) || mkdir(dirname($path), 0777, true);
+        if (!is_dir(dirname($path))) {
+            throw new CoreException('Error. Failed to create dir. ' . dirname($path), 500, compact('FILE', 'path'));
+        }
+        file_put_contents($path, $data);
+
+        return $path;
+    }
+
+    /**
+     * @param string $path
+     */
+    static function loadFilePond(string $path)
+    {
+        if (file_exists($path)) {
+            $mime_content_type = mime_content_type($path);
+            header('Content-Disposition: inline; filename="' . basename($path) . '"');
+            header('Content-Type: ' . $mime_content_type);
+            header('Content-Length: ' . filesize($path));
+            readfile($path);
+        } else {
+            header($_SERVER["SERVER_PROTOCOL"] . " 404 Not Found");
+        }
+        exit;
+    }
+
+    static function objectToObject(stdClass $instance, string $className) {
+        return unserialize(sprintf(
+            'O:%d:"%s"%s',
+            strlen($className),
+            $className,
+            strstr(strstr(serialize($instance), '"'), ':')
+        ));
     }
 }

@@ -44,7 +44,7 @@ class Controller
     {
         if (ENVIRONMENT == 'web' && ENDPOINT !== 'api/endpoints') {
             if (!isset($methods[REQUEST_METHOD])) {
-                JsonResponse::sendResponse('Method Not Allowed', HTTPStatusCodes::MethodNotAllowed);
+                throw new CoreException('Method Not Allowed', HTTPStatusCodes::MethodNotAllowed);
             }
         }
     }

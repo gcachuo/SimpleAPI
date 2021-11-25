@@ -122,7 +122,7 @@ sql
                 }
             }
         } catch (mysqli_sql_exception $exception) {
-            JsonResponse::sendResponse($exception->getMessage(), HTTPStatusCodes::InternalServerError);
+            throw new CoreException($exception->getMessage(), HTTPStatusCodes::InternalServerError);
         }
     }
 
@@ -354,8 +354,9 @@ sql
      * @param TableColumn[] $columns
      * @param string $extra_sql
      * @return bool
+     * @throws CoreException
      */
-    function create_table($table, $columns, $extra_sql = '')
+    function create_table(string $table, array $columns, string $extra_sql = ''): bool
     {
         $table_exists = array_flip(array_column($this->prepare2("show tables;")->fetchAll(PDO::FETCH_NUM), 0))[$table];
 
@@ -536,7 +537,11 @@ sql;
         return $this->stmt->fetchAll($fetch_style ?: PDO::FETCH_ASSOC);
     }
 
-    public function fetchColumn(string $column)
+    /**
+     * @param int|string $column
+     * @return mixed
+     */
+    public function fetchColumn($column = 0)
     {
         return $this->stmt->fetchColumn($column);
     }
