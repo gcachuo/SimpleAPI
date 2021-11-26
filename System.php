@@ -2170,7 +2170,7 @@ html;
                 } else {
                     $o_module = $o_module['modules'][$item] ?? $o_module;
                 }
-                $module_name .= $o_module['name'] . ":" . ($key == 0 ? "" : $item) . " / ";
+                $module_name .= $o_module['name'] . ":" . $item . " / ";
             }
         } else {
             $o_module = $modules[$href] ?? '';
