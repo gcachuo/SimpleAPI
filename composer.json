@@ -26,7 +26,8 @@
     "camcima/php-mysql-diff": "^1.2",
     "shuchkin/simplexlsx": "^0.8.24",
     "shuchkin/simplexls": "^0.9.10",
-    "ext-fileinfo": "*"
+    "ext-fileinfo": "*",
+    "ext-pdo": "*"
   },
   "require-dev": {
     "phpunit/phpunit": "^8"
