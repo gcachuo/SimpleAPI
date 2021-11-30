@@ -1065,9 +1065,12 @@ class System
                 JsonResponse::sendResponse($message);
             } else if (is_scalar($response)) {
                 JsonResponse::sendResponse($response);
-            } else {
+            } else if (is_array($response)) {
                 $data = $response;
                 JsonResponse::sendResponse($message, $data);
+            } else {
+                $type = gettype($response);
+                throw new CoreException(ENDPOINT . " - Type not supported: $type", 500);
             }
         }
         if ($controller == 'api') {
