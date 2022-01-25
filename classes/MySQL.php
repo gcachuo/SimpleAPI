@@ -540,10 +540,10 @@ sql;
     }
 
     /**
-     * @param int|string $column
+     * @param int $column
      * @return mixed
      */
-    public function fetchColumn($column = 0)
+    public function fetchColumn(int $column = 0)
     {
         return $this->stmt->fetchColumn($column);
     }

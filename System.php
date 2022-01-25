@@ -225,7 +225,9 @@ class System
      */
     public static function generatePDF(array $pages, string $output)
     {
-        $pdf = new Pdf();
+        $pdf = new Pdf([
+            'binary' => '/usr/local/bin/wkhtmltopdf'
+        ]);
 
         foreach ($pages as $page) {
             $pdf->addPage($page);
