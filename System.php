@@ -572,9 +572,9 @@ class System
                 throw new CoreException('The token has expired.', 500);
             }
             return json_decode(json_encode($decoded), true)['data'];
-        } catch (Firebase\JWT\ExpiredException | Firebase\JWT\SignatureInvalidException $ex) {
+        } catch (Firebase\JWT\ExpiredException|Firebase\JWT\SignatureInvalidException $ex) {
             throw new CoreException($ex->getMessage(), 500);
-        } catch (UnexpectedValueException | DomainException $ex) {
+        } catch (UnexpectedValueException|DomainException $ex) {
             throw new CoreException('Invalid token.', 500);
         }
     }
@@ -2173,7 +2173,7 @@ html;
                 } else {
                     $o_module = $o_module['modules'][$item] ?? $o_module;
                 }
-                $module_name .= $o_module['name'] . ":" . $item . " / ";
+                $module_name .= ($o_module['name'] ?? '') . ":" . $item . " / ";
             }
         } else {
             $o_module = $modules[$href] ?? '';
