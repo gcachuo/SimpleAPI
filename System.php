@@ -357,7 +357,7 @@ class System
     {
         $request_uri = str_replace(BASENAME, '', $_SERVER['REQUEST_URI']);
         $pathinfo = pathinfo($request_uri);
-        if ($pathinfo['dirname'] !== $path && $pathinfo['filename'] !== $path && !($pathinfo['extension'] ?? null)) {
+        if ($pathinfo['filename'] !== $path && !($pathinfo['extension'] ?? null)) {
             if (!$external) {
                 $path = rtrim(BASENAME, '/') . '/' . ltrim($path, '/');
             }
@@ -1890,7 +1890,7 @@ html
                     $user = System::curlDecodeToken($_SESSION['user_token']);
                     if ($user) {
                         $user_name = $user['name'] ?? 'No Name';
-                        self::$dom->getElementById('project-user')->nodeValue = $user_name;
+                        self::$dom->getElementById('project-user')->nodeValue = ucwords($user_name);
                     } else {
                         System::redirect('login');
                     }
