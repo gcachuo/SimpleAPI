@@ -546,7 +546,9 @@ class System
     {
         if (empty(JWT_KEY)) {
             if (!file_exists(DIR . '/Config/.jwt_key')) {
-                throw new CoreException('Missing file .jwt_key', 500);
+                //throw new CoreException('Missing file .jwt_key', 500);
+                file_put_contents(DIR . '/Config/.jwt_key', uniqid());
+                throw new CoreException('JWT key was created. Try again.', 500);
             }
             throw new CoreException('JWT key is empty', 500);
         }
