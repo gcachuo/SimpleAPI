@@ -2185,7 +2185,7 @@ html;
         }
 
         $breadcrumbs = '';
-        if (BREADCRUMBS && !($o_module['modal'] ?? false)) {
+        if (BREADCRUMBS && !($o_module['modal'] ?? false) && ($o_module['breadcrumbs'] ?? true)) {
             $module_names = explode(" / ", rtrim($module_name, " / "));
             $last_index = array_key_last($module_names);
             array_walk($module_names, function (&$module_name, $index) use ($last_index) {
