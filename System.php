@@ -2059,7 +2059,7 @@ html;
 <li class="$className[li]" style="$styles_li">
     <a target="$target" href="$href" class="$disabled $className[a]" style="$styles_a" onclick="$onclick">
         $nav_icon
-        <span class="nav-text">$name</span>
+        <span class="nav-text nav-link">$name</span>
     </a>
 </li>
 html
