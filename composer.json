@@ -20,7 +20,7 @@
     "firebase/php-jwt": "v5.0.0",
     "phpmailer/phpmailer": "^6.1",
     "mikehaertl/phpwkhtmltopdf": "^2.4",
-    "neitanod/forceutf8": "^2.0",
+    "neitanod/forceutf8": "~2.0",
     "cboden/ratchet": "^0.4.3",
     "textalk/websocket": "^1.4",
     "camcima/php-mysql-diff": "^1.2",
