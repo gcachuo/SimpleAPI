@@ -19,7 +19,7 @@ class JsonResponse
 
         $response = compact('data');
         $data = self::encode_items($data);
-        $response = compact('message', 'code', 'data', 'response');
+        $response = compact('message', 'code', 'data');
 
         if ($code >= 400) {
             $status = 'error';
