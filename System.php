@@ -577,7 +577,7 @@ class System
             }
             return json_decode(json_encode($decoded), true)['data'];
         } catch (Firebase\JWT\ExpiredException|Firebase\JWT\SignatureInvalidException $ex) {
-            throw new CoreException($ex->getMessage(), 400);
+            throw new CoreException($ex->getMessage(), 500);
         } catch (UnexpectedValueException|DomainException $ex) {
             throw new CoreException('Invalid token.', 500);
         }
