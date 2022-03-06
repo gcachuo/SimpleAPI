@@ -892,8 +892,8 @@ class System
 
         if (ENVIRONMENT === 'web') {
             $headers = apache_request_headers();
-            if ($headers['X-Client'] ?? null) {
-                if (!defined('PROJECT')) define('PROJECT', System::utf8($headers['X-Client']));
+            if (($headers['X-Client'] ?? null) || $headers['x-client'] ?? null) {
+                if (!defined('PROJECT')) define('PROJECT', System::utf8($headers['X-Client'] ?? $headers['x-client']));
             }
             if ($headers['X-Database'] ?? null) {
                 if (($headers['Authorization'] ?? null) and !defined('USER_TOKEN')) {
