@@ -1912,11 +1912,14 @@ html
                 System::redirect('login');
             }
 
+            if (defined('SESSIONCHECK') && SESSIONCHECK && pathinfo($module_file, PATHINFO_EXTENSION) !== 'js') {
+                $user = System::sessionCheck('user_token');
+            }
+
             if (self::getElementsByClass(self::$dom, 'ul', 'project-nav')) {
                 $fragment = self::$dom->createDocumentFragment();
 
                 if (defined('SESSIONCHECK') && SESSIONCHECK && pathinfo($module_file, PATHINFO_EXTENSION) !== 'js') {
-                    $user = System::sessionCheck("user_token");
                     if (($user['permissions'] ?? null) !== null) {
                         $module_list = array_merge(array_filter(MODULES, function ($module) {
                             return ($module['permissions'] ?? true) === false;
