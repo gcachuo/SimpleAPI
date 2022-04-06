@@ -892,7 +892,7 @@ class System
 
         if (ENVIRONMENT === 'web') {
             $headers = apache_request_headers();
-            if (($headers['X-Client'] ?? null) || $headers['x-client'] ?? null) {
+            if (($headers['X-Client'] ?? null) || ($headers['x-client'] ?? null)) {
                 if (!defined('PROJECT')) define('PROJECT', System::utf8($headers['X-Client'] ?? $headers['x-client']));
             }
             if ($headers['X-Database'] ?? null) {
