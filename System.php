@@ -1913,7 +1913,7 @@ html
             }
 
             if (defined('SESSIONCHECK') && SESSIONCHECK && pathinfo($module_file, PATHINFO_EXTENSION) !== 'js') {
-                $user = System::sessionCheck('user_token');
+                $user = System::sessionCheck(SESSIONCHECK);
             }
 
             if (self::getElementsByClass(self::$dom, 'ul', 'project-nav')) {
