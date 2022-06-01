@@ -163,6 +163,10 @@ export class Defaults {
             api: true,
             async: true,
             dataType: "json",
+            headers: {
+                'X-Client': this.code,
+                Authorization: 'Bearer ' + this.user_token
+            },
             beforeSend: function (jqXHR, settings: AjaxSettings & { api: boolean }) {
                 if (settings.api) {
                     settings.url = Defaults.settings.apiUrl + settings.url;
