@@ -623,7 +623,8 @@ class System
                 $data = $exception->getData() ?? [];
             } else {
                 $data = [
-                    'exception' => get_class($exception)
+                    'exception' => get_class($exception),
+                    'phpversion' => phpversion()
                 ];
             }
             $error = null;
@@ -632,9 +633,8 @@ class System
             }
             if (ENVIRONMENT === 'web' || ENVIRONMENT === 'www') {
                 if (ob_get_contents()) ob_end_clean();
-                $response = compact('message');
                 header('Content-Type: application/json');
-                die(json_encode(compact('code', 'message', 'data', 'error', 'response'), JSON_UNESCAPED_SLASHES));
+                die(json_encode(compact('code', 'message', 'data', 'error'), JSON_UNESCAPED_SLASHES));
             } else {
                 die("\033[31m" . $message . "\033");
             }
