@@ -1065,10 +1065,10 @@ class System
             $response = $class->call($action, [$id]);
 
             $message = 'Completed.';
-            if (!$response) {
+            if (empty($response) && $response !== false) {
                 JsonResponse::sendResponse($message);
             } else if (is_scalar($response)) {
-                JsonResponse::sendResponse($response);
+                JsonResponse::sendResponse($message, $response);
             } else if (is_array($response)) {
                 $data = $response;
                 JsonResponse::sendResponse($message, $data);
