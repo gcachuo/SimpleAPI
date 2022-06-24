@@ -10,7 +10,7 @@ class JsonResponse
      * @param int $code
      * @param array $data
      */
-    public static function sendResponse(string $message, array|bool $data = [], int $code = 200): void
+    public static function sendResponse(string $message, array $data = [], int $code = 200): void
     {
         if (!$code) {
             $code = http_response_code();
