@@ -35,6 +35,9 @@ class MySQL
         self::$dbname = null;
     }
 
+    /**
+     * @throws CoreException
+     */
     public function __construct($dbname = null)
     {
         mysqli_report(MYSQLI_REPORT_ALL ^ MYSQLI_REPORT_INDEX);
@@ -70,7 +73,7 @@ class MySQL
                 $this->username = $username;
                 $this->passwd = $passwd;
             } else {
-                JsonResponse::sendResponse("File $filename not found.", HTTPStatusCodes::InternalServerError);
+                throw new CoreException("File $filename not found.", HTTPStatusCodes::InternalServerError);
             }
         } catch (mysqli_sql_exception $exception) {
             $code = $exception->getCode();
@@ -84,8 +87,7 @@ class MySQL
                     throw new CoreException($error, HTTPStatusCodes::NotImplemented, compact('error', 'code'));
                 default:
                     $type = 'MySQL';
-                    JsonResponse::sendResponse($error, HTTPStatusCodes::InternalServerError, compact('error', 'code', 'type'));
-                    break;
+                    throw new CoreException($error, HTTPStatusCodes::InternalServerError, compact('error', 'code', 'type'));
             }
         }
     }
@@ -538,10 +540,10 @@ sql;
     }
 
     /**
-     * @param int|string $column
+     * @param int $column
      * @return mixed
      */
-    public function fetchColumn($column = 0)
+    public function fetchColumn(int $column = 0)
     {
         return $this->stmt->fetchColumn($column);
     }
