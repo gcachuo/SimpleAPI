@@ -225,7 +225,9 @@ class System
      */
     public static function generatePDF(array $pages, string $output)
     {
-        $pdf = new Pdf();
+        $pdf = new Pdf([
+            'binary' => '/usr/local/bin/wkhtmltopdf'
+        ]);
 
         foreach ($pages as $page) {
             $pdf->addPage($page);
@@ -355,7 +357,7 @@ class System
     {
         $request_uri = str_replace(BASENAME, '', $_SERVER['REQUEST_URI']);
         $pathinfo = pathinfo($request_uri);
-        if ($pathinfo['dirname'] !== $path && $pathinfo['filename'] !== $path && !($pathinfo['extension'] ?? null)) {
+        if ($pathinfo['filename'] !== $path && !($pathinfo['extension'] ?? null)) {
             if (!$external) {
                 $path = rtrim(BASENAME, '/') . '/' . ltrim($path, '/');
             }
@@ -544,7 +546,9 @@ class System
     {
         if (empty(JWT_KEY)) {
             if (!file_exists(DIR . '/Config/.jwt_key')) {
-                throw new CoreException('Missing file .jwt_key', 500);
+                //throw new CoreException('Missing file .jwt_key', 500);
+                file_put_contents(DIR . '/Config/.jwt_key', uniqid());
+                throw new CoreException('JWT key was created. Try again.', 500);
             }
             throw new CoreException('JWT key is empty', 500);
         }
@@ -572,9 +576,9 @@ class System
                 throw new CoreException('The token has expired.', 500);
             }
             return json_decode(json_encode($decoded), true)['data'];
-        } catch (Firebase\JWT\ExpiredException | Firebase\JWT\SignatureInvalidException $ex) {
+        } catch (Firebase\JWT\ExpiredException|Firebase\JWT\SignatureInvalidException $ex) {
             throw new CoreException($ex->getMessage(), 500);
-        } catch (UnexpectedValueException | DomainException $ex) {
+        } catch (UnexpectedValueException|DomainException $ex) {
             throw new CoreException('Invalid token.', 500);
         }
     }
@@ -619,7 +623,8 @@ class System
                 $data = $exception->getData() ?? [];
             } else {
                 $data = [
-                    'exception' => get_class($exception)
+                    'exception' => get_class($exception),
+                    'phpversion' => phpversion()
                 ];
             }
             $error = null;
@@ -628,9 +633,8 @@ class System
             }
             if (ENVIRONMENT === 'web' || ENVIRONMENT === 'www') {
                 if (ob_get_contents()) ob_end_clean();
-                $response = compact('message');
                 header('Content-Type: application/json');
-                die(json_encode(compact('code', 'message', 'data', 'error', 'response'), JSON_UNESCAPED_SLASHES));
+                die(json_encode(compact('code', 'message', 'data', 'error'), JSON_UNESCAPED_SLASHES));
             } else {
                 die("\033[31m" . $message . "\033");
             }
@@ -888,8 +892,8 @@ class System
 
         if (ENVIRONMENT === 'web') {
             $headers = apache_request_headers();
-            if ($headers['X-Client'] ?? null) {
-                if (!defined('PROJECT')) define('PROJECT', System::utf8($headers['X-Client']));
+            if (($headers['X-Client'] ?? null) || ($headers['x-client'] ?? null)) {
+                if (!defined('PROJECT')) define('PROJECT', System::utf8($headers['X-Client'] ?? $headers['x-client']));
             }
             if ($headers['X-Database'] ?? null) {
                 if (($headers['Authorization'] ?? null) and !defined('USER_TOKEN')) {
@@ -901,7 +905,7 @@ class System
                 }
                 if (!defined('DATABASE')) define('DATABASE', $headers['X-Database']);
             } else {
-                $user_token = trim(strstr($headers['Authorization'] ?? '', ' '));
+                $user_token = trim(strstr($headers['Authorization'] ?? $headers['authorization'] ?? '', ' '));
                 if (($user_token) and !defined('USER_TOKEN')) {
                     $user = System::decode_token($user_token);
                     if ($user) {
@@ -1061,13 +1065,16 @@ class System
             $response = $class->call($action, [$id]);
 
             $message = 'Completed.';
-            if (!$response) {
+            if (empty($response) && $response !== false) {
                 JsonResponse::sendResponse($message);
             } else if (is_scalar($response)) {
-                JsonResponse::sendResponse($response);
-            } else {
+                JsonResponse::sendResponse($message, $response);
+            } else if (is_array($response)) {
                 $data = $response;
                 JsonResponse::sendResponse($message, $data);
+            } else {
+                $type = gettype($response);
+                throw new CoreException(ENDPOINT . " - Type not supported: $type", 500);
             }
         }
         if ($controller == 'api') {
@@ -1885,7 +1892,7 @@ html
                     $user = System::curlDecodeToken($_SESSION['user_token']);
                     if ($user) {
                         $user_name = $user['name'] ?? 'No Name';
-                        self::$dom->getElementById('project-user')->nodeValue = $user_name;
+                        self::$dom->getElementById('project-user')->nodeValue = ucwords($user_name);
                     } else {
                         System::redirect('login');
                     }
@@ -1905,11 +1912,14 @@ html
                 System::redirect('login');
             }
 
+            if (defined('SESSIONCHECK') && SESSIONCHECK && pathinfo($module_file, PATHINFO_EXTENSION) !== 'js') {
+                $user = System::sessionCheck(SESSIONCHECK);
+            }
+
             if (self::getElementsByClass(self::$dom, 'ul', 'project-nav')) {
                 $fragment = self::$dom->createDocumentFragment();
 
                 if (defined('SESSIONCHECK') && SESSIONCHECK && pathinfo($module_file, PATHINFO_EXTENSION) !== 'js') {
-                    $user = System::sessionCheck("user_token");
                     if (($user['permissions'] ?? null) !== null) {
                         $module_list = array_merge(array_filter(MODULES, function ($module) {
                             return ($module['permissions'] ?? true) === false;
@@ -2052,7 +2062,7 @@ html;
 <li class="$className[li]" style="$styles_li">
     <a target="$target" href="$href" class="$disabled $className[a]" style="$styles_a" onclick="$onclick">
         $nav_icon
-        <span class="nav-text">$name</span>
+        <span class="nav-text nav-link">$name</span>
     </a>
 </li>
 html
@@ -2159,18 +2169,18 @@ html;
         $modules = MODULES;
         if (is_array($href)) {
             $o_module = $modules[$href[0]] ?? [];
-            $module_name = ucfirst(strtolower($o_module['name'] ?? ''));
-            if (!!($href[1] ?? null) && !!($o_module['modules'] ?? null)) {
-                $module_name .= ' / ' . ($o_module['modules'][$href[1]]['name'] ?? '');
+            $module_name = "";
+            if ($href[1] == "index") {
+                unset($href[1]);
             }
-            foreach ($href as $item) {
+            foreach ($href as $key => $item) {
                 $o_module['action'] = $o_module['action'] ?? [];
                 if (($o_module['action']['href'] ?? null) == $item) {
                     $o_module = $o_module['action'];
-                    $module_name .= ' / ' . ($o_module['name'] ?? '');
                 } else {
                     $o_module = $o_module['modules'][$item] ?? $o_module;
                 }
+                $module_name .= ($o_module['name'] ?? '') . ":" . $item . " / ";
             }
         } else {
             $o_module = $modules[$href] ?? '';
@@ -2178,17 +2188,41 @@ html;
         }
 
         $breadcrumbs = '';
-        if (BREADCRUMBS && !($o_module['modal'] ?? false)) {
+        if (BREADCRUMBS && !($o_module['modal'] ?? false) && ($o_module['breadcrumbs'] ?? true)) {
+            $module_names = explode(" / ", rtrim($module_name, " / "));
+            $last_index = array_key_last($module_names);
+            array_walk($module_names, function (&$module_name, $index) use ($last_index) {
+                if ($index == $last_index) {
+                    $module_name = explode(':', $module_name);
+                    $module_name = <<<html
+<li class="breadcrumb-item active">
+    $module_name[0]
+</li>
+html;
+                } else {
+                    $module_name = explode(":", $module_name);
+                    $module_name = <<<html
+<li class="breadcrumb-item">
+    <a href="../$module_name[1]">$module_name[0]</a>
+</li>
+html;
+                }
+            });
+            $module_name = implode("", $module_names);
             $breadcrumbs = <<<html
-<p class="text-left breadcrumbs" style="">
-        <span class="text-muted">Usted se encuentra en:</span> <span>$module_name</span>
-</p>
+<nav aria-label="breadcrumb" class="breadcrumbs">
+  <ol class="breadcrumb">
+    $module_name  
+  </ol>
+</nav>
 html;
         }
 
         $module = self::createElement('div', <<<html
+<section>
     $breadcrumbs
     $contents
+</section>
 html
         );
 
@@ -2202,8 +2236,8 @@ html
             $html->setAttribute('class', WEBCONFIG['code']);
 
             if (is_array($href)) {
-                $module->setAttribute('class', $class . ' ' . $href[0] . ' ' . $href[1]);
-                $body->setAttribute('id', $href[0] . '-' . $href[1]);
+                $module->setAttribute('class', $class . ' ' . $href[0] . ' ' . ($href[1] ?? 'index'));
+                $body->setAttribute('id', $href[0] . '-' . ($href[1] ?? "index"));
             } else {
                 $module->setAttribute('class', $class . ' ' . $href);
                 $body->setAttribute('id', $href);
@@ -2439,7 +2473,8 @@ html;
         exit;
     }
 
-    static function objectToObject(stdClass $instance, string $className) {
+    static function objectToObject(stdClass $instance, string $className)
+    {
         return unserialize(sprintf(
             'O:%d:"%s"%s',
             strlen($className),
