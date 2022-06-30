@@ -1496,13 +1496,15 @@ class System
         }
 
         $file = '';
+        $theme = null;
         $list = $module_list;
         foreach (explode('/', $module_file) as $item) {
             $list = $list[$item] ?? $list['modules'][$item] ?? [];
             $file = $list['file'] ?? $entry;
+            $theme = $list['theme'] ?? null;
         }
 
-        self::formatDocument($file, $module_file);
+        self::formatDocument($file, $module_file, $theme);
     }
 
     /**
@@ -1510,7 +1512,7 @@ class System
      * @param null $module_file
      * @throws CoreException
      */
-    public static function formatDocument($file, $module_file = null)
+    public static function formatDocument($file, $module_file = null, $theme = null)
     {
         try {
             [
@@ -1533,6 +1535,10 @@ class System
                 'email' => '',
                 'social_media' => []
             ];
+
+            if ($theme) {
+                $dir = $theme;
+            }
 
             if (!file_exists($dir . $file)) {
                 die($dir . $file . ' does not exist');
