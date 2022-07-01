@@ -10,6 +10,7 @@ import * as toastr from "toastr";
 
 import 'datatables.net';
 import 'datatables.net-dt';
+import 'datatables.net-responsive';
 import 'datatables.net-buttons';
 import 'datatables.net-buttons/js/buttons.html5';
 
