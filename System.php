@@ -1077,6 +1077,14 @@ class System
                 throw new CoreException(ENDPOINT . " - Type not supported: $type", 500);
             }
         }
+
+        $dirname = basename(DIR);
+        if ($dirname == 'api' && $controller !== 'api') {
+            $id = $action;
+            $action = $controller;
+            $controller = $dirname;
+        }
+
         if ($controller == 'api') {
             switch ($action) {
                 default:
@@ -1110,10 +1118,10 @@ class System
                         });
                         $entry = array_values(array_filter($entry));
 
-                        $error_code = $entry[2];
-                        if (!is_int($error_code) && $errors) {
+                        $error_code = $entry[3];
+                        if (!is_numeric($error_code) && $errors) {
                             $entry = null;
-                        } elseif (is_int($error_code) && !$errors) {
+                        } elseif (is_numeric($error_code) && !$errors) {
                             $entry = null;
                         }
                     });
@@ -1168,8 +1176,12 @@ class System
                 case "webhook":
                     if (REQUEST_METHOD === 'POST' && $id) {
                         include_once __DIR__ . '/classes/Webhook.php';
-                        new Webhook($id);
-                        JsonResponse::sendResponse('Webhook', $_POST);
+                        $webhook = new Webhook();
+                        $response = $webhook->callAction($id);
+                        if (!is_array($response)) {
+                            $response = compact('response');
+                        }
+                        JsonResponse::sendResponse('Webhook', $response);
                     } else {
                         $method = REQUEST_METHOD;
                         throw new CoreException("Endpoint not found.  [$controller/$action]", 404, compact('method', 'controller', 'action'));

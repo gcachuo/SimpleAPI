@@ -21,6 +21,12 @@ class Controller
         $this->_methods[REQUEST_METHOD]['webhook'];
     }
 
+    /**
+     * @param string $action
+     * @param array $arguments
+     * @return mixed
+     * @throws CoreException
+     */
     public function call(string $action, array $arguments)
     {
         if ($this->method_exists($action)) {
