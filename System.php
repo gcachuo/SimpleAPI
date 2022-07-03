@@ -830,7 +830,7 @@ class System
         function createConfig()
         {
             file_put_contents(DIR . '/../Config/.jwt_key', '');
-            file_put_contents(DIR . '/../Config/.gitignore', join("\n", ['.jwt_key', 'database.json', '*.json', '!default.json']));
+            file_put_contents(DIR . '/../Config/.gitignore', join("\n", ['.jwt_key', 'database.json', '*.json', '!default.json', '!webhook_events.json']));
             @chmod(DIR . '/../Config/.jwt_key', 0777);
             @chmod(DIR . '/../Config/.gitignore', 0777);
         }
