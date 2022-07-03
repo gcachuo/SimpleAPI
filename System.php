@@ -1173,7 +1173,7 @@ class System
                     $basePath = BASENAME;
                     JsonResponse::sendResponse('Endpoints', compact('swagger', 'info', 'host', 'basePath', 'paths'), HTTPStatusCodes::OK);
                     break;
-                case "webhook":
+                case "hooks":
                     if (REQUEST_METHOD === 'POST' && $id) {
                         include_once __DIR__ . '/classes/Webhook.php';
                         $webhook = new Webhook();
