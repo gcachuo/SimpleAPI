@@ -1103,12 +1103,13 @@ class System
                     $log = array_filter($log);
 
                     $errors = true;
+                    $code = ($_GET['code'] ?? null);
 
-                    array_walk($log, function (&$entry) use ($errors) {
+                    array_walk($log, function (&$entry) use ($errors, $code) {
                         $entry = preg_split('/] \[|] |^\[/m', $entry);
                         $entry = array_values(array_filter($entry));
                         array_walk($entry, function (&$value) use ($entry) {
-                            if (System::isset_get($_GET['errors']) === 'true' && count($entry) < 5) {
+                            if (System::isset_get($errors) === 'true' && count($entry) < 5) {
                                 $value = null;
                             }
                             $value = trim($value, '[] ');
@@ -1124,9 +1125,13 @@ class System
                         } elseif (is_numeric($error_code) && !$errors) {
                             $entry = null;
                         }
+
+                        if (is_numeric($error_code) && $code && $error_code < $code) {
+                            $entry = null;
+                        }
                     });
                     $log = array_values(array_filter($log));
-                    JsonResponse::sendResponse('Logs', compact('log'));
+                    JsonResponse::sendResponse('Logs - ' . basename($path, '.log'), $log);
                     break;
                 case "decodeToken":
                     if (REQUEST_METHOD === 'POST') {
@@ -1316,7 +1321,7 @@ class System
         if (!defined('REQUEST_METHOD'))
             define('REQUEST_METHOD', $_SERVER['REQUEST_METHOD']);
 
-        $data = '[' . date('Y-m-d H:i:s') . '] ';
+        $data = '[' . date('Y-m-d H:i:s a') . ' | ' . $_SERVER['REMOTE_ADDR'] . '] ';
         $data .= '[' . ($_SERVER['REQUEST_METHOD'] ?? 'SHELL') . '] ';
         if (ENVIRONMENT == 'web') {
             $data .= '[' . substr(strstr(($_SERVER['REQUEST_URI']), 'api/'), 4) . '] ';
@@ -1324,10 +1329,10 @@ class System
             $data .= '[' . System::isset_get($_SERVER['argv'][5]) . '] ';
         }
         $data .= '[' . $response['code'] . '] ';
-        $data .= '[' . json_encode($response['response']) . '] ';
+        $data .= '[' . ($response['response'] ? json_encode($response['response']) : null) . '] ';
         $data .= '[' . json_encode([
-                    'GET' => $_GET,
-                    'POST' => $_POST,
+                    'GET' => ($_GET ?? ''),
+                    'POST' => ($_POST ?? ''),
                     'PUT' => $_PUT,
                     'PATCH' => $_PATCH,
                 ][REQUEST_METHOD] ?? ENVIRONMENT) . '] ';

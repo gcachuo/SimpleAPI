@@ -28,11 +28,17 @@ class JsonResponse
         }
         $response = compact('message', 'code', 'data', 'body');
 
-        if ($code >= 200 && ENDPOINT != 'api/logs') {
+        if ($code >= 200) {
             $status = 'error';
             $error = error_get_last();
             if (defined('FILE')) unlink(FILE);
-            System::log_error(compact('status', 'code', 'response', 'error'));
+
+            if (ENDPOINT == 'api/logs') {
+                System::log_error(compact('status', 'code'));
+            } else {
+                System::log_error(compact('status', 'code', 'response', 'error'));
+            }
+
         }
 
         ob_clean();
