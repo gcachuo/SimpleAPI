@@ -1188,7 +1188,9 @@ class System
                         }
                         JsonResponse::sendResponse(CONFIG['project']['name'] . ' ' . mb_strtoupper($id) . " webhook", $response, 200, $_POST);
                     } else if (REQUEST_METHOD === 'GET' && $id) {
-                        ['key' => $key, 'events' => $events] = System::json_decode(file_get_contents(__DIR__ . '/../Config/webhook_events.json'))[$id];
+                        $webhook_events = json_decode(file_get_contents(DIR . '/Config/webhook_events.json'), true);
+                        System::check_value_empty($webhook_events, [$id], 'Webhook not found', 404);
+                        ['key' => $key, 'events' => $events] = $webhook_events[$id];
                         JsonResponse::sendResponse(CONFIG['project']['name'] . ' ' . mb_strtoupper($id) . " webhook", [$key => array_keys($events)]);
                     } else {
                         $method = REQUEST_METHOD;

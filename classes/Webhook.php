@@ -16,7 +16,9 @@ class Webhook
      */
     public function callAction(string $platform)
     {
-        ['events' => $events, 'key' => $key] = json_decode(file_get_contents(DIR . '/Config/webhook_events.json'), true)[$platform];
+        $webhook_events = json_decode(file_get_contents(DIR . '/Config/webhook_events.json'), true);
+        System::check_value_empty($webhook_events, [$platform], 'Webhook not found', 404);
+        ['events' => $events, 'key' => $key] = $webhook_events[$platform];
         System::check_value_empty(compact('events', 'key'), ['events', 'key'], 'Missing config data', 500);
         System::check_value_empty($_POST, [$key]);
         System::check_value_empty($events, [$_POST[$key]], 'Event does not exist', 500);
