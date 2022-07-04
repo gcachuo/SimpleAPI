@@ -2430,6 +2430,9 @@ html;
         }
 
         $rows = $parse->rows($page);
+        if (!$rows) {
+            throw new CoreException('Cannot parse rows', 500);
+        }
         $rows = array_slice($rows, $skip);
         $headers = $rows[0];
 
