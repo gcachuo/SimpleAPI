@@ -3,23 +3,30 @@
 class JsonResponse
 {
     private $response, $error, $code;
-    private static $alreadySent = false, $json;
+    private static $json;
+    private static bool $alreadySent = false;
 
     /**
      * @param string $message
-     * @param int $code
      * @param array $data
+     * @param int $code
+     * @param array $body
      */
-    public static function sendResponse(string $message, array $data = [], int $code = 200): void
+    public static function sendResponse(string $message, array $data = [], int $code = 200, array $body = []): void
     {
         if (!$code) {
             $code = http_response_code();
         }
         http_response_code($code);
 
-        $response = compact('data');
         $data = self::encode_items($data);
-        $response = compact('message', 'code', 'data');
+        if (empty($data)) {
+            unset($data);
+        }
+        if (empty($body)) {
+            unset($body);
+        }
+        $response = compact('message', 'code', 'data', 'body');
 
         if ($code >= 400) {
             $status = 'error';

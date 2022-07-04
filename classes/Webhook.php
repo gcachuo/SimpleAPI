@@ -18,14 +18,10 @@ class Webhook
     {
         ['events' => $events, 'key' => $key] = json_decode(file_get_contents(DIR . '/Config/webhook_events.json'), true)[$platform];
         System::check_value_empty(compact('events', 'key'), ['events', 'key'], 'Missing config data', 500);
+        System::check_value_empty($_POST, [$key]);
+        System::check_value_empty($events, [$_POST[$key]], 'Event does not exist', 500);
+        System::check_value_empty($events[$_POST[$key]], ['controller', 'action'], 'Empty event: ' . $_POST[$key], 500);
         ['controller' => $controller, 'action' => $action] = $events[$_POST[$key]];
-
-        if (empty($controller)) {
-            throw new CoreException('Empty Controller', 500, $events[$_POST[$key]]);
-        }
-        if (empty($action)) {
-            throw new CoreException('Empty Action', 500, $events[$_POST[$key]]);
-        }
 
         if ($controller == 'webhook') {
             return $this->call($action, [$_POST]);
