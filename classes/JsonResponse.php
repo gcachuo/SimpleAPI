@@ -33,7 +33,7 @@ class JsonResponse
             $error = error_get_last();
             if (defined('FILE')) unlink(FILE);
 
-            if (ENDPOINT == 'api/logs') {
+            if (defined('ENDPOINT') && ENDPOINT == 'api/logs') {
                 System::log_error(compact('status', 'code'));
             } else {
                 System::log_error(compact('status', 'code', 'response', 'error'));
