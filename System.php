@@ -1102,7 +1102,7 @@ class System
                     rsort($log);
                     $log = array_filter($log);
 
-                    $errors = !!($_GET['errors'] ?? null);
+                    $errors = true;
 
                     array_walk($log, function (&$entry) use ($errors) {
                         $entry = preg_split('/] \[|] |^\[/m', $entry);
@@ -1319,7 +1319,7 @@ class System
         $data = '[' . date('Y-m-d H:i:s') . '] ';
         $data .= '[' . ($_SERVER['REQUEST_METHOD'] ?? 'SHELL') . '] ';
         if (ENVIRONMENT == 'web') {
-            $data .= '[' . strstr(($_SERVER['REQUEST_URI']), 'api/') . '] ';
+            $data .= '[' . substr(strstr(($_SERVER['REQUEST_URI']), 'api/'), 4) . '] ';
         } elseif (ENVIRONMENT == 'cli') {
             $data .= '[' . System::isset_get($_SERVER['argv'][5]) . '] ';
         }

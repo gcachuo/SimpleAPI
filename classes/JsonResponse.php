@@ -28,7 +28,7 @@ class JsonResponse
         }
         $response = compact('message', 'code', 'data', 'body');
 
-        if ($code >= 400) {
+        if ($code >= 200 && ENDPOINT != 'api/logs') {
             $status = 'error';
             $error = error_get_last();
             if (defined('FILE')) unlink(FILE);
