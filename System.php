@@ -1088,6 +1088,9 @@ class System
         if ($controller == 'api') {
             switch ($action) {
                 default:
+                    $method = REQUEST_METHOD;
+                    $endpoint = ENDPOINT;
+                    throw new CoreException("Endpoint not found.  [$method][$endpoint]", HTTPStatusCodes::NotFound, compact('endpoint', 'method'));
                 case "version":
                     $name = CONFIG['project']['name'];
                     $version = VERSION;
