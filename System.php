@@ -1141,7 +1141,9 @@ class System
                         }
                         throw new CoreException("Missing token", 400);
                     } else {
-                        throw new CoreException("Endpoint not found.  [$namespace]", 400);
+                        $method = REQUEST_METHOD;
+                        $endpoint = ENDPOINT;
+                        throw new CoreException("Endpoint not found. [$method][$endpoint]", 400);
                     }
                 case "backup":
                     $mysql = new MySQL();
@@ -1194,7 +1196,8 @@ class System
                         JsonResponse::sendResponse(CONFIG['project']['name'] . ' ' . mb_strtoupper($id) . " webhook", [$key => array_keys($events)]);
                     } else {
                         $method = REQUEST_METHOD;
-                        throw new CoreException("Endpoint not found.  [$controller/$action]", 404, compact('method', 'controller', 'action'));
+                        $endpoint = ENDPOINT;
+                        throw new CoreException("Endpoint not found. [$method][$endpoint]", 404, compact('method', 'controller', 'action'));
                     }
                     break;
                 case "socket":
@@ -1202,8 +1205,8 @@ class System
             }
         } else {
             $method = REQUEST_METHOD;
-            $endpoint = $controller . '/' . $action;
-            throw new CoreException("Endpoint not found.  [$endpoint]", HTTPStatusCodes::NotFound, compact('endpoint', 'method'));
+            $endpoint = ENDPOINT;
+            throw new CoreException("Endpoint not found.  [$method][$endpoint]", HTTPStatusCodes::NotFound, compact('endpoint', 'method'));
         }
     }
 
@@ -1333,10 +1336,10 @@ class System
         $data .= '[' . $response['code'] . '] ';
         $data .= '[' . ($response['response'] ? json_encode($response['response']) : null) . '] ';
         $data .= '[' . json_encode([
-                    'GET' => ($_GET ?? ''),
-                    'POST' => ($_POST ?? ''),
-                    'PUT' => $_PUT,
-                    'PATCH' => $_PATCH,
+                    'GET' => (array_filter($_GET ?? [])),
+                    'POST' => (array_filter($_POST ?? [])),
+                    'PUT' => (array_filter($_PUT ?? [])),
+                    'PATCH' => (array_filter($_PATCH ?? []))
                 ][REQUEST_METHOD] ?? ENVIRONMENT) . '] ';
 
         if (!is_dir(__DIR__ . '/../Logs/')) {
