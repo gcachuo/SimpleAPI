@@ -1186,10 +1186,10 @@ class System
                         if (!is_array($response)) {
                             $response = compact('response');
                         }
-                        JsonResponse::sendResponse(mb_strtoupper($id) . " webhook", $response, 200, $_POST);
+                        JsonResponse::sendResponse(CONFIG['project']['name'] . ' ' . mb_strtoupper($id) . " webhook", $response, 200, $_POST);
                     } else if (REQUEST_METHOD === 'GET' && $id) {
                         ['key' => $key, 'events' => $events] = System::json_decode(file_get_contents(__DIR__ . '/../Config/webhook_events.json'))[$id];
-                        JsonResponse::sendResponse(mb_strtoupper($id) . " webhook", array_keys($events));
+                        JsonResponse::sendResponse(CONFIG['project']['name'] . ' ' . mb_strtoupper($id) . " webhook", array_keys($events));
                     } else {
                         $method = REQUEST_METHOD;
                         throw new CoreException("Endpoint not found.  [$controller/$action]", 404, compact('method', 'controller', 'action'));
