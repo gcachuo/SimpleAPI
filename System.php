@@ -1197,6 +1197,7 @@ class System
                     } else {
                         $method = REQUEST_METHOD;
                         $endpoint = ENDPOINT;
+                        [$controller, $action] = explode('/', $endpoint);
                         throw new CoreException("Endpoint not found. [$method][$endpoint]", 404, compact('method', 'controller', 'action'));
                     }
                     break;
