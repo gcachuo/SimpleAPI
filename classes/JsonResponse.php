@@ -8,11 +8,11 @@ class JsonResponse
 
     /**
      * @param string $message
-     * @param array $data
+     * @param mixed $data
      * @param int $code
      * @param array $body
      */
-    public static function sendResponse(string $message, array $data = [], int $code = 200, array $body = []): void
+    public static function sendResponse(string $message, $data = [], int $code = 200, array $body = []): void
     {
         if (!$code) {
             $code = http_response_code();
