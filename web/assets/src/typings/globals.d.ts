@@ -4,6 +4,16 @@ interface ApiResponse<T = { [name: string]: object | number | string }> {
     message: string
 }
 
+interface ApiErrorResponse<T = { [name: string]: object | number | string }> {
+    code: number
+    data: T
+    error: string
+    message: string
+    response: {
+        message: string
+    }
+}
+
 interface JQuery {
     select2();
 

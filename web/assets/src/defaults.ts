@@ -10,6 +10,7 @@ import * as toastr from "toastr";
 
 import 'datatables.net';
 import 'datatables.net-dt';
+import 'datatables.net-responsive';
 import 'datatables.net-buttons';
 import 'datatables.net-buttons/js/buttons.html5';
 
@@ -133,6 +134,16 @@ export class Defaults {
                     headers: {
                         'X-Client': this.code,
                         Authorization: 'Bearer ' + this.user_token
+                    },
+                    error: (e, settings, message) => {
+                        const {responseText, responseJSON}: { responseText: string, responseJSON?: ApiErrorResponse } = e;
+                        if (responseJSON) {
+                            console.error('DataTables error: ', responseJSON.message, responseJSON.error);
+                            Defaults.Alert(message, 'error');
+                        } else {
+                            console.error('DataTables error: ', responseText);
+                        }
+                        return true;
                     }
                 },
                 pageLength: 25,
