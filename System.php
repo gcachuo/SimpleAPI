@@ -566,7 +566,7 @@ class System
         self::load_composer();
         try {
             if (empty($jwt)) {
-                throw new CoreException('The token sent is empty.', 500);
+                throw new CoreException('The token sent is empty.', HTTPStatusCodes::Unauthorized);
             }
 
             $jwt_key = self::get_jwt_key();
@@ -574,13 +574,13 @@ class System
             $time = time();
             $decoded = JWT::decode($jwt, $jwt_key, ['HS256']);
             if (!empty($decoded->exp) && $decoded->exp <= $time) {
-                throw new CoreException('The token has expired.', 500);
+                throw new CoreException('The token has expired.', HTTPStatusCodes::Unauthorized);
             }
             return json_decode(json_encode($decoded), true)['data'];
-        } catch (Firebase\JWT\ExpiredException|Firebase\JWT\SignatureInvalidException $ex) {
-            throw new CoreException($ex->getMessage(), 500);
+        } catch (Firebase\JWT\ExpiredException | Firebase\JWT\SignatureInvalidException $ex) {
+            throw new CoreException($ex->getMessage(), HTTPStatusCodes::Unauthorized);
         } catch (UnexpectedValueException|DomainException $ex) {
-            throw new CoreException('Invalid token.', 500);
+            throw new CoreException('Invalid token.', HTTPStatusCodes::Unauthorized);
         }
     }
 
