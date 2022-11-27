@@ -566,7 +566,7 @@ class System
         self::load_composer();
         try {
             if (empty($jwt)) {
-                throw new CoreException('The token sent is empty.', HTTPStatusCodes::Unauthorized);
+                throw new CoreException('The token sent is empty.', HTTPStatusCodes::BadRequest);
             }
 
             $jwt_key = self::get_jwt_key();
@@ -579,8 +579,8 @@ class System
             return json_decode(json_encode($decoded), true)['data'];
         } catch (Firebase\JWT\ExpiredException | Firebase\JWT\SignatureInvalidException $ex) {
             throw new CoreException($ex->getMessage(), HTTPStatusCodes::Unauthorized);
-        } catch (UnexpectedValueException|DomainException $ex) {
-            throw new CoreException('Invalid token.', HTTPStatusCodes::Unauthorized);
+        } catch (UnexpectedValueException | DomainException $ex) {
+            throw new CoreException('Invalid token.', HTTPStatusCodes::BadRequest);
         }
     }
 
