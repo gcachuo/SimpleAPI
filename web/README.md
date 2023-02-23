@@ -1,0 +1,2 @@
+- .project-nav
+- .project-img

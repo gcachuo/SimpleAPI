@@ -1891,6 +1891,32 @@ html
                 }
             }
 
+            if (self::getElementsByClass(self::$dom, 'img', 'project-img-inverted')) {
+                $imgs = (self::getElementsByClass(self::$dom, 'img', 'project-img-inverted'));
+                $config = WEBCONFIG;
+                foreach ($imgs as $img) {
+                    $env = $config['code'];
+                    $logo = BASENAME . 'logo-inverted.png';
+                    if (file_exists(__DIR__ . '/../settings/' . $env . '/img/logo-inverted.png')) {
+                        $logo = BASENAME . 'settings/' . $env . '/img/logo-inverted.png';
+                    }
+                    $img->setAttribute('src', $logo);
+
+                    $old_links = $img->getAttribute("srcset");
+                    if ($old_links) {
+                        $new_links = [];
+                        foreach (explode(', ', $old_links) as $old_link) {
+                            if (strpos($old_link, 'http') !== false) {
+                                $new_links[] = $old_link;
+                                continue;
+                            }
+                            $new_links[] = $logo;
+                        }
+                        $img->setAttribute('srcset', implode(', ', $new_links));
+                    }
+                }
+            }
+
             if (self::getElementsByClass(self::$dom, 'img', 'project-img-small')) {
                 $imgs = (self::getElementsByClass(self::$dom, 'img', 'project-img-small'));
                 $config = WEBCONFIG;
