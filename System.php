@@ -300,6 +300,7 @@ class System
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => $options['method'] ?? "GET",
+            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
         ]);
         if ($options['data'] ?? null) {
             $data = json_encode($options['data']);
@@ -565,7 +566,7 @@ class System
         self::load_composer();
         try {
             if (empty($jwt)) {
-                throw new CoreException('The token sent is empty.', 500);
+                throw new CoreException('The token sent is empty.', HTTPStatusCodes::BadRequest);
             }
 
             $jwt_key = self::get_jwt_key();
@@ -573,13 +574,13 @@ class System
             $time = time();
             $decoded = JWT::decode($jwt, $jwt_key, ['HS256']);
             if (!empty($decoded->exp) && $decoded->exp <= $time) {
-                throw new CoreException('The token has expired.', 500);
+                throw new CoreException('The token has expired.', HTTPStatusCodes::Unauthorized);
             }
             return json_decode(json_encode($decoded), true)['data'];
-        } catch (Firebase\JWT\ExpiredException|Firebase\JWT\SignatureInvalidException $ex) {
-            throw new CoreException($ex->getMessage(), 500);
-        } catch (UnexpectedValueException|DomainException $ex) {
-            throw new CoreException('Invalid token.', 500);
+        } catch (Firebase\JWT\ExpiredException | Firebase\JWT\SignatureInvalidException $ex) {
+            throw new CoreException($ex->getMessage(), HTTPStatusCodes::Unauthorized);
+        } catch (UnexpectedValueException | DomainException $ex) {
+            throw new CoreException('Invalid token.', HTTPStatusCodes::BadRequest);
         }
     }
 
@@ -623,7 +624,8 @@ class System
                 $data = $exception->getData() ?? [];
             } else {
                 $data = [
-                    'exception' => get_class($exception)
+                    'exception' => get_class($exception),
+                    'phpversion' => phpversion()
                 ];
             }
             $error = null;
@@ -632,9 +634,8 @@ class System
             }
             if (ENVIRONMENT === 'web' || ENVIRONMENT === 'www') {
                 if (ob_get_contents()) ob_end_clean();
-                $response = compact('message');
                 header('Content-Type: application/json');
-                die(json_encode(compact('code', 'message', 'data', 'error', 'response'), JSON_UNESCAPED_SLASHES));
+                die(json_encode(compact('code', 'message', 'data', 'error'), JSON_UNESCAPED_SLASHES));
             } else {
                 die("\033[31m" . $message . "\033");
             }
@@ -830,7 +831,7 @@ class System
         function createConfig()
         {
             file_put_contents(DIR . '/../Config/.jwt_key', '');
-            file_put_contents(DIR . '/../Config/.gitignore', join("\n", ['.jwt_key', 'database.json', '*.json', '!default.json']));
+            file_put_contents(DIR . '/../Config/.gitignore', join("\n", ['.jwt_key', 'database.json', '*.json', '!default.json', '!webhook_events.json']));
             @chmod(DIR . '/../Config/.jwt_key', 0777);
             @chmod(DIR . '/../Config/.gitignore', 0777);
         }
@@ -1065,21 +1066,32 @@ class System
             $response = $class->call($action, [$id]);
 
             $message = 'Completed.';
-            if (!$response) {
+            if (empty($response) && $response !== false) {
                 JsonResponse::sendResponse($message);
             } else if (is_scalar($response)) {
-                JsonResponse::sendResponse($response);
+                JsonResponse::sendResponse($message, +$response);
             } else if (is_array($response)) {
-                $data = $response;
-                JsonResponse::sendResponse($message, $data);
+                JsonResponse::sendResponse($message, $response);
             } else {
                 $type = gettype($response);
                 throw new CoreException(ENDPOINT . " - Type not supported: $type", 500);
             }
         }
+
+        $dirname = basename(DIR);
+        if ($dirname == 'api' && $controller !== 'api') {
+            $id = $action;
+            $action = $controller;
+            $controller = $dirname;
+        }
+
         if ($controller == 'api') {
             switch ($action) {
                 default:
+                    $method = REQUEST_METHOD;
+                    $endpoint = ENDPOINT;
+                    throw new CoreException("Endpoint not found.  [$method][$endpoint]", HTTPStatusCodes::NotFound, compact('endpoint', 'method'));
+                case "":
                 case "version":
                     $name = CONFIG['project']['name'];
                     $version = VERSION;
@@ -1094,13 +1106,14 @@ class System
                     rsort($log);
                     $log = array_filter($log);
 
-                    $errors = !!($_GET['errors'] ?? null);
+                    $errors = true;
+                    $code = ($_GET['code'] ?? null);
 
-                    array_walk($log, function (&$entry) use ($errors) {
+                    array_walk($log, function (&$entry) use ($errors, $code) {
                         $entry = preg_split('/] \[|] |^\[/m', $entry);
                         $entry = array_values(array_filter($entry));
                         array_walk($entry, function (&$value) use ($entry) {
-                            if (System::isset_get($_GET['errors']) === 'true' && count($entry) < 5) {
+                            if (System::isset_get($errors) === 'true' && count($entry) < 5) {
                                 $value = null;
                             }
                             $value = trim($value, '[] ');
@@ -1110,15 +1123,19 @@ class System
                         });
                         $entry = array_values(array_filter($entry));
 
-                        $error_code = $entry[2];
-                        if (!is_int($error_code) && $errors) {
+                        $error_code = $entry[3];
+                        if (!is_numeric($error_code) && $errors) {
                             $entry = null;
-                        } elseif (is_int($error_code) && !$errors) {
+                        } elseif (is_numeric($error_code) && !$errors) {
+                            $entry = null;
+                        }
+
+                        if (is_numeric($error_code) && $code && $error_code < $code) {
                             $entry = null;
                         }
                     });
                     $log = array_values(array_filter($log));
-                    JsonResponse::sendResponse('Logs', compact('log'));
+                    JsonResponse::sendResponse('Logs - ' . basename($path, '.log'), $log);
                     break;
                 case "decodeToken":
                     if (REQUEST_METHOD === 'POST') {
@@ -1128,7 +1145,9 @@ class System
                         }
                         throw new CoreException("Missing token", 400);
                     } else {
-                        throw new CoreException("Endpoint not found.  [$namespace]", 400);
+                        $method = REQUEST_METHOD;
+                        $endpoint = ENDPOINT;
+                        throw new CoreException("Endpoint not found. [$method][$endpoint]", 400);
                     }
                 case "backup":
                     $mysql = new MySQL();
@@ -1165,14 +1184,25 @@ class System
                     $basePath = BASENAME;
                     JsonResponse::sendResponse('Endpoints', compact('swagger', 'info', 'host', 'basePath', 'paths'), HTTPStatusCodes::OK);
                     break;
-                case "webhook":
+                case "hooks":
                     if (REQUEST_METHOD === 'POST' && $id) {
                         include_once __DIR__ . '/classes/Webhook.php';
-                        new Webhook($id);
-                        JsonResponse::sendResponse('Webhook', $_POST);
+                        $webhook = new Webhook();
+                        $response = $webhook->callAction($id);
+                        if (!is_array($response)) {
+                            $response = compact('response');
+                        }
+                        JsonResponse::sendResponse(CONFIG['project']['name'] . ' ' . mb_strtoupper($id) . " webhook", $response, 200, $_POST);
+                    } else if (REQUEST_METHOD === 'GET' && $id) {
+                        $webhook_events = json_decode(file_get_contents(DIR . '/Config/webhook_events.json'), true);
+                        System::check_value_empty($webhook_events, [$id], 'Webhook not found', 404);
+                        ['key' => $key, 'events' => $events] = $webhook_events[$id];
+                        JsonResponse::sendResponse(CONFIG['project']['name'] . ' ' . mb_strtoupper($id) . " webhook", [$key => array_keys($events)]);
                     } else {
                         $method = REQUEST_METHOD;
-                        throw new CoreException("Endpoint not found.  [$controller/$action]", 404, compact('method', 'controller', 'action'));
+                        $endpoint = ENDPOINT;
+                        [$controller, $action] = explode('/', $endpoint);
+                        throw new CoreException("Endpoint not found. [$method][$endpoint]", 404, compact('method', 'controller', 'action'));
                     }
                     break;
                 case "socket":
@@ -1180,8 +1210,8 @@ class System
             }
         } else {
             $method = REQUEST_METHOD;
-            $endpoint = $controller . '/' . $action;
-            throw new CoreException("Endpoint not found.  [$endpoint]", HTTPStatusCodes::NotFound, compact('endpoint', 'method'));
+            $endpoint = ENDPOINT;
+            throw new CoreException("Endpoint not found.  [$method][$endpoint]", HTTPStatusCodes::NotFound, compact('endpoint', 'method'));
         }
     }
 
@@ -1301,20 +1331,20 @@ class System
         if (!defined('REQUEST_METHOD'))
             define('REQUEST_METHOD', $_SERVER['REQUEST_METHOD']);
 
-        $data = '[' . date('Y-m-d H:i:s') . '] ';
+        $data = '[' . date('Y-m-d H:i:s a') . ' | ' . $_SERVER['REMOTE_ADDR'] . '] ';
         $data .= '[' . ($_SERVER['REQUEST_METHOD'] ?? 'SHELL') . '] ';
         if (ENVIRONMENT == 'web') {
-            $data .= '[' . strstr(($_SERVER['REQUEST_URI']), 'api/') . '] ';
+            $data .= '[' . substr(strstr(($_SERVER['REQUEST_URI']), 'api/'), 4) . '] ';
         } elseif (ENVIRONMENT == 'cli') {
             $data .= '[' . System::isset_get($_SERVER['argv'][5]) . '] ';
         }
         $data .= '[' . $response['code'] . '] ';
-        $data .= '[' . json_encode($response['response']) . '] ';
+        $data .= '[' . ($response['response'] ? json_encode($response['response']) : null) . '] ';
         $data .= '[' . json_encode([
-                    'GET' => $_GET,
-                    'POST' => $_POST,
-                    'PUT' => $_PUT,
-                    'PATCH' => $_PATCH,
+                    'GET' => (array_filter($_GET ?? [])),
+                    'POST' => (array_filter($_POST ?? [])),
+                    'PUT' => (array_filter($_PUT ?? [])),
+                    'PATCH' => (array_filter($_PATCH ?? []))
                 ][REQUEST_METHOD] ?? ENVIRONMENT) . '] ';
 
         if (!is_dir(__DIR__ . '/../Logs/')) {
@@ -1496,13 +1526,15 @@ class System
         }
 
         $file = '';
+        $theme = null;
         $list = $module_list;
         foreach (explode('/', $module_file) as $item) {
             $list = $list[$item] ?? $list['modules'][$item] ?? [];
             $file = $list['file'] ?? $entry;
+            $theme = $list['theme'] ?? null;
         }
 
-        self::formatDocument($file, $module_file);
+        self::formatDocument($file, $module_file, $theme);
     }
 
     /**
@@ -1510,7 +1542,7 @@ class System
      * @param null $module_file
      * @throws CoreException
      */
-    public static function formatDocument($file, $module_file = null)
+    public static function formatDocument($file, $module_file = null, $theme = null)
     {
         try {
             [
@@ -1533,6 +1565,10 @@ class System
                 'email' => '',
                 'social_media' => []
             ];
+
+            if ($theme) {
+                $dir = $theme;
+            }
 
             if (!file_exists($dir . $file)) {
                 die($dir . $file . ' does not exist');
@@ -1855,6 +1891,32 @@ html
                 }
             }
 
+            if (self::getElementsByClass(self::$dom, 'img', 'project-img-inverted')) {
+                $imgs = (self::getElementsByClass(self::$dom, 'img', 'project-img-inverted'));
+                $config = WEBCONFIG;
+                foreach ($imgs as $img) {
+                    $env = $config['code'];
+                    $logo = BASENAME . 'logo-inverted.png';
+                    if (file_exists(__DIR__ . '/../settings/' . $env . '/img/logo-inverted.png')) {
+                        $logo = BASENAME . 'settings/' . $env . '/img/logo-inverted.png';
+                    }
+                    $img->setAttribute('src', $logo);
+
+                    $old_links = $img->getAttribute("srcset");
+                    if ($old_links) {
+                        $new_links = [];
+                        foreach (explode(', ', $old_links) as $old_link) {
+                            if (strpos($old_link, 'http') !== false) {
+                                $new_links[] = $old_link;
+                                continue;
+                            }
+                            $new_links[] = $logo;
+                        }
+                        $img->setAttribute('srcset', implode(', ', $new_links));
+                    }
+                }
+            }
+
             if (self::getElementsByClass(self::$dom, 'img', 'project-img-small')) {
                 $imgs = (self::getElementsByClass(self::$dom, 'img', 'project-img-small'));
                 $config = WEBCONFIG;
@@ -1912,11 +1974,14 @@ html
                 System::redirect('login');
             }
 
+            if (defined('SESSIONCHECK') && SESSIONCHECK && pathinfo($module_file, PATHINFO_EXTENSION) !== 'js') {
+                $user = System::sessionCheck(SESSIONCHECK);
+            }
+
             if (self::getElementsByClass(self::$dom, 'ul', 'project-nav')) {
                 $fragment = self::$dom->createDocumentFragment();
 
                 if (defined('SESSIONCHECK') && SESSIONCHECK && pathinfo($module_file, PATHINFO_EXTENSION) !== 'js') {
-                    $user = System::sessionCheck("user_token");
                     if (($user['permissions'] ?? null) !== null) {
                         $module_list = array_merge(array_filter(MODULES, function ($module) {
                             return ($module['permissions'] ?? true) === false;
@@ -2395,6 +2460,9 @@ html;
         }
 
         $rows = $parse->rows($page);
+        if (!$rows) {
+            throw new CoreException('Cannot parse rows', 500);
+        }
         $rows = array_slice($rows, $skip);
         $headers = $rows[0];
 

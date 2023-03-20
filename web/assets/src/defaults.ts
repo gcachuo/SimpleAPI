@@ -10,6 +10,7 @@ import * as toastr from "toastr";
 
 import 'datatables.net';
 import 'datatables.net-dt';
+import 'datatables.net-responsive';
 import 'datatables.net-buttons';
 import 'datatables.net-buttons/js/buttons.html5';
 
@@ -55,6 +56,20 @@ export class Defaults {
         });
 
         $("button").prop('disabled', false);
+    }
+
+    public static initNotifications(){
+        if (!Notification) {
+            alert('Desktop notifications not available in your browser. Try Chromium.');
+            return;
+        }
+
+        if (Notification.permission !== "granted") {
+            Notification.requestPermission().then(() => Defaults.browserNotification({
+                title: 'Notificaciones Activadas',
+                body: 'Has activado las notificaciones correctamente'
+            }));
+        }
     }
 
     private static loadSelect2() {
@@ -119,6 +134,16 @@ export class Defaults {
                     headers: {
                         'X-Client': this.code,
                         Authorization: 'Bearer ' + this.user_token
+                    },
+                    error: (e, settings, message) => {
+                        const {responseText, responseJSON}: { responseText: string, responseJSON?: ApiErrorResponse } = e;
+                        if (responseJSON) {
+                            console.error('DataTables error: ', responseJSON.message, responseJSON.error);
+                            Defaults.Alert(message, 'error');
+                        } else {
+                            console.error('DataTables error: ', responseText);
+                        }
+                        return true;
                     }
                 },
                 pageLength: 25,
@@ -163,6 +188,10 @@ export class Defaults {
             api: true,
             async: true,
             dataType: "json",
+            headers: {
+                'X-Client': this.code,
+                Authorization: 'Bearer ' + this.user_token
+            },
             beforeSend: function (jqXHR, settings: AjaxSettings & { api: boolean }) {
                 if (settings.api) {
                     settings.url = Defaults.settings.apiUrl + settings.url;
@@ -342,5 +371,26 @@ export class Defaults {
         document.body.appendChild(link);
         link.click();
         link.remove();
+    }
+
+    static async browserNotification(data: { title: string, body: string, url?: string | null, icon?: string | null, }) {
+        if (Notification.permission !== "granted") {
+            Notification.requestPermission().then(() => this.browserNotification({
+                title: 'Notificaciones Activadas',
+                body: 'Has activado las notificaciones correctamente'
+            }))
+        } else {
+            const notification = new Notification(
+                data.title,
+                {
+                    icon: data.icon,
+                    body: data.body,
+                }
+            );
+
+            notification.onclick = function () {
+                window.open(data.url || location.href);
+            };
+        }
     }
 }

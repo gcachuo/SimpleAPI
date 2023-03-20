@@ -21,7 +21,7 @@ class MySQL
     private $pdo;
     /** @var string */
     private static $dbname;
-    private $username, $passwd, $host;
+    private $username, $passwd, $host, $port;
     /** @var PDOStatement */
     private $stmt;
     /**
@@ -55,6 +55,7 @@ class MySQL
                 $host = $config['host'];
                 $username = $config['username'];
                 $passwd = $config['passwd'];
+                $port = $config['port'] ?? 3306;
                 $config['dbname'] = $dbname ?: self::$dbname ?: (getenv('DATABASE') ?: $config['dbname'] ?? (defined('DATABASE') ? DATABASE : null));
 
                 System::check_value_empty($config, ['host', 'username', 'passwd', 'dbname'], 'Missing data in config file.', HTTPStatusCodes::InternalServerError);
@@ -62,7 +63,7 @@ class MySQL
                 $dbname = $config['dbname'];
 
                 $this->mysqli = new mysqli($host, $username, $passwd, $dbname);
-                $this->pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $passwd);
+                $this->pdo = new PDO("mysql:host=$host;dbname=$dbname;port=$port;", $username, $passwd);
 
                 $this->pdo->query("set names 'utf8'");
 
@@ -72,6 +73,7 @@ class MySQL
                 self::$dbname = $dbname;
                 $this->username = $username;
                 $this->passwd = $passwd;
+                $this->port = $port;
             } else {
                 throw new CoreException("File $filename not found.", HTTPStatusCodes::InternalServerError);
             }

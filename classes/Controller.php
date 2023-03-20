@@ -21,18 +21,24 @@ class Controller
         $this->_methods[REQUEST_METHOD]['webhook'];
     }
 
+    /**
+     * @param string $action
+     * @param array $arguments
+     * @return mixed
+     * @throws CoreException
+     */
     public function call(string $action, array $arguments)
     {
         if ($this->method_exists($action)) {
-            $method = $this->_methods[REQUEST_METHOD][$action];
-            return $this->$method(...($arguments ?: [null]));
+            $function = $this->_methods[REQUEST_METHOD][$action];
+            return $this->$function(...($arguments ?: [null]));
         }
 
         $endpoint = ENDPOINT;
         $request_method = REQUEST_METHOD;
         $class = get_class($this);
 
-        throw new CoreException("Endpoint not found. [$endpoint]", HTTPStatusCodes::NotFound, compact('class', 'method', 'endpoint', 'request_method'));
+        throw new CoreException("Endpoint not found. [$request_method][$endpoint]", HTTPStatusCodes::NotFound, compact('class', 'function', 'endpoint', 'request_method'));
     }
 
     public function method_exists($action)
