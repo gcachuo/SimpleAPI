@@ -566,7 +566,7 @@ class System
         self::load_composer();
         try {
             if (empty($jwt)) {
-                throw new CoreException('The token sent is empty.', 500);
+                throw new CoreException('The token sent is empty.', HTTPStatusCodes::BadRequest);
             }
 
             $jwt_key = self::get_jwt_key();
@@ -574,13 +574,13 @@ class System
             $time = time();
             $decoded = JWT::decode($jwt, $jwt_key, ['HS256']);
             if (!empty($decoded->exp) && $decoded->exp <= $time) {
-                throw new CoreException('The token has expired.', 500);
+                throw new CoreException('The token has expired.', HTTPStatusCodes::Unauthorized);
             }
             return json_decode(json_encode($decoded), true)['data'];
-        } catch (Firebase\JWT\ExpiredException|Firebase\JWT\SignatureInvalidException $ex) {
-            throw new CoreException($ex->getMessage(), 500);
-        } catch (UnexpectedValueException|DomainException $ex) {
-            throw new CoreException('Invalid token.', 500);
+        } catch (Firebase\JWT\ExpiredException | Firebase\JWT\SignatureInvalidException $ex) {
+            throw new CoreException($ex->getMessage(), HTTPStatusCodes::Unauthorized);
+        } catch (UnexpectedValueException | DomainException $ex) {
+            throw new CoreException('Invalid token.', HTTPStatusCodes::BadRequest);
         }
     }
 
@@ -1873,6 +1873,32 @@ html
                     $logo = BASENAME . 'logo.png';
                     if (file_exists(__DIR__ . '/../settings/' . $env . '/img/logo.png')) {
                         $logo = BASENAME . 'settings/' . $env . '/img/logo.png';
+                    }
+                    $img->setAttribute('src', $logo);
+
+                    $old_links = $img->getAttribute("srcset");
+                    if ($old_links) {
+                        $new_links = [];
+                        foreach (explode(', ', $old_links) as $old_link) {
+                            if (strpos($old_link, 'http') !== false) {
+                                $new_links[] = $old_link;
+                                continue;
+                            }
+                            $new_links[] = $logo;
+                        }
+                        $img->setAttribute('srcset', implode(', ', $new_links));
+                    }
+                }
+            }
+
+            if (self::getElementsByClass(self::$dom, 'img', 'project-img-inverted')) {
+                $imgs = (self::getElementsByClass(self::$dom, 'img', 'project-img-inverted'));
+                $config = WEBCONFIG;
+                foreach ($imgs as $img) {
+                    $env = $config['code'];
+                    $logo = BASENAME . 'logo-inverted.png';
+                    if (file_exists(__DIR__ . '/../settings/' . $env . '/img/logo-inverted.png')) {
+                        $logo = BASENAME . 'settings/' . $env . '/img/logo-inverted.png';
                     }
                     $img->setAttribute('src', $logo);
 
