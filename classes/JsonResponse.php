@@ -20,12 +20,6 @@ class JsonResponse
         http_response_code($code);
 
         $data = self::encode_items($data);
-        if (empty($data)) {
-            unset($data);
-        }
-        if (empty($body)) {
-            unset($body);
-        }
         $response = compact('message', 'code', 'data', 'body');
 
         if ($code >= 200) {

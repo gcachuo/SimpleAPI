@@ -592,7 +592,7 @@ class System
         if ($token) {
             try {
                 return System::curl([
-                    'url' => 'api/decodeToken',
+                    'url' => 'decodeToken',
                     'method' => 'POST',
                     'data' => ['token' => $token],
                     'session' => false
