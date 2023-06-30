@@ -615,7 +615,7 @@ class System
             if ($config['ENV'] ?? null)
                 define('ENVIRONMENT', $config['ENV']);
             else
-                define('ENVIRONMENT', isset($_SERVER['SHELL']) || isset($_SERVER['argv']) ? 'cli' : 'web');
+                define('ENVIRONMENT', isset($_SERVER['SHELL']) || !empty($_SERVER['argv']) ? 'cli' : 'web');
         }
 
         if (!defined('REQUEST_METHOD'))
