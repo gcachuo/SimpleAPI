@@ -41,7 +41,9 @@ class JsonResponse
 
         }
 
-        ob_clean();
+        if (ob_get_length() > 0) {
+            ob_clean();
+        }
         header('Content-Type: application/json');
         die(json_encode($response, JSON_UNESCAPED_SLASHES));
     }
