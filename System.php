@@ -1,5 +1,6 @@
 <?php
 
+use Controller\Notifications;
 use Firebase\JWT\JWT;
 use ForceUTF8\Encoding;
 use mikehaertl\wkhtmlto\Pdf;
@@ -43,6 +44,15 @@ class System
         return $_SERVER['REMOTE_ADDR'];
     }
 
+    public static function sessionSet(string $name, $value)
+    {
+        session_start();
+        $_SESSION[$name] = $value;
+        session_write_close();
+
+        return self::sessionCheck($name);
+    }
+
     public static function sessionCheck(string $name, string $token = null)
     {
         System::get_web_config();
@@ -55,7 +65,7 @@ class System
         $module_name = ($_GET['module'] ?? WEBCONFIG['default']);
 
         $modules = defined('MODULES') ? MODULES : [];
-        foreach (explode("/", $module_name) as $module_name) {
+        foreach (explode('/', $module_name) as $module_name) {
             $module = $modules[$module_name] ?? [];
             $modules = $module['modules'] ?? $modules;
         }
@@ -92,156 +102,110 @@ class System
         return $user;
     }
 
-    public static function sessionSet(string $name, $value)
+    /**
+     * @return array
+     */
+    private static function get_web_config()
     {
-        session_start();
-        $_SESSION[$name] = $value;
-        session_write_close();
+        $config = System::readJsonFile(WEBDIR . '/config.json');
 
-        return self::sessionCheck($name);
-    }
-
-    public static function decrypt(string $value_encrypted)
-    {
-        $value_encrypted = html_entity_decode($value_encrypted);
-        return trim(strstr(openssl_decrypt($value_encrypted, "AES-256-CBC", CONFIG['seed'], 0, str_pad(CONFIG['seed'], 16, 'X', STR_PAD_LEFT)), 'º'), 'º');
-    }
-
-    public static function encrypt(string $value)
-    {
-        return openssl_encrypt(uniqid() . 'º' . $value, "AES-256-CBC", CONFIG['seed'], 0, str_pad(CONFIG['seed'], 16, 'X', STR_PAD_LEFT));
-    }
-
-    public static function query_log(string $sql)
-    {
-        $date = date('Y-m-d H:i:s');
-        $request = ($_SERVER['REQUEST_URI'] ?? NULL) ? trim(stristr($_SERVER['REQUEST_URI'], 'api'), '/') : '';
-        if (defined('CONFIG')) {
-            $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/';
-        } else {
-            $path = __DIR__ . '/../Logs/';
+        $env = getenv(mb_strtoupper($config['code']) . '_CONFIG');
+        if (file_exists(WEBDIR . '/.env')) {
+            $env = trim(file_get_contents(WEBDIR . '/.env'));
         }
-        if (!is_dir($path)) {
-            mkdir($path, 0777, true);
-        }
-        file_put_contents($path . date('Y-m-d') . '.sql', "#$date $request\n" . $sql . "\n\n", FILE_APPEND);
-    }
 
-    public static function log(string $message)
-    {
-        $date = date('Y-m-d H:i:s');
-        $request = trim(stristr($_SERVER['REQUEST_URI'], 'api'), '/');
-        if (defined('CONFIG')) {
-            $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/';
-        } else {
-            $path = __DIR__ . '/../Logs/';
+        if ($env) {
+            $env_config = file_get_contents(WEBDIR . "/settings/$env/" . 'config.json');
+            $env_config = json_decode($env_config, true);
+            $env_config = array_merge($config, $env_config);
         }
-        if (!is_dir($path)) {
-            mkdir($path, 0777, true);
+        if ($env_config ?? null) {
+            $config = $env_config;
         }
-        file_put_contents($path . 'custom' . date('Y-m-d') . '.log', "#$date $request\n" . $message . "\n\n", FILE_APPEND);
+
+        if (!defined('WEBCONFIG')) define('WEBCONFIG', $config);
+        return $config;
     }
 
     /**
-     * @param array $to
-     * @param string $body
-     * @param array $options
+     * @param string $filename
+     * @return array|object
      * @throws CoreException
      */
-    public static function sendEmail(array $to, string $body, array $options)
+    public static function readJsonFile(string $filename)
     {
-        try {
-            $mail = new PHPMailer(true);
+        $file = fopen($filename, 'a+');
+        fclose($file);
+        return System::json_decode(file_get_contents($filename)) ?: [];
+    }
 
-            $mail->Username = CONFIG['email']['username'];
-            $mail->Password = CONFIG['email']['password'];
-            $mail->Host = CONFIG['email']['host'] ?? "smtp.gmail.com"; // GMail
-            $mail->Port = CONFIG['email']['port'] ?? 465;
+    /**
+     * @param string|null $json_string
+     * @param bool $assoc
+     * @return object|array
+     * @throws CoreException
+     */
+    public static function json_decode(string $json_string = null, bool $assoc = true): ?array
+    {
+        if (!$json_string) {
+            return null;
+        }
+        $json = json_decode($json_string, $assoc);
+        $error = json_last_error();
+        switch ($error) {
+            case 0:
+                //No Error
+                break;
+            case 4:
+                //Syntax Error
+                throw new CoreException('Syntax Error', 500);
+            case 5:
+                //Malformed UTF-8 characters, possibly incorrectly encoded
+                array_walk_recursive($array, function (&$item) {
+                    $item = utf8_encode($item);
+                });
+                $json = json_decode($json, $assoc);
+                break;
+            default:
+                $json = [json_last_error_msg()];
+                break;
+        }
+        return $json;
+    }
 
-            $mail->SMTPDebug = 1;
-            $mail->SMTPSecure = CONFIG['email']['protocol'] ?? 'ssl';
-            $mail->IsSMTP(); // use SMTP
-            $mail->SMTPAuth = true;
-            $mail->CharSet = 'UTF-8';
-            $mail->Encoding = 'base64';
-
-            $mail->setFrom(CONFIG['email']['username'], CONFIG['email']['name']);
-
-            foreach ($to as $item) {
-                if (strpos($_SERVER['HTTP_USER_AGENT'], 'Postman') !== false) {
-                    $item['email'] = CONFIG['email']['username'];
-                }
-
-                if (!$item['email']) {
-                    JsonResponse::sendResponse('Invalid email format: ' . "'$item[email]'");
-                }
-
-                $mail->addAddress($item['email'], $item['name'] ?? null);
+    public static function redirect(string $path = '', bool $external = false)
+    {
+        $request_uri = str_replace(BASENAME, '', $_SERVER['REQUEST_URI']);
+        $pathinfo = pathinfo($request_uri);
+        if ($pathinfo['dirname'] !== $path && $pathinfo['filename'] !== $path && !($pathinfo['extension'] ?? null)) {
+            if (!$external) {
+                $path = rtrim(BASENAME, '/') . '/' . ltrim($path, '/');
             }
+            header('Location: ' . $path);
+            exit;
+        }
+    }
 
-            $mail->Subject = $options['subject'] ?? null;
-            $mail->Body = $body;
-            $mail->AltBody = $options['altbody'] ?? $body;
-
-            foreach ($options['attachments'] ?? [] as $attachment) {
-                $mail->addAttachment($attachment['path'], $attachment['name'] . '.pdf');
+    public static function curlDecodeToken($token)
+    {
+        if ($_SESSION['user'] ?? null) {
+            return $_SESSION['user'];
+        }
+        if ($token) {
+            try {
+                return System::curl([
+                    'url' => 'decodeToken',
+                    'method' => 'POST',
+                    'data' => ['token' => $token],
+                    'session' => false
+                ]);
+            } catch (CoreException $exception) {
+                unset($_SESSION['user_token']);
+                return [];
             }
-
-            $mail->send();
-        } catch (\PHPMailer\PHPMailer\Exception $exception) {
-            throw new CoreException($exception->getMessage(), HTTPStatusCodes::ServiceUnavailable);
+        } else {
+            return [];
         }
-    }
-
-    public static function utf8($value)
-    {
-        if (mb_detect_encoding(utf8_decode($value)) === 'UTF-8') {
-            // Double encoded, or bad encoding
-            $value = utf8_decode($value);
-        }
-
-        include_once __DIR__ . "/vendor/neitanod/forceutf8/src/ForceUTF8/Encoding.php";
-        return Encoding::toUTF8($value);
-    }
-
-    public static function getHost()
-    {
-        return $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . BASENAME;
-    }
-
-    public static function generatePDF(array $pages, string $output)
-    {
-        $pdf = new Pdf();
-
-        foreach ($pages as $page) {
-            $pdf->addPage($page);
-        }
-
-        // Save the PDF
-        if (!$pdf->saveAs($output)) {
-            $error = $pdf->getError();
-            throw new CoreException($error, HTTPStatusCodes::InternalServerError);
-        }
-    }
-
-    public static function getTemplate(string $filename, $data)
-    {
-        ob_start();
-        include_once __DIR__ . '/../templates/' . $filename . '.php';
-        $contents = ob_get_contents();
-        ob_end_clean();
-
-        return $contents;
-    }
-
-    public static function getSettings()
-    {
-        $path = __DIR__ . '/../settings.dev.json';
-        if (!file_exists($path)) {
-            $path = __DIR__ . '/../settings.json';
-        }
-
-        return self::json_decode(file_get_contents($path), true);
     }
 
     /**
@@ -259,13 +223,13 @@ class System
         $curl = curl_init();
 
         $headers = [
-            "Cookie: XDEBUG_SESSION=PHPSTORM",
-            "X-Client: " . WEBCONFIG['code']
+            'Cookie: XDEBUG_SESSION=PHPSTORM',
+            'X-Client: ' . WEBCONFIG['code']
         ];
         if (($_SESSION['user_token'] ?? null) && ($options['session'] ?? true) !== false) {
             $user = System::curlDecodeToken($_SESSION['user_token']);
             if ($user) {
-                $headers[] = "Authorization: Bearer " . $_SESSION['user_token'];
+                $headers[] = 'Authorization: Bearer ' . $_SESSION['user_token'];
             }
         }
         $options['method'] = mb_strtoupper($options['method'] ?? 'get');
@@ -274,17 +238,17 @@ class System
         curl_setopt_array($curl, [
             CURLOPT_URL => $settings['apiUrl'] . ($options['url'] ?? ''),
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => "",
+            CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
             CURLOPT_TIMEOUT => 0,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => $options['method'] ?? "GET",
+            CURLOPT_CUSTOMREQUEST => $options['method'] ?? 'GET',
         ]);
         if ($options['data'] ?? null) {
             $data = json_encode($options['data']);
 
-            $headers[] = "Content-Type: application/json";
+            $headers[] = 'Content-Type: application/json';
             $headers[] = 'Content-Length: ' . strlen($data);
 
             curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
@@ -333,68 +297,163 @@ class System
         return $result['data'];
     }
 
-    public static function redirect(string $path = '', bool $external = false)
+    public static function getSettings()
     {
-        $request_uri = str_replace(BASENAME, '', $_SERVER['REQUEST_URI']);
-        $pathinfo = pathinfo($request_uri);
-        if ($pathinfo['dirname'] !== $path && $pathinfo['filename'] !== $path && !($pathinfo['extension'] ?? null)) {
-            if (!$external) {
-                $path = rtrim(BASENAME, '/') . '/' . ltrim($path, '/');
-            }
-            header('Location: ' . $path);
-            exit;
+        $path = __DIR__ . '/../settings.dev.json';
+        if (!file_exists($path)) {
+            $path = __DIR__ . '/../settings.json';
         }
+
+        return self::json_decode(file_get_contents($path), true);
+    }
+
+    private static function isJson($string)
+    {
+        $decoded = json_decode($string, true);
+        $isJson = (json_last_error() == JSON_ERROR_NONE && is_array($decoded));
+        if (!$isJson) {
+            $error = json_last_error_msg();
+        }
+        return $isJson;
+    }
+
+    public static function decrypt(string $value_encrypted)
+    {
+        $value_encrypted = html_entity_decode($value_encrypted);
+        return trim(strstr(openssl_decrypt($value_encrypted, 'AES-256-CBC', CONFIG['seed'], 0, str_pad(CONFIG['seed'], 16, 'X', STR_PAD_LEFT)), 'º'), 'º');
+    }
+
+    public static function encrypt(string $value)
+    {
+        return openssl_encrypt(uniqid() . 'º' . $value, 'AES-256-CBC', CONFIG['seed'], 0, str_pad(CONFIG['seed'], 16, 'X', STR_PAD_LEFT));
+    }
+
+    public static function query_log(string $sql)
+    {
+        $date = date('Y-m-d H:i:s');
+        $request = ($_SERVER['REQUEST_URI'] ?? NULL) ? trim(stristr($_SERVER['REQUEST_URI'], 'api'), '/') : '';
+        if (defined('CONFIG')) {
+            $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/';
+        } else {
+            $path = __DIR__ . '/../Logs/';
+        }
+        if (!is_dir($path)) {
+            mkdir($path, 0777, true);
+        }
+        file_put_contents($path . date('Y-m-d') . '.sql', "#$date $request\n" . $sql . "\n\n", FILE_APPEND);
+    }
+
+    public static function log(string $message)
+    {
+        $date = date('Y-m-d H:i:s');
+        $request = trim(stristr($_SERVER['REQUEST_URI'], 'api'), '/');
+        if (defined('CONFIG')) {
+            $path = __DIR__ . '/../Logs/' . CONFIG['project']['code'] . '/';
+        } else {
+            $path = __DIR__ . '/../Logs/';
+        }
+        if (!is_dir($path)) {
+            mkdir($path, 0777, true);
+        }
+        file_put_contents($path . 'custom' . date('Y-m-d') . '.log', "#$date $request\n" . $message . "\n\n", FILE_APPEND);
     }
 
     /**
-     * @param string|null $json_string
-     * @param bool $assoc
-     * @return object|array
+     * @param array $to
+     * @param string $body
+     * @param array $options
      * @throws CoreException
      */
-    public static function json_decode(string $json_string = null, bool $assoc = true): ?array
+    public static function sendEmail(array $to, string $body, array $options)
     {
-        if (!$json_string) {
-            return null;
+        try {
+            $mail = new PHPMailer(true);
+
+            $mail->Username = CONFIG['email']['username'];
+            $mail->Password = CONFIG['email']['password'];
+            $mail->Host = CONFIG['email']['host'] ?? 'smtp.gmail.com'; // GMail
+            $mail->Port = CONFIG['email']['port'] ?? 465;
+
+            $mail->SMTPDebug = 1;
+            $mail->SMTPSecure = CONFIG['email']['protocol'] ?? 'ssl';
+            $mail->IsSMTP(); // use SMTP
+            $mail->SMTPAuth = true;
+            $mail->CharSet = 'UTF-8';
+            $mail->Encoding = 'base64';
+
+            $mail->setFrom(CONFIG['email']['username'], CONFIG['email']['name']);
+
+            foreach ($to as $item) {
+                if (strpos($_SERVER['HTTP_USER_AGENT'], 'Postman') !== false) {
+                    $item['email'] = CONFIG['email']['username'];
+                }
+
+                if (!$item['email']) {
+                    JsonResponse::sendResponse('Invalid email format: ' . "'$item[email]'");
+                }
+
+                $mail->addAddress($item['email'], $item['name'] ?? null);
+            }
+
+            $mail->Subject = $options['subject'] ?? null;
+            $mail->Body = $body;
+            $mail->AltBody = $options['altbody'] ?? $body;
+
+            foreach ($options['attachments'] ?? [] as $attachment) {
+                $mail->addAttachment($attachment['path'], $attachment['name'] . '.pdf');
+            }
+
+            $mail->send();
+        } catch (\PHPMailer\PHPMailer\Exception $exception) {
+            throw new CoreException($exception->getMessage(), HTTPStatusCodes::ServiceUnavailable);
         }
-        $json = json_decode($json_string, $assoc);
-        $error = json_last_error();
-        switch ($error) {
-            case 0:
-                //No Error
-                break;
-            case 4:
-                //Syntax Error
-                throw new CoreException('Syntax Error', 500);
-            case 5:
-                //Malformed UTF-8 characters, possibly incorrectly encoded
-                array_walk_recursive($array, function (&$item) {
-                    $item = utf8_encode($item);
-                });
-                $json = json_decode($json, $assoc);
-                break;
-            default:
-                $json = [json_last_error_msg()];
-                break;
+    }
+
+    public static function getHost()
+    {
+        return $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . BASENAME;
+    }
+
+    public static function generatePDF(array $pages, string $output)
+    {
+        $pdf = new Pdf();
+
+        foreach ($pages as $page) {
+            $pdf->addPage($page);
         }
-        return $json;
+
+        // Save the PDF
+        if (!$pdf->saveAs($output)) {
+            $error = $pdf->getError();
+            throw new CoreException($error, HTTPStatusCodes::InternalServerError);
+        }
+    }
+
+    public static function getTemplate(string $filename, $data)
+    {
+        ob_start();
+        include_once __DIR__ . '/../templates/' . $filename . '.php';
+        $contents = ob_get_contents();
+        ob_end_clean();
+
+        return $contents;
     }
 
     public static function cli_echo(string $string, string $color = null)
     {
         $color = [
-                'red' => '01;31',
-                'green' => '0;32',
-                'blue' => '0;34',
-                'yellow' => '1;33'
-            ][$color] ?? '';
+            'red' => '01;31',
+            'green' => '0;32',
+            'blue' => '0;34',
+            'yellow' => '1;33'
+        ][$color] ?? '';
         echo "\033[{$color}m " . $string . " \033[0m" . "\n";
     }
 
     public static function get_config()
     {
-        $path = DIR . "/Config";
-        $env = file_exists("$path/config.dev.json") ? "dev" : "prod";
+        $path = DIR . '/Config';
+        $env = file_exists("$path/config.dev.json") ? 'dev' : 'prod';
 
         $ruta = "$path/config.$env.json";
         if (!file_exists($ruta)) {
@@ -415,24 +474,6 @@ class System
     public static function encode_id($id)
     {
         return base64_encode(rand(10000, 99999) . '=' . $id);
-    }
-
-    public static function decode_id(string $id)
-    {
-        $base64 = base64_decode($id);
-        $end_decoded = strstr($base64, '=');
-        if (!empty($base64) && (strlen($end_decoded) > 1)) {
-            $end_decoded = trim($end_decoded, '=');
-            if (!empty($end_decoded)) {
-                if (!is_nan($end_decoded)) {
-                    return intval($end_decoded);
-                }
-                return $end_decoded;
-            }
-        } elseif (!is_string($id)) {
-            return intval($id);
-        }
-        return $id;
     }
 
     public static function format_date(string $format, $value)
@@ -471,24 +512,6 @@ class System
         return true;
     }
 
-    /**
-     * @param $variable
-     * @param null $return
-     * @return int|string|null|array
-     */
-    public static function isset_get(&$variable, $return = null)
-    {
-        if (isset($variable)) {
-            if (empty($variable)) {
-                return $return;
-            }
-            $variable = is_string($variable) ? trim($variable) : $variable;
-            return $variable;
-        }
-        unset($variable);
-        return $return;
-    }
-
     public static function encode_token(array $data, array $options = [])
     {
         try {
@@ -523,60 +546,6 @@ class System
         return JWT_KEY;
     }
 
-    /**
-     * @param string $jwt
-     * @return mixed
-     * @throws CoreException
-     */
-    public static function decode_token(string $jwt = null)
-    {
-        self::load_composer();
-        try {
-            if (empty($jwt)) {
-                throw new CoreException('The token sent is empty.', 500);
-            }
-
-            $jwt_key = self::get_jwt_key();
-
-            $time = time();
-            $decoded = JWT::decode($jwt, $jwt_key, ['HS256']);
-            if (!empty($decoded->exp) && $decoded->exp <= $time) {
-                throw new CoreException('The token has expired.', 500);
-            }
-            return json_decode(json_encode($decoded), true)['data'];
-        } catch (Firebase\JWT\ExpiredException $ex) {
-            throw new CoreException($ex->getMessage(), 500);
-        } catch (Firebase\JWT\SignatureInvalidException $ex) {
-            throw new CoreException($ex->getMessage(), 500);
-        } catch (UnexpectedValueException $ex) {
-            throw new CoreException('Invalid token.', 500);
-        } catch (DomainException $ex) {
-            throw new CoreException('Invalid token.', 500);
-        }
-    }
-
-    public static function curlDecodeToken($token)
-    {
-        if ($_SESSION['user'] ?? null) {
-            return $_SESSION['user'];
-        }
-        if ($token) {
-            try {
-                return System::curl([
-                    'url' => 'api/decodeToken',
-                    'method' => 'POST',
-                    'data' => ['token' => $token],
-                    'session' => false
-                ]);
-            } catch (CoreException $exception) {
-                unset($_SESSION['user_token']);
-                return [];
-            }
-        } else {
-            return [];
-        }
-    }
-
     public static function init($config)
     {
         set_exception_handler(function ($exception) {
@@ -609,7 +578,7 @@ class System
             }
         });
 
-        $classes = glob(__DIR__ . "/classes/*.php");
+        $classes = glob(__DIR__ . '/classes/*.php');
         foreach ($classes as $class) {
             require_once($class);
         }
@@ -635,191 +604,6 @@ class System
         } else {
             ob_end_clean();
         }
-    }
-
-    /**
-     * @param string $string
-     * @param string|null $module
-     * @return string
-     */
-    public static function translate(string $string, string $module = null)
-    {
-        $string = mb_strtolower($string);
-        $lang = LANG[$module ?: MODULE] ?? [];
-        return $lang[$string] ?? $string;
-    }
-
-    /**
-     * @param string $filename
-     * @return array|object
-     * @throws CoreException
-     */
-    public static function readJsonFile(string $filename)
-    {
-        $file = fopen($filename, 'a+');
-        fclose($file);
-        return System::json_decode(file_get_contents($filename)) ?: [];
-    }
-
-    public static function writeJsonFile(string $filename, array $data)
-    {
-        $file = fopen($filename, 'a+');
-        fclose($file);
-        file_put_contents($filename, json_encode($data));
-    }
-
-    public function startup()
-    {
-        define('ENVIRONMENT', 'init');
-        $classes = glob(__DIR__ . "/classes/*.php");
-        foreach ($classes as $class) {
-            require_once($class);
-        }
-        self::define_constants(['DIR' => __DIR__ . '/']);
-        self::load_php_functions();
-        self::create_directories();
-    }
-
-    private static function load_composer()
-    {
-        if (ENVIRONMENT !== 'www') {
-            $pathLib = DIR . "/Lib/vendor/autoload.php";
-            $path = DIR . "/vendor/autoload.php";
-            if (!file_exists($pathLib)) {
-                throw new CoreException('Composer is not installed on Lib.', HTTPStatusCodes::InternalServerError);
-            }
-            if (!file_exists($path)) {
-                throw new CoreException('Composer is not installed.', HTTPStatusCodes::InternalServerError);
-            }
-            require_once($pathLib);
-            require_once($path);
-        }
-    }
-
-    private static function load_php_functions($config = [])
-    {
-        ob_start();
-        setcookie('XDEBUG_SESSION', 'PHPSTORM');
-        if (ENVIRONMENT == 'web') {
-            header('Content-Type: application/json');
-            header('Access-Control-Allow-Origin: *');
-            header('Access-Control-Allow-Methods: PUT, POST, GET, OPTIONS, PATCH, DELETE');
-            header('Access-Control-Allow-Headers: X-Requested-With, Content-Type, dataType, contenttype, processdata, authorization, x-client, x-database');
-        }
-        register_shutdown_function(function () {
-            if (error_get_last()) {
-                $error = error_get_last();
-                if (!strpos($error['file'], 'vendor')) {
-                    switch ($error['type']) {
-                        case 2:
-                            switch ($error['message']) {
-                                case "session_start(): Cannot start session when headers already sent":
-                                    break 2;
-                            }
-                            break;
-                        case 8:
-                            break;
-                        case 32:
-                            //Module '<module>' already loaded
-                            switch ($error['message']) {
-                                case "Module 'sqlite3' already loaded":
-                                    break 2;
-                            }
-                            break;
-                        default:
-                            if (ob_get_contents()) ob_clean();
-
-                            $status = 'error';
-                            $code = 500;
-                            $response = ['message' => $error['message']];
-                            http_response_code($code);
-
-                            if (ENVIRONMENT == 'www') {
-                                die($error['message']);
-                            }
-                            die(json_encode(compact('status', 'code', 'response', 'error')));
-                    }
-                }
-            }
-        });
-
-        ini_set('memory_limit', '2048M');
-        ini_set('display_errors', 'On');
-        ini_set('always_populate_raw_post_data', '-1');
-        ini_set('max_execution_time', '300');
-        date_default_timezone_set($config['TIMEZONE'] ?? 'America/Mexico_City');
-        spl_autoload_register(function ($class) {
-            if (defined('WEBDIR') && !defined('DIR')) {
-                define('DIR', WEBDIR . '/api');
-            }
-            $file = str_replace('\\', '/', $class);
-            $path = DIR . "/$file.php";
-            if (file_exists($path)) {
-                include_once $path;
-            }
-        });
-        if (function_exists('xdebug_disable')) {
-            //Disables stack traces
-            //Disable showing stack traces on error conditions.
-            xdebug_disable();
-        }
-
-        if (file_exists(__DIR__ . '/../offline')) {
-            throw new CoreException('We are updating the app, please be patient.', HTTPStatusCodes::ServiceUnavailable);
-        }
-    }
-
-    private static function create_directories()
-    {
-        function createDir($dir)
-        {
-            if (!is_dir(DIR . "/../$dir/")) {
-                mkdir(DIR . "/../$dir/", 0777, true);
-                @chmod(DIR . "/../$dir/", 0777);
-            }
-        }
-
-        function createFile($file)
-        {
-            if (!file_exists(DIR . "/../$file")) {
-                copy(DIR . "/files/$file", DIR . "/../$file");
-                @chmod(DIR . "/../$file", 0777);
-            }
-        }
-
-        function createConfig()
-        {
-            file_put_contents(DIR . '/../Config/.jwt_key', '');
-//            file_put_contents(DIR . '/../Config/database.json', json_encode(["host" => "", "username" => "", "passwd" => "", "dbname" => ""]));
-            file_put_contents(DIR . '/../Config/.gitignore', join("\n", ['.jwt_key', 'database.json', '*.json', '!default.json']));
-//            copy(DIR . '/../Config/database.json', DIR . '/../Config/database.prod.json');
-            @chmod(DIR . '/../Config/.jwt_key', 0777);
-//            @chmod(DIR . '/../Config/database.json', 0777);
-//            @chmod(DIR . '/../Config/database.prod.json', 0777);
-            @chmod(DIR . '/../Config/.gitignore', 0777);
-        }
-
-        createDir('Config');
-        createDir('Controller');
-        createDir('Model');
-        createDir('Helper');
-        createDir('Data');
-        createDir('public');
-        createDir('Tests');
-        createDir('Tests/Data');
-        createDir('Logs');
-
-        createConfig();
-        createFile('.htaccess');
-        createFile('index.php');
-        createFile('composer.json');
-        createFile('.gitignore');
-
-        createFile('public/.htaccess');
-
-        shell_exec('cd .. && composer install && cd .. && composer install');
-
-        JsonResponse::sendResponse('');
     }
 
     private static function define_constants($config)
@@ -888,15 +672,15 @@ class System
                     self::define_constants($config);
                 } else {
                     $project_config = [
-                        "project" => [
-                            "name" => "default",
-                            "code" => "default"
+                        'project' => [
+                            'name' => 'default',
+                            'code' => 'default'
                         ],
-                        "database" => [
-                            "host" => "",
-                            "username" => "",
-                            "passwd" => "",
-                            "dbname" => ""
+                        'database' => [
+                            'host' => '',
+                            'username' => '',
+                            'passwd' => '',
+                            'dbname' => ''
                         ],
                         'email' => [
                             'name' => '',
@@ -913,7 +697,7 @@ class System
 
                     header('Content-Type: application/json');
                     http_response_code(500);
-                    $message = "default.json not found";
+                    $message = 'default.json not found';
                     die(json_encode(compact('message')));
                 }
             } else {
@@ -941,21 +725,21 @@ class System
                 if (REQUEST_METHOD === 'POST') {
                     parse_str($entry, $_POST);
                     if (!empty($_POST['form'])) {
-                        parse_str($_POST["form"], $_POST["form"]);
-                        $_POST = array_merge($_POST, $_POST["form"]);
-                        unset($_POST["form"]);
+                        parse_str($_POST['form'], $_POST['form']);
+                        $_POST = array_merge($_POST, $_POST['form']);
+                        unset($_POST['form']);
                     }
                     if (!empty($_POST['aside'])) {
-                        parse_str($_POST["aside"], $_POST["aside"]);
-                        $_POST = array_merge($_POST, $_POST["aside"]);
-                        unset($_POST["aside"]);
+                        parse_str($_POST['aside'], $_POST['aside']);
+                        $_POST = array_merge($_POST, $_POST['aside']);
+                        unset($_POST['aside']);
                     }
                     if (!empty($_POST['post'])) {
                         if (is_string($_POST['post'])) {
-                            parse_str($_POST["post"], $_POST["post"]);
+                            parse_str($_POST['post'], $_POST['post']);
                         }
-                        $_POST = array_merge($_POST, $_POST["post"]);
-                        unset($_POST["post"]);
+                        $_POST = array_merge($_POST, $_POST['post']);
+                        unset($_POST['post']);
                     }
                 }
                 if (REQUEST_METHOD === 'GET') {
@@ -965,226 +749,154 @@ class System
         }
     }
 
-    private static function convert_endpoint(&$controller, &$action, &$id)
+    /**
+     * @param $variable
+     * @param null $return
+     * @return int|string|null|array
+     */
+    public static function isset_get(&$variable, $return = null)
     {
-        $request = trim($_SERVER['REQUEST_URI'], '/');
-        $request = str_replace('//', '/', $request);
-        if (BASENAME !== '/') {
-            $request = str_replace(trim(BASENAME, '/'), '', $request);
-            if (empty($request)) {
-                $request = 'api/version';
+        if (isset($variable)) {
+            if (empty($variable)) {
+                return $return;
             }
+            $variable = is_string($variable) ? trim($variable) : $variable;
+            return $variable;
         }
-        if (strpos($request, '?') !== false) {
-            $request = stristr($request, '?', true);
-        }
-        preg_match_all('/\/?\b([a-z-]+?)\/+([a-z-]+)(?:\W+(.+))?/i', $request, $request, PREG_SET_ORDER, 0);
-        if (!empty($request)) {
-            $request = array_splice($request[0], 1);
-            [$controller, $action] = $request;
-            $id = System::isset_get($request[2]);
-            if (!empty($id)) {
-                $id = System::decode_id($id);
-            }
-        } else {
-            $request = trim($_SERVER['REQUEST_URI'], '/');
-            $request = trim($request, '/');
-            if (strpos($request, 'api/') !== false) {
-                $request = stristr($request, 'api/');
-            } elseif (strpos($request, '/') === false) {
-                $request = 'api/' . $request;
-            }
-            $request = explode('/', $request);
-
-            $controller = $request[0];
-            $action = $request[1] ?? null;
-        }
-        define('ENDPOINT', $request[0] . '/' . $request[1]);
+        unset($variable);
+        return $return;
     }
 
-    private static function call_action($controller, $action, $id)
+    public static function utf8($value)
     {
-        switch (REQUEST_METHOD) {
-            case 'OPTIONS':
-                JsonResponse::sendResponse('Completed.');
-                break;
-            case 'PATCH':
-                global $_PATCH;
-                if (empty($id)) {
-                    throw new CoreException('Request Method PATCH needs an ID to work', HTTPStatusCodes::BadRequest);
-                }
-                break;
+        if (mb_detect_encoding(utf8_decode($value)) === 'UTF-8') {
+            // Double encoded, or bad encoding
+            $value = utf8_decode($value);
         }
-        global $_PATCH;
-        $response = null;
-        $namespace = "Controller\\" . ucfirst($controller);
-        if (class_exists($namespace)) {
-            /** @var $class Controller */
-            $class = new $namespace();
-            $response = $class->call($action, [$id]);
 
-            $message = 'Completed.';
-            if (!$response) {
-                JsonResponse::sendResponse($message);
-            } else if (is_scalar($response)) {
-                JsonResponse::sendResponse($response);
-            } else {
-                $data = $response;
-                JsonResponse::sendResponse($message, $data);
-            }
-        }
-        if ($controller == 'api') {
-            switch ($action) {
-                default:
-                case "version":
-                    $name = CONFIG['project']['name'];
-                    $version = VERSION;
-                    JsonResponse::sendResponse('Completed.', compact('name', 'version'));
-                    break;
-                case "logs":
-                    $path = DIR . '/Logs/' . CONFIG['project']['code'] . '/' . date('Y-m-d', strtotime(System::isset_get($_GET['date'], date('Y-m-d')))) . '.log';
-                    if (!file_exists($path)) {
-                        file_put_contents($path, '');
-                    }
-                    $log = explode("\n", file_get_contents($path));
-                    rsort($log);
-                    $log = array_filter($log);
-
-                    $errors = !!($_GET['errors'] ?? null);
-
-                    array_walk($log, function (&$entry) use ($errors) {
-                        $entry = preg_split('/\] \[|] |^\[/m', $entry);
-                        $entry = array_values(array_filter($entry));
-                        array_walk($entry, function (&$value) use ($entry) {
-                            if (System::isset_get($_GET['errors']) === 'true' && count($entry) < 5) {
-                                $value = null;
-                            }
-                            $value = trim($value, '[] ');
-                            if (self::isJson($value)) {
-                                $value = self::json_decode($value);
-                            }
-                        });
-                        $entry = array_values(array_filter($entry));
-
-                        $error_code = $entry[2];
-                        if (!is_int($error_code) && $errors) {
-                            $entry = null;
-                        } elseif (is_int($error_code) && !$errors) {
-                            $entry = null;
-                        }
-                    });
-                    $log = array_values(array_filter($log));
-                    JsonResponse::sendResponse('Logs', compact('log'));
-                    break;
-                case "decodeToken":
-                    if (REQUEST_METHOD === 'POST') {
-                        if ($_POST['token'] ?? null) {
-                            $data = System::decode_token($_POST['token']);
-                            JsonResponse::sendResponse('Completed.', $data);
-                        }
-                        throw new CoreException("Missing token", 400);
-                    } else {
-                        throw new CoreException("Endpoint not found.  [$namespace]", 400);
-                    }
-                case "backup":
-                    $mysql = new MySQL();
-                    $data = $mysql->backupDB();
-                    JsonResponse::sendResponse('Completed.', HTTPStatusCodes::OK, $data);
-                    break;
-                case "endpoints":
-                    $files = glob(__DIR__ . '/../Controller/*.{php}', GLOB_BRACE);
-                    $paths = [];
-                    foreach ($files as $file) {
-                        $basename = basename($file, '.php');
-                        $class = 'Controller\\' . $basename;
-                        $controller = new $class();
-                        $methods = $controller->getMethods();
-                        foreach ($methods as $method => $functions) {
-                            $functions = array_values(array_flip($functions));
-                            foreach ($functions as $endpoint) {
-                                $lower = strtolower(str_replace('Controller' . '\\', '', get_class($controller)));
-                                $endpoint = $lower . '/' . $endpoint;
-                                $paths['/' . $endpoint][strtolower($method)] = [
-                                    'produces' => ['application/json'],
-                                    'responses' => [200 => ['description' => 'Success']]
-                                ];
-                            }
-                        }
-                    }
-                    $swagger = '2.0';
-                    $info = [
-                        'description' => ucfirst(PROJECT),
-                        'version' => VERSION,
-                        'title' => ucfirst(PROJECT),
-                    ];
-                    $host = $_SERVER['SERVER_NAME'];
-                    $basePath = BASENAME;
-                    JsonResponse::sendResponse('Endpoints', HTTPStatusCodes::OK, compact('swagger', 'info', 'host', 'basePath', 'paths'));
-                    break;
-                case "webhook":
-                    if (REQUEST_METHOD === 'POST' && $id) {
-                        include_once __DIR__ . '/classes/Webhook.php';
-                        new Webhook($id);
-                        JsonResponse::sendResponse('Webhook', 200, $_POST);
-                    } else {
-                        $method = REQUEST_METHOD;
-                        throw new CoreException("Endpoint not found.  [$controller/$action]", 404, compact('method', 'controller', 'action'));
-                    }
-                    break;
-                case "socket":
-                    new \Controller\Notifications();
-                    break;
-            }
-        } else {
-            $method = REQUEST_METHOD;
-            $endpoint = $controller . '/' . $action;
-            throw new CoreException("Endpoint not found.  [$endpoint]", HTTPStatusCodes::NotFound, compact('endpoint', 'method'));
-        }
+        include_once __DIR__ . '/vendor/neitanod/forceutf8/src/ForceUTF8/Encoding.php';
+        return Encoding::toUTF8($value);
     }
 
     /**
-     * @param array $array
-     * @param array $required
-     * @param string $message
-     * @param int $code
+     * @param string $jwt
+     * @return mixed
      * @throws CoreException
      */
-    public static function check_value_empty($array, $required, $message = 'Missing Data.', $code = 400)
+    public static function decode_token(string $jwt = null)
     {
-        $required = array_flip($required);
-        $intersect = array_intersect_key($array ?: $required, $required);
-        $empty_values = '';
-
-        foreach ($required as $key => $value) {
-            if (!isset($array[$key]) || empty($array[$key]) && $array[$key] !== 0) {
-                $empty_values .= $key . ', ';
+        self::load_composer();
+        try {
+            if (empty($jwt)) {
+                throw new CoreException('The token sent is empty.', 500);
             }
-        }
-        $empty_values = trim($empty_values, ', ');
-        if (!empty($empty_values)) {
-            throw new CoreException($message . ' ' . "[$empty_values]", $code);
-        }
 
-        foreach ($intersect as $key => $value) {
-            $value = is_string($value) ? trim($value) : $value;
-            if (empty($value) and $value != 0) {
-                $empty_values .= $key . ', ';
+            $jwt_key = self::get_jwt_key();
+
+            $time = time();
+            $decoded = JWT::decode($jwt, $jwt_key, ['HS256']);
+            if (!empty($decoded->exp) && $decoded->exp <= $time) {
+                throw new CoreException('The token has expired.', 500);
             }
-        }
-        $empty_values = trim($empty_values, ', ');
-        if (!empty($empty_values)) {
-            JsonResponse::sendResponse($message . ' ' . "[$empty_values]", $code);
+            return json_decode(json_encode($decoded), true)['data'];
+        } catch (Firebase\JWT\ExpiredException $ex) {
+            throw new CoreException($ex->getMessage(), 500);
+        } catch (Firebase\JWT\SignatureInvalidException $ex) {
+            throw new CoreException($ex->getMessage(), 500);
+        } catch (UnexpectedValueException $ex) {
+            throw new CoreException('Invalid token.', 500);
+        } catch (DomainException $ex) {
+            throw new CoreException('Invalid token.', 500);
         }
     }
 
-    private static function isJson($string)
+    private static function load_composer()
     {
-        $decoded = json_decode($string, true);
-        $isJson = (json_last_error() == JSON_ERROR_NONE && is_array($decoded));
-        if (!$isJson) {
-            $error = json_last_error_msg();
+        if (ENVIRONMENT !== 'www') {
+            $pathLib = DIR . '/Lib/vendor/autoload.php';
+            $path = DIR . '/vendor/autoload.php';
+            if (!file_exists($pathLib)) {
+                throw new CoreException('Composer is not installed on Lib.', HTTPStatusCodes::InternalServerError);
+            }
+            if (!file_exists($path)) {
+                throw new CoreException('Composer is not installed.', HTTPStatusCodes::InternalServerError);
+            }
+            require_once($pathLib);
+            require_once($path);
         }
-        return $isJson;
+    }
+
+    private static function load_php_functions($config = [])
+    {
+        ob_start();
+        setcookie('XDEBUG_SESSION', 'PHPSTORM');
+        if (ENVIRONMENT == 'web') {
+            header('Content-Type: application/json');
+            header('Access-Control-Allow-Origin: *');
+            header('Access-Control-Allow-Methods: PUT, POST, GET, OPTIONS, PATCH, DELETE');
+            header('Access-Control-Allow-Headers: X-Requested-With, Content-Type, dataType, contenttype, processdata, authorization, x-client, x-database');
+        }
+        register_shutdown_function(function () {
+            if (error_get_last()) {
+                $error = error_get_last();
+                if (!strpos($error['file'], 'vendor')) {
+                    switch ($error['type']) {
+                        case 2:
+                            switch ($error['message']) {
+                                case 'session_start(): Cannot start session when headers already sent':
+                                    break 2;
+                            }
+                            break;
+                        case 8:
+                            break;
+                        case 32:
+                            //Module '<module>' already loaded
+                            switch ($error['message']) {
+                                case "Module 'sqlite3' already loaded":
+                                    break 2;
+                            }
+                            break;
+                        default:
+                            if (ob_get_contents()) ob_clean();
+
+                            $status = 'error';
+                            $code = 500;
+                            $response = ['message' => $error['message']];
+                            http_response_code($code);
+
+                            if (ENVIRONMENT == 'www') {
+                                die($error['message']);
+                            }
+                            die(json_encode(compact('status', 'code', 'response', 'error')));
+                    }
+                }
+            }
+        });
+
+        ini_set('memory_limit', '2048M');
+        ini_set('display_errors', 'On');
+        ini_set('always_populate_raw_post_data', '-1');
+        ini_set('max_execution_time', '300');
+        date_default_timezone_set($config['TIMEZONE'] ?? 'America/Mexico_City');
+        spl_autoload_register(function ($class) {
+            if (defined('WEBDIR') && !defined('DIR')) {
+                define('DIR', WEBDIR . '/api');
+            }
+            $file = str_replace('\\', '/', $class);
+            $path = DIR . "/$file.php";
+            if (file_exists($path)) {
+                include_once $path;
+            }
+        });
+        if (function_exists('xdebug_disable')) {
+            //Disables stack traces
+            //Disable showing stack traces on error conditions.
+            xdebug_disable();
+        }
+
+        if (file_exists(__DIR__ . '/../offline')) {
+            throw new CoreException('We are updating the app, please be patient.', HTTPStatusCodes::ServiceUnavailable);
+        }
     }
 
     public static function request_log()
@@ -1268,11 +980,11 @@ class System
         $data .= '[' . $response['code'] . '] ';
         $data .= '[' . json_encode($response['response']) . '] ';
         $data .= '[' . json_encode([
-                    'GET' => $_GET,
-                    'POST' => $_POST,
-                    'PUT' => $_PUT,
-                    'PATCH' => $_PATCH,
-                ][REQUEST_METHOD] ?? ENVIRONMENT) . '] ';
+                'GET' => $_GET,
+                'POST' => $_POST,
+                'PUT' => $_PUT,
+                'PATCH' => $_PATCH,
+            ][REQUEST_METHOD] ?? ENVIRONMENT) . '] ';
         /* if ($response['error'] ?? null) {
              $data .= '[' . json_encode($response['error']) . '] ';
          }*/
@@ -1309,6 +1021,325 @@ class System
                 self::log_error($response);
             }
         }
+    }
+
+    private static function convert_endpoint(&$controller, &$action, &$id)
+    {
+        $request = trim($_SERVER['REQUEST_URI'], '/');
+        $request = str_replace('//', '/', $request);
+        if (BASENAME !== '/') {
+            $request = str_replace(trim(BASENAME, '/'), '', $request);
+            if (empty($request)) {
+                $request = 'api/version';
+            }
+        }
+        if (strpos($request, '?') !== false) {
+            $request = stristr($request, '?', true);
+        }
+        preg_match_all('/\/?\b([a-z-]+?)\/+([a-z-]+)(?:\W+(.+))?/i', $request, $request, PREG_SET_ORDER, 0);
+        if (!empty($request)) {
+            $request = array_splice($request[0], 1);
+            [$controller, $action] = $request;
+            $id = System::isset_get($request[2]);
+            if (!empty($id)) {
+                $id = System::decode_id($id);
+            }
+        } else {
+            $request = trim($_SERVER['REQUEST_URI'], '/');
+            $request = trim($request, '/');
+            if (strpos($request, 'api/') !== false) {
+                $request = stristr($request, 'api/');
+            } elseif (strpos($request, '/') === false) {
+                $request = 'api/' . $request;
+            }
+            $request = explode('/', $request);
+
+            $controller = $request[0];
+            $action = $request[1] ?? null;
+        }
+        define('ENDPOINT', $request[0] . '/' . $request[1]);
+    }
+
+    public static function decode_id(string $id)
+    {
+        $base64 = base64_decode($id);
+        $end_decoded = strstr($base64, '=');
+        if (!empty($base64) && (strlen($end_decoded) > 1)) {
+            $end_decoded = trim($end_decoded, '=');
+            if (!empty($end_decoded)) {
+                if (!is_nan($end_decoded)) {
+                    return intval($end_decoded);
+                }
+                return $end_decoded;
+            }
+        } elseif (!is_string($id)) {
+            return intval($id);
+        }
+        return $id;
+    }
+
+    private static function call_action($controller, $action, $id)
+    {
+        switch (REQUEST_METHOD) {
+            case 'OPTIONS':
+                JsonResponse::sendResponse('Completed.');
+                break;
+            case 'PATCH':
+                global $_PATCH;
+                if (empty($id)) {
+                    throw new CoreException('Request Method PATCH needs an ID to work', HTTPStatusCodes::BadRequest);
+                }
+                break;
+        }
+        global $_PATCH;
+        $response = null;
+        $namespace = "Controller\\" . ucfirst($controller);
+        if (class_exists($namespace)) {
+            /** @var $class Controller */
+            $class = new $namespace();
+            $response = $class->call($action, [$id]);
+
+            $message = 'Completed.';
+            if (!$response) {
+                JsonResponse::sendResponse($message);
+            } else if (is_scalar($response)) {
+                JsonResponse::sendResponse($response);
+            } else {
+                $data = $response;
+                JsonResponse::sendResponse($message, $data);
+            }
+        }
+        if ($controller == 'api') {
+            switch ($action) {
+                default:
+                case 'version':
+                    $name = CONFIG['project']['name'];
+                    $version = VERSION;
+                    JsonResponse::sendResponse('Completed.', compact('name', 'version'));
+                    break;
+                case 'logs':
+                    $path = DIR . '/Logs/' . CONFIG['project']['code'] . '/' . date('Y-m-d', strtotime(System::isset_get($_GET['date'], date('Y-m-d')))) . '.log';
+                    if (!file_exists($path)) {
+                        file_put_contents($path, '');
+                    }
+                    $log = explode("\n", file_get_contents($path));
+                    rsort($log);
+                    $log = array_filter($log);
+
+                    $errors = !!($_GET['errors'] ?? null);
+
+                    array_walk($log, function (&$entry) use ($errors) {
+                        $entry = preg_split('/\] \[|] |^\[/m', $entry);
+                        $entry = array_values(array_filter($entry));
+                        array_walk($entry, function (&$value) use ($entry) {
+                            if (System::isset_get($_GET['errors']) === 'true' && count($entry) < 5) {
+                                $value = null;
+                            }
+                            $value = trim($value, '[] ');
+                            if (self::isJson($value)) {
+                                $value = self::json_decode($value);
+                            }
+                        });
+                        $entry = array_values(array_filter($entry));
+
+                        $error_code = $entry[2];
+                        if (!is_int($error_code) && $errors) {
+                            $entry = null;
+                        } elseif (is_int($error_code) && !$errors) {
+                            $entry = null;
+                        }
+                    });
+                    $log = array_values(array_filter($log));
+                    JsonResponse::sendResponse('Logs', compact('log'));
+                    break;
+                case 'decodeToken':
+                    if (REQUEST_METHOD === 'POST') {
+                        if ($_POST['token'] ?? null) {
+                            $data = System::decode_token($_POST['token']);
+                            JsonResponse::sendResponse('Completed.', $data);
+                        }
+                        throw new CoreException('Missing token', 400);
+                    } else {
+                        throw new CoreException("Endpoint not found.  [$namespace]", 400);
+                    }
+                case 'backup':
+                    $mysql = new MySQL();
+                    $data = $mysql->backupDB();
+                    JsonResponse::sendResponse('Completed.', HTTPStatusCodes::OK, $data);
+                    break;
+                case 'endpoints':
+                    $files = glob(__DIR__ . '/../Controller/*.{php}', GLOB_BRACE);
+                    $paths = [];
+                    foreach ($files as $file) {
+                        $basename = basename($file, '.php');
+                        $class = 'Controller\\' . $basename;
+                        $controller = new $class();
+                        $methods = $controller->getMethods();
+                        foreach ($methods as $method => $functions) {
+                            $functions = array_values(array_flip($functions));
+                            foreach ($functions as $endpoint) {
+                                $lower = strtolower(str_replace('Controller' . '\\', '', get_class($controller)));
+                                $endpoint = $lower . '/' . $endpoint;
+                                $paths['/' . $endpoint][strtolower($method)] = [
+                                    'produces' => ['application/json'],
+                                    'responses' => [200 => ['description' => 'Success']]
+                                ];
+                            }
+                        }
+                    }
+                    $swagger = '2.0';
+                    $info = [
+                        'description' => ucfirst(PROJECT),
+                        'version' => VERSION,
+                        'title' => ucfirst(PROJECT),
+                    ];
+                    $host = $_SERVER['SERVER_NAME'];
+                    $basePath = BASENAME;
+                    JsonResponse::sendResponse('Endpoints', HTTPStatusCodes::OK, compact('swagger', 'info', 'host', 'basePath', 'paths'));
+                    break;
+                case 'webhook':
+                    if (REQUEST_METHOD === 'POST' && $id) {
+                        include_once __DIR__ . '/classes/Webhook.php';
+                        new Webhook($id);
+                        JsonResponse::sendResponse('Webhook', 200, $_POST);
+                    } else {
+                        $method = REQUEST_METHOD;
+                        throw new CoreException("Endpoint not found.  [$controller/$action]", 404, compact('method', 'controller', 'action'));
+                    }
+                    break;
+                case 'socket':
+                    new Notifications();
+                    break;
+            }
+        } else {
+            $method = REQUEST_METHOD;
+            $endpoint = $controller . '/' . $action;
+            throw new CoreException("Endpoint not found.  [$endpoint]", HTTPStatusCodes::NotFound, compact('endpoint', 'method'));
+        }
+    }
+
+    /**
+     * @param string $string
+     * @param string|null $module
+     * @return string
+     */
+    public static function translate(string $string, string $module = null)
+    {
+        $string = mb_strtolower($string);
+        $lang = LANG[$module ?: MODULE] ?? [];
+        return $lang[$string] ?? $string;
+    }
+
+    public static function writeJsonFile(string $filename, array $data)
+    {
+        $file = fopen($filename, 'a+');
+        fclose($file);
+        file_put_contents($filename, json_encode($data));
+    }
+
+    /**
+     * @param array $array
+     * @param array $required
+     * @param string $message
+     * @param int $code
+     * @throws CoreException
+     */
+    public static function check_value_empty($array, $required, $message = 'Missing Data.', $code = 400)
+    {
+        $required = array_flip($required);
+        $intersect = array_intersect_key($array ?: $required, $required);
+        $empty_values = '';
+
+        foreach ($required as $key => $value) {
+            if (!isset($array[$key]) || empty($array[$key]) && $array[$key] !== 0) {
+                $empty_values .= $key . ', ';
+            }
+        }
+        $empty_values = trim($empty_values, ', ');
+        if (!empty($empty_values)) {
+            throw new CoreException($message . ' ' . "[$empty_values]", $code);
+        }
+
+        foreach ($intersect as $key => $value) {
+            $value = is_string($value) ? trim($value) : $value;
+            if (empty($value) and $value != 0) {
+                $empty_values .= $key . ', ';
+            }
+        }
+        $empty_values = trim($empty_values, ', ');
+        if (!empty($empty_values)) {
+            JsonResponse::sendResponse($message . ' ' . "[$empty_values]", $code);
+        }
+    }
+
+    /**
+     * @param array $constants
+     * @return void
+     * @throws CoreException
+     */
+    public static function init_web(array $constants)
+    {
+        $classes = glob(__DIR__ . '/classes/*.php');
+        foreach ($classes as $class) {
+            require_once($class);
+        }
+
+        define('ENVIRONMENT', 'www');
+        define('WEBDIR', $constants['WEBDIR']);
+
+        set_exception_handler(function ($exception) {
+            self::set_web_exception($exception);
+        });
+        self::load_php_functions();
+
+        if (!defined('JWT_KEY'))
+            define('JWT_KEY', file_exists(WEBDIR . '/../api/Config/.jwt_key') ? file_get_contents(WEBDIR . '/../api/Config/.jwt_key') : null);
+
+        if (!file_exists(WEBDIR . '/config.json')) {
+            die('config.json does not exist');
+        }
+
+        self::get_web_config();
+
+        [
+            'entry' => $entry,
+            'default' => $default,
+            'modules' => $module_list,
+            'breadcrumbs' => $breadcrumbs
+        ] = WEBCONFIG;
+
+        define('BREADCRUMBS', $breadcrumbs);
+
+        if ($constants['BASENAME'] ?? null) {
+            define('BASENAME', $constants['BASENAME']);
+        } else {
+            define('BASENAME', '/' . (trim(dirname($_SERVER['SCRIPT_NAME']), '/') ?: '.') . '/');
+        }
+
+        if (file_exists(__DIR__ . '/vendor/autoload.php')) {
+            require __DIR__ . '/vendor/autoload.php';
+        }
+
+        $module_file = System::isset_get($_GET['module'], $default) . (System::isset_get($_GET['action']) ? '/' . $_GET['action'] : '');
+        if (strpos($module_file, '/')) {
+            $module_file_array = explode('/', $module_file);
+
+            $basename = explode('/', BASENAME);
+            $basename = array_values(array_filter($basename));
+
+            $module_file_intersect = array_diff($module_file_array, $basename);
+            $module_file_intersect = array_values($module_file_intersect);
+
+            $module_file = implode('/', $module_file_intersect);
+        }
+
+        $list = $module_list;
+        foreach (explode('/', $module_file) as $item) {
+            $list = $list[$item] ?? $list['modules'][$item] ?? [];
+            $file = $list['file'] ?? $entry;
+        }
+
+        self::formatDocument($file, $module_file);
     }
 
     private static function set_web_exception($exception)
@@ -1354,101 +1385,6 @@ class System
     }
 
     /**
-     * @return array
-     */
-    private static function get_web_config()
-    {
-        $config = System::readJsonFile(WEBDIR . '/config.json');
-
-        $env = getenv(mb_strtoupper($config['code']) . '_CONFIG');
-        if (file_exists(WEBDIR . '/.env')) {
-            $env = trim(file_get_contents(WEBDIR . '/.env'));
-        }
-
-        if ($env) {
-            $env_config = file_get_contents(WEBDIR . "/settings/$env/" . "config.json");
-            $env_config = json_decode($env_config, true);
-            $env_config = array_merge($config, $env_config);
-        }
-        if ($env_config ?? null) {
-            $config = $env_config;
-        }
-
-        if (!defined('WEBCONFIG')) define('WEBCONFIG', $config);
-        return $config;
-    }
-
-    /**
-     * @param array $constants
-     * @return void
-     * @throws CoreException
-     */
-    public static function init_web(array $constants)
-    {
-        $classes = glob(__DIR__ . "/classes/*.php");
-        foreach ($classes as $class) {
-            require_once($class);
-        }
-
-        define('ENVIRONMENT', 'www');
-        define('WEBDIR', $constants['WEBDIR']);
-
-        set_exception_handler(function ($exception) {
-            self::set_web_exception($exception);
-        });
-        self::load_php_functions();
-
-        if (!defined('JWT_KEY'))
-            define('JWT_KEY', file_exists(WEBDIR . '/../api/Config/.jwt_key') ? file_get_contents(WEBDIR . '/../api/Config/.jwt_key') : null);
-
-        if (!file_exists(WEBDIR . '/config.json')) {
-            die('config.json does not exist');
-        }
-
-        self::get_web_config();
-
-        [
-            'entry' => $entry,
-            'default' => $default,
-            'modules' => $module_list,
-            'breadcrumbs' => $breadcrumbs
-        ] = WEBCONFIG;
-
-        define('BREADCRUMBS', $breadcrumbs);
-
-        if ($constants['BASENAME'] ?? null) {
-            define('BASENAME', $constants['BASENAME']);
-        } else {
-            define('BASENAME', '/' . (trim(dirname($_SERVER['SCRIPT_NAME']), '/') ?: '.') . '/');
-        }
-
-        if (file_exists(__DIR__ . "/vendor/autoload.php")) {
-            require __DIR__ . "/vendor/autoload.php";
-        }
-
-        $module_file = System::isset_get($_GET['module'], $default) . (System::isset_get($_GET['action']) ? '/' . $_GET['action'] : '');
-        if (strpos($module_file, '/')) {
-            $module_file_array = explode('/', $module_file);
-
-            $basename = explode('/', BASENAME);
-            $basename = array_values(array_filter($basename));
-
-            $module_file_intersect = array_diff($module_file_array, $basename);
-            $module_file_intersect = array_values($module_file_intersect);
-
-            $module_file = implode('/', $module_file_intersect);
-        }
-
-        $list = $module_list;
-        foreach (explode('/', $module_file) as $item) {
-            $list = $list[$item] ?? $list['modules'][$item] ?? [];
-            $file = $list['file'] ?? $entry;
-        }
-
-        self::formatDocument($file, $module_file);
-    }
-
-    /**
      * @param $file
      * @param null $module_file
      * @throws CoreException
@@ -1485,9 +1421,9 @@ class System
             libxml_use_internal_errors(true);
             self::$dom->loadHTMLFile($dir . $file);
 
-            if (self::$dom->getElementsByTagName('html')[0] && self::$dom->getElementsByTagName('html')[0]->getAttribute("lang")) {
+            if (self::$dom->getElementsByTagName('html')[0] && self::$dom->getElementsByTagName('html')[0]->getAttribute('lang')) {
                 session_start();
-                $lang = ($_GET['lang'] ?? null) ? $_GET['lang'] : ($_SESSION['lang'] ?? self::$dom->getElementsByTagName('html')[0]->getAttribute("lang"));
+                $lang = ($_GET['lang'] ?? null) ? $_GET['lang'] : ($_SESSION['lang'] ?? self::$dom->getElementsByTagName('html')[0]->getAttribute('lang'));
                 $_SESSION['lang'] = $lang;
                 session_write_close();
                 self::$dom->getElementsByTagName('html')[0]->setAttribute('lang', $lang);
@@ -1498,7 +1434,7 @@ class System
 
             /** @var DOMElement $link */
             foreach (self::$dom->getElementsByTagName('a') as $link) {
-                $old_link = $link->getAttribute("href");
+                $old_link = $link->getAttribute('href');
 
                 if (strpos($old_link, 'tel:') !== false) {
                     continue;
@@ -1513,7 +1449,7 @@ class System
                 $link->setAttribute('href', BASENAME . trim($old_link, '/'));
             }
             foreach (self::$dom->getElementsByTagName('link') as $link) {
-                $old_link = $link->getAttribute("href");
+                $old_link = $link->getAttribute('href');
                 if (strpos($old_link, 'http') !== false) {
                     continue;
                 }
@@ -1530,28 +1466,28 @@ class System
                 }
             }
             foreach (self::$dom->getElementsByTagName('div') as $link) {
-                $old_link = $link->getAttribute("ui-include");
+                $old_link = $link->getAttribute('ui-include');
                 if ($old_link) {
                     $old_link = str_replace("'", '', $old_link);
                     $link->setAttribute('ui-include', "'" . BASENAME . $dir . $old_link . "'");
                 }
             }
             foreach (self::$dom->getElementsByTagName('img') as $link) {
-                $old_link = $link->getAttribute("src");
+                $old_link = $link->getAttribute('src');
                 if ($old_link) {
                     if (strpos($old_link, 'http') !== false) {
                         continue;
                     }
                     $link->setAttribute('src', BASENAME . $dir . $old_link);
                 }
-                $old_link = $link->getAttribute("data-src");
+                $old_link = $link->getAttribute('data-src');
                 if ($old_link) {
                     if (strpos($old_link, 'http') !== false) {
                         continue;
                     }
                     $link->setAttribute('data-src', BASENAME . $dir . $old_link);
                 }
-                $old_links = $link->getAttribute("srcset");
+                $old_links = $link->getAttribute('srcset');
                 if ($old_links) {
                     $new_links = [];
                     foreach (explode(', ', $old_links) as $old_link) {
@@ -1565,11 +1501,11 @@ class System
                 }
             }
             foreach (self::$dom->getElementsByTagName('source') as $link) {
-                $old_link = $link->getAttribute("src");
+                $old_link = $link->getAttribute('src');
                 $link->setAttribute('src', BASENAME . $dir . $old_link);
             }
             foreach (self::$dom->getElementsByTagName('script') as $link) {
-                $old_link = $link->getAttribute("src");
+                $old_link = $link->getAttribute('src');
                 if ($old_link) {
                     if (strpos($old_link, 'http') !== false) {
                         continue;
@@ -1579,7 +1515,7 @@ class System
             }
 
             if (self::$dom->getElementsByTagName('head')->item(0)) {
-                $assets = glob(__DIR__ . "/../assets/dist/*.js");
+                $assets = glob(__DIR__ . '/../assets/dist/*.js');
                 if (empty($assets)) {
                     throw new CoreException('Assets not generated', 500, ['dir' => WEBDIR . '/assets/dist/']);
                 }
@@ -1748,7 +1684,7 @@ html
                     }
                     $img->setAttribute('src', $logo);
 
-                    $old_links = $img->getAttribute("srcset");
+                    $old_links = $img->getAttribute('srcset');
                     if ($old_links) {
                         $new_links = [];
                         foreach (explode(', ', $old_links) as $old_link) {
@@ -1774,7 +1710,7 @@ html
                     }
                     $img->setAttribute('src', $logo);
 
-                    $old_links = $img->getAttribute("srcset");
+                    $old_links = $img->getAttribute('srcset');
                     if ($old_links) {
                         $new_links = [];
                         foreach (explode(', ', $old_links) as $old_link) {
@@ -1824,7 +1760,7 @@ html
                 $fragment = self::$dom->createDocumentFragment();
 
                 if (defined('SESSIONCHECK') && SESSIONCHECK && pathinfo($module_file, PATHINFO_EXTENSION) !== 'js') {
-                    $user = System::sessionCheck("user_token");
+                    $user = System::sessionCheck('user_token');
                     if (($user['permissions'] ?? null) !== null) {
                         $module_list = ($_SESSION['modules'] ?? []) + array_filter(MODULES, function ($module) {
                                 return ($module['permissions'] ?? true) === false;
@@ -2031,6 +1967,23 @@ html;
         return $nodes;
     }
 
+    /**
+     * @param string $element
+     * @param string $html
+     * @return DOMElement
+     */
+    private static function createElement(string $element, string $html)
+    {
+        $module = self::$dom->createElement($element);
+        if (!empty(trim($html))) {
+            $fragment = new DOMDocument();
+            $fragment->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'), 8192 | 4);
+
+            $module->appendChild(self::$dom->importNode($fragment->documentElement, true));
+        }
+        return $module;
+    }
+
     public static function load_module($file)
     {
         $pathinfo = pathinfo($file);
@@ -2045,7 +1998,7 @@ html;
                 $code = HTTPStatusCodes::NotFound;
                 $status = 'error';
                 $response = [
-                    'message' => "File not found [" . $module_path . $file . "]"
+                    'message' => 'File not found [' . $module_path . $file . ']'
                 ];
                 System::log_error(compact('status', 'code', 'response'));
                 throw new CoreException('Not found', 404);
@@ -2125,7 +2078,7 @@ html
                 $view->parentNode->replaceChild($module, $view);
             }
 
-            if (file_exists("settings/" . WEBCONFIG['code'] . "/css/index.css")) {
+            if (file_exists('settings/' . WEBCONFIG['code'] . '/css/index.css')) {
                 $code = WEBCONFIG['code'];
                 $fragment = self::$dom->createDocumentFragment();
                 $fragment->appendXML(<<<html
@@ -2172,23 +2125,6 @@ html
         }
     }
 
-    /**
-     * @param string $element
-     * @param string $html
-     * @return DOMElement
-     */
-    private static function createElement(string $element, string $html)
-    {
-        $module = self::$dom->createElement($element);
-        if (!empty(trim($html))) {
-            $fragment = new DOMDocument();
-            $fragment->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'), 8192 | 4);
-
-            $module->appendChild(self::$dom->importNode($fragment->documentElement, true));
-        }
-        return $module;
-    }
-
     public static function print_page()
     {
         echo self::$dom->saveHTML();
@@ -2222,7 +2158,7 @@ html
         return $permissions;
     }
 
-    static function getQR(string $chl)
+    public static function getQR(string $chl)
     {
         $url = http_build_query([
             'chl' => $chl,
@@ -2236,7 +2172,7 @@ html
         return compact('chart', 'chl');
     }
 
-    static function parseRows($name, $path, $template): array
+    public static function parseRows($name, $path, $template): array
     {
         $parse = SimpleXLSX::parse($path);
 
@@ -2269,12 +2205,12 @@ html
         return compact('headers', 'rows');
     }
 
-    static function array_fill(array $keys, $value = null): array
+    public static function array_fill(array $keys, $value = null): array
     {
         return array_fill_keys($keys, $value);
     }
 
-    static function filePond(string $FILE, string $path): string
+    public static function filePond(string $FILE, string $path): string
     {
         $FILE = System::json_decode($FILE);
         $data = base64_decode($FILE['data']);
@@ -2284,5 +2220,70 @@ html
         file_put_contents($path, $data);
 
         return $path;
+    }
+
+    public function startup()
+    {
+        define('ENVIRONMENT', 'init');
+        $classes = glob(__DIR__ . '/classes/*.php');
+        foreach ($classes as $class) {
+            require_once($class);
+        }
+        self::define_constants(['DIR' => __DIR__ . '/']);
+        self::load_php_functions();
+        self::create_directories();
+    }
+
+    private static function create_directories()
+    {
+        function createDir($dir)
+        {
+            if (!is_dir(DIR . "/../$dir/")) {
+                mkdir(DIR . "/../$dir/", 0777, true);
+                @chmod(DIR . "/../$dir/", 0777);
+            }
+        }
+
+        function createFile($file)
+        {
+            if (!file_exists(DIR . "/../$file")) {
+                copy(DIR . "/files/$file", DIR . "/../$file");
+                @chmod(DIR . "/../$file", 0777);
+            }
+        }
+
+        function createConfig()
+        {
+            file_put_contents(DIR . '/../Config/.jwt_key', '');
+//            file_put_contents(DIR . '/../Config/database.json', json_encode(["host" => "", "username" => "", "passwd" => "", "dbname" => ""]));
+            file_put_contents(DIR . '/../Config/.gitignore', join("\n", ['.jwt_key', 'database.json', '*.json', '!default.json']));
+//            copy(DIR . '/../Config/database.json', DIR . '/../Config/database.prod.json');
+            @chmod(DIR . '/../Config/.jwt_key', 0777);
+//            @chmod(DIR . '/../Config/database.json', 0777);
+//            @chmod(DIR . '/../Config/database.prod.json', 0777);
+            @chmod(DIR . '/../Config/.gitignore', 0777);
+        }
+
+        createDir('Config');
+        createDir('Controller');
+        createDir('Model');
+        createDir('Helper');
+        createDir('Data');
+        createDir('public');
+        createDir('Tests');
+        createDir('Tests/Data');
+        createDir('Logs');
+
+        createConfig();
+        createFile('.htaccess');
+        createFile('index.php');
+        createFile('composer.json');
+        createFile('.gitignore');
+
+        createFile('public/.htaccess');
+
+        shell_exec('cd .. && composer install && cd .. && composer install');
+
+        JsonResponse::sendResponse('');
     }
 }
