@@ -2210,13 +2210,22 @@ html
         return array_fill_keys($keys, $value);
     }
 
+    /**
+     * @param string $FILE
+     * @param string $path
+     * @return string
+     * @throws CoreException
+     */
     public static function filePond(string $FILE, string $path): string
     {
         $FILE = System::json_decode($FILE);
         $data = base64_decode($FILE['data']);
 
-        $path = $path . urlencode(str_replace(['(', ')'], '', $FILE['name']));
-        is_dir(dirname($path)) || @mkdir(dirname($path));
+        $path = $path . '/' . urlencode(str_replace(['(', ')'], '', $FILE['name']));
+        is_dir(dirname($path)) || mkdir(dirname($path), 0777, true);
+        if (!is_dir(dirname($path))) {
+            throw new CoreException('Error. Failed to create dir. ' . dirname($path), 500, compact('FILE', 'path'));
+        }
         file_put_contents($path, $data);
 
         return $path;
