@@ -2222,6 +2222,23 @@ html
         return $path;
     }
 
+    /**
+     * @param string $path
+     */
+    public static function loadFilePond(string $path)
+    {
+        if (file_exists($path)) {
+            $mime_content_type = mime_content_type($path);
+            header('Content-Disposition: inline; filename="' . basename($path) . '"');
+            header('Content-Type: ' . $mime_content_type);
+            header('Content-Length: ' . filesize($path));
+            readfile($path);
+        } else {
+            header($_SERVER['SERVER_PROTOCOL'] . ' 404 Not Found');
+        }
+        exit;
+    }
+
     public function startup()
     {
         define('ENVIRONMENT', 'init');
