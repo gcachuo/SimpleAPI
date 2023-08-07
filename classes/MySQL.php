@@ -62,7 +62,7 @@ class MySQL
 
                 $dbname = $config['dbname'];
 
-                $this->mysqli = new mysqli($host, $username, $passwd, $dbname);
+                //$this->mysqli = new mysqli($host, $username, $passwd, $dbname);
                 $this->pdo = new PDO("mysql:host=$host;dbname=$dbname;port=$port;", $username, $passwd);
 
                 $this->pdo->query("set names 'utf8'");
