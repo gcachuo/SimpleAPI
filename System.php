@@ -2134,7 +2134,7 @@ html;
         $module = self::$dom->createElement($element);
         if (!empty(trim($html))) {
             $fragment = new DOMDocument();
-            $fragment->loadHTML(htmlspecialchars_decode(utf8_decode(htmlentities($html, ENT_COMPAT, 'utf-8', false))));
+            $fragment->loadHTML(htmlspecialchars_decode(iconv('UTF-8', 'ISO-8859-1', htmlentities($html, ENT_COMPAT, 'UTF-8')), ENT_QUOTES));
 
             $module->appendChild(self::$dom->importNode($fragment->documentElement, true));
         }
