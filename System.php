@@ -509,7 +509,7 @@ class System
             }
         }
 
-        if (!copy($file['tmp_name'], $destination)) {
+        if (!move_uploaded_file($file['tmp_name'], $destination)) {
             JsonResponse::sendResponse('File could not be moved.', HTTPStatusCodes::InternalServerError);
         }
 
