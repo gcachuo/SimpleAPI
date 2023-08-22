@@ -488,6 +488,12 @@ class System
         return strftime($format, strtotime($value));
     }
 
+    /**
+     * @param array $file
+     * @param string $destination
+     * @return bool
+     * @throws CoreException
+     */
     public static function upload_file(array $file, string $destination): bool
     {
         if (empty($file['tmp_name'])) {
