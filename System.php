@@ -267,9 +267,9 @@ class System
         } elseif ($json) {
             if (!self::isJson($json)) {
                 if ($info['http_code'] >= 500) {
-                    JsonResponse::sendResponse('', $info['http_code']);
+                    JsonResponse::sendResponse('', [], $info['http_code']);
                 } elseif ($info['http_code'] >= 400) {
-                    JsonResponse::sendResponse('', $info['http_code']);
+                    JsonResponse::sendResponse('', [], $info['http_code']);
                 } else {
                     throw new CoreException('', $info['http_code'], ['data' => $json]);
                 }
