@@ -1280,7 +1280,7 @@ class System
 
     /**
      * @param array $constants
-     * @return void
+     * @return array
      * @throws CoreException
      */
     public static function init_web(array $constants)
@@ -1345,7 +1345,7 @@ class System
             $file = $list['file'] ?? $entry;
         }
 
-        self::formatDocument($file, $module_file);
+        return compact('file', 'module_file');
     }
 
     private static function set_web_exception($exception)
@@ -1676,6 +1676,18 @@ html
                 foreach ($e_copyrights as $e_copyright) {
                     $copyright = str_replace('##YEAR##', date('Y'), $copyright);
                     $e_copyright->getElementsByTagName('p')->item(0)->nodeValue = $copyright;
+                }
+            }
+
+            if (self::getElementsByClass(self::$dom, 'div', 'privacy-notice')) {
+                $e_privacyNotices = self::getElementsByClass(self::$dom, 'div', 'privacy-notice');
+                if ($e_privacyNotices) {
+                    foreach ($e_privacyNotices as $e_privacyNotice) {
+                        $e_links = $e_privacyNotice->getElementsByTagName('a');
+                        if ($e_links->length > 0) {
+                            $e_links->item(0)->setAttribute('href', PRIVACY_NOTICE);
+                        }
+                    }
                 }
             }
 
