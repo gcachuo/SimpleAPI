@@ -62,7 +62,7 @@ class MySQL
 
                 $dbname = $config['dbname'];
 
-                $this->mysqli = new mysqli($host, $username, $passwd, $dbname);
+                //$this->mysqli = new mysqli($host, $username, $passwd, $dbname);
                 $this->pdo = new PDO("mysql:host=$host;dbname=$dbname;port=$port;", $username, $passwd);
 
                 $this->pdo->query("set names 'utf8'");
@@ -117,11 +117,6 @@ CREATE DATABASE $dbname;
 sql
         );
         self::$dbname = $dbname;
-    }
-
-    public static function unset_database()
-    {
-        self::$dbname = null;
     }
 
     public static function default_values(&$values, $keys)
@@ -445,61 +440,6 @@ sql;
     }
 
     /**
-     * @param string $table
-     * @param TableColumn[] $columns
-     * @param string $extra_sql
-     * @return bool
-     * @throws CoreException
-     */
-    function create_table(string $table, array $columns, string $extra_sql = ''): bool
-    {
-        $table_exists = array_flip(array_column($this->prepare2("show tables;")->fetchAll(PDO::FETCH_NUM), 0))[$table];
-
-        if (!$table_exists) {
-            $sql_columns = "";
-            foreach ($columns as $column) {
-                $sql_column = $this->parsed_sql_column($column);
-                $sql_columns .= $sql_column;
-            }
-            $sql_columns = trim($sql_columns, ',');
-
-            $sql = <<<sql
-CREATE TABLE IF NOT EXISTS `$table`($sql_columns) 
-ENGINE = InnoDB
-CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-sql;
-            try {
-                $this->pdo->query("DESCRIBE `$table`");
-            } catch (PDOException $exception) {
-                $sql .= $extra_sql;
-            }
-            $this->prepare2($sql);
-            return false;
-        } else {
-            try {
-                $sql_columns = implode(',', array_column($columns, 'name'));
-                $this->prepare2("select $sql_columns from $table");
-            } catch (CoreException $exception) {
-                $code = $exception->getData('code');
-                $message = $exception->getMessage();
-                switch ($code) {
-                    case 1054:
-                        preg_match('/Unknown column \'(.+)\' in \'field list\'/', $message, $matches);
-                        [$message, $column_name] = $matches;
-                        $index = array_search($column_name, array_column($columns, 'name'));
-                        $sql_column = trim($this->parsed_sql_column($columns[$index]), ',');
-                        $this->prepare2("ALTER TABLE $table ADD $sql_column;");
-                        break;
-                    default:
-                        throw $exception;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    /**
      * @return mixed
      * @deprecated
      */
@@ -598,55 +538,6 @@ sql;
             $decrypted_data[$data_key] = openssl_decrypt($decrypted, 'aes-256-cbc', $key, 0, $iv);
         }
         return $decrypted_data;
-    }
-
-    private static function interpolate_query($query, $params, $splice = false)
-    {
-        if ($splice) {
-            $params = array_splice($params, 1);
-        }
-
-        $keys = array();
-        $values = $params;
-
-        # build a regular expression for each parameter
-        foreach ($params as $key => $value) {
-            if (is_string($key)) {
-                $keys[] = '/' . $key . '(?=[^_])/';
-            } else {
-                $keys[] = '/[?]/';
-            }
-
-            if (is_array($value)) {
-                $value = $value[0];
-            }
-
-            if (is_string($value))
-                $values[$key] = "'" . $value . "'";
-
-            if (is_array($value))
-                $values[$key] = "'" . implode("','", $value) . "'";
-
-            if (is_null($value))
-                $values[$key] = 'NULL';
-
-            if (is_bool($value))
-                $values[$key] = $value ? "true" : "false";
-        }
-
-        $query = @preg_replace($keys, $values, $query);
-
-        return $query;
-    }
-
-    public function fetch()
-    {
-        return $this->stmt->fetch(PDO::FETCH_ASSOC) ?: [];
-    }
-
-    public function fetchAll($fetch_style = null)
-    {
-        return $this->stmt->fetchAll($fetch_style ?: PDO::FETCH_ASSOC);
     }
 
     /**

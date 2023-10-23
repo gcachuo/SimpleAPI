@@ -7,7 +7,7 @@ services:
     depends_on:
       - web
     environment:
-      MYSQL_DATABASE: lasalle
+      MYSQL_DATABASE: - %MYSQL_DATABASE%
       MYSQL_USER: root
       MYSQL_PASSWORD: sqlserver
       MYSQL_ROOT_PASSWORD: sqlserver

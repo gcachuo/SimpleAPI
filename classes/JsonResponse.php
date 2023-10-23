@@ -8,38 +8,38 @@ class JsonResponse
 
     /**
      * @param string $message
-     * @param mixed $data
      * @param int $code
-     * @param array $body
+     * @param array $data
+     * @throws CoreException
      */
-    public static function sendResponse(string $message, $data = [], int $code = 200, array $body = []): void
+    public static function sendResponse(string $message, array $data = [], $code = 200)
     {
-        if (!$code) {
+        if ($code) {
+            http_response_code($code);
+        } else {
             $code = http_response_code();
         }
-        http_response_code($code);
 
+        $response = compact('data');
         $data = self::encode_items($data);
-        $response = compact('message', 'code', 'data', 'body');
+        $response = compact('message', 'code', 'data', 'response');
 
-        if ($code >= 200) {
+        if ($code < HTTPStatusCodes::BadRequest) {
+            if (ob_get_length() > 0) {
+                ob_clean();
+            }
+            header('Content-Type: application/json');
+            die(json_encode($response, JSON_UNESCAPED_SLASHES));
+        } else {
             $status = 'error';
             $error = error_get_last();
+
             if (defined('FILE')) unlink(FILE);
 
-            if (defined('ENDPOINT') && ENDPOINT == 'api/logs') {
-                System::log_error(compact('status', 'code'));
-            } else {
-                System::log_error(compact('status', 'code', 'response', 'error'));
-            }
+            System::log_error(compact('status', 'code', 'response', 'error'));
 
+            throw new CoreException($response['message'] ?? $response['error'], $code, $data);
         }
-
-        if (ob_get_length() > 0) {
-            ob_clean();
-        }
-        header('Content-Type: application/json');
-        die(json_encode($response, JSON_UNESCAPED_SLASHES));
     }
 
     /**
@@ -112,41 +112,5 @@ class JsonResponse
         }
 
         return $array;
-    }
-
-    /**
-     * @param string $message
-     * @param int $code
-     * @param array $data
-     * @throws CoreException
-     */
-    public static function sendResponse(string $message, array $data = [], $code = 200)
-    {
-        if ($code) {
-            http_response_code($code);
-        } else {
-            $code = http_response_code();
-        }
-
-        $response = compact('data');
-        $data = self::encode_items($data);
-        $response = compact('message', 'code', 'data', 'response');
-
-        if ($code < HTTPStatusCodes::BadRequest) {
-            if (ob_get_length() > 0) {
-                ob_clean();
-            }
-            header('Content-Type: application/json');
-            die(json_encode($response, JSON_UNESCAPED_SLASHES));
-        } else {
-            $status = 'error';
-            $error = error_get_last();
-
-            if (defined('FILE')) unlink(FILE);
-
-            System::log_error(compact('status', 'code', 'response', 'error'));
-
-            throw new CoreException($response['message'] ?? $response['error'], $code, $data);
-        }
     }
 }
