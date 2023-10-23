@@ -1,5 +1,6 @@
 <?php
 
+use Controller\Notifications;
 use Firebase\JWT\JWT;
 use ForceUTF8\Encoding;
 use mikehaertl\wkhtmlto\Pdf;
@@ -113,10 +114,9 @@ class System
     }
 
     /**
-     * @return void
-     * @throws CoreException
+     * @return array
      */
-    private static function get_web_config(): void
+    private static function get_web_config(): array
     {
         $config = System::readJsonFile(WEBDIR . '/config.json');
 
@@ -141,13 +141,13 @@ class System
             $env_config = json_decode($env_config, true);
             $env_config = array_merge($config, $env_config);
             $env_config = $env_dev_config + $env_config;
-
-            if ($env_config ?? null) {
-                $config = $env_config;
-            }
+        }
+        if ($env_config ?? null) {
+            $config = $env_config;
         }
 
         if (!defined('WEBCONFIG')) define('WEBCONFIG', $config);
+        return $config;
     }
 
     /**
@@ -640,7 +640,7 @@ class System
 
             if (!empty($options['exp_hours'])) {
                 $hours = $options['exp_hours'];
-                $expiration = (60 * 60) * $hours;
+                $expiration = (60 * 60) * $hours; //12 Hours
                 $payload['exp'] = $time + $expiration;
             }
 
@@ -1543,7 +1543,7 @@ class System
             }
             foreach (self::$dom->getElementsByTagName('link') as $link) {
                 $old_link = $link->getAttribute('href');
-                if (strpos($old_link, '//') !== false) {
+                if (strpos($old_link, 'http') !== false) {
                     continue;
                 }
 
@@ -2440,6 +2440,9 @@ html;
     }
 
     /**
+     * @param string $FILE
+     * @param string $path
+     * @return string
      * @throws CoreException
      */
     public static function filePond(string $FILE, string $path): string

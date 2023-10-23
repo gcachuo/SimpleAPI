@@ -42,6 +42,32 @@ class JsonResponse
         die(json_encode($response, JSON_UNESCAPED_SLASHES));
     }
 
+    /**
+     * @param $array
+     * @return mixed
+     * @deprecated
+     */
+    private static function encode_items2($array)
+    {
+        foreach ($array as $key => $value) {
+            if (is_array($value)) {
+                $array[$key] = self::encode_items2($value);
+            } elseif (is_object($value)) {
+
+            } else {
+                if (!mb_detect_encoding($value, 'UTF-8', true)) {
+                    $array[$key] = utf8_encode($value);
+                } elseif (gettype($value) == 'boolean') {
+                    $array[$key] = $value ? 'true' : 'false';
+                } else {
+                    $array[$key] = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+                }
+            }
+        }
+
+        return $array;
+    }
+
     private function json_encode()
     {
         if (!defined('DEBUG_MODE'))
@@ -89,28 +115,38 @@ class JsonResponse
     }
 
     /**
-     * @param $array
-     * @return mixed
-     * @deprecated
+     * @param string $message
+     * @param int $code
+     * @param array $data
+     * @throws CoreException
      */
-    private static function encode_items2($array)
+    public static function sendResponse(string $message, array $data = [], $code = 200)
     {
-        foreach ($array as $key => $value) {
-            if (is_array($value)) {
-                $array[$key] = self::encode_items2($value);
-            } elseif (is_object($value)) {
-
-            } else {
-                if (!mb_detect_encoding($value, 'UTF-8', true)) {
-                    $array[$key] = utf8_encode($value);
-                } elseif (gettype($value) == 'boolean') {
-                    $array[$key] = $value ? 'true' : 'false';
-                } else {
-                    $array[$key] = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
-                }
-            }
+        if ($code) {
+            http_response_code($code);
+        } else {
+            $code = http_response_code();
         }
 
-        return $array;
+        $response = compact('data');
+        $data = self::encode_items($data);
+        $response = compact('message', 'code', 'data', 'response');
+
+        if ($code < HTTPStatusCodes::BadRequest) {
+            if (ob_get_length() > 0) {
+                ob_clean();
+            }
+            header('Content-Type: application/json');
+            die(json_encode($response, JSON_UNESCAPED_SLASHES));
+        } else {
+            $status = 'error';
+            $error = error_get_last();
+
+            if (defined('FILE')) unlink(FILE);
+
+            System::log_error(compact('status', 'code', 'response', 'error'));
+
+            throw new CoreException($response['message'] ?? $response['error'], $code, $data);
+        }
     }
 }
