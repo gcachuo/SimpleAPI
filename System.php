@@ -598,6 +598,9 @@ class System
     }
 
     /**
+     * @param array $file
+     * @param string $destination
+     * @return bool
      * @throws CoreException
      */
     public static function upload_file(array $file, string $destination): bool
@@ -1357,7 +1360,7 @@ class System
 
     /**
      * @param array $constants
-     * @return void
+     * @return array
      * @throws CoreException
      */
     public static function init_web(array $constants)
@@ -1425,7 +1428,7 @@ class System
             $theme = $list['theme'] ?? null;
         }
 
-        self::formatDocument($file, $module_file, $theme);
+        return compact('file', 'module_file', 'theme');
     }
 
     /**
@@ -1797,6 +1800,18 @@ html
                     $copyright = str_replace('##YEAR##', date('Y'), $copyright);
                     if ($e_copyright->getElementsByTagName('p')->item(0)) {
                         $e_copyright->getElementsByTagName('p')->item(0)->nodeValue = $copyright;
+                    }
+                }
+            }
+
+            if (self::getElementsByClass(self::$dom, 'div', 'privacy-notice')) {
+                $e_privacyNotices = self::getElementsByClass(self::$dom, 'div', 'privacy-notice');
+                if ($e_privacyNotices) {
+                    foreach ($e_privacyNotices as $e_privacyNotice) {
+                        $e_links = $e_privacyNotice->getElementsByTagName('a');
+                        if ($e_links->length > 0) {
+                            $e_links->item(0)->setAttribute('href', PRIVACY_NOTICE);
+                        }
                     }
                 }
             }
