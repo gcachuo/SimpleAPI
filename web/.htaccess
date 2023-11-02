@@ -11,4 +11,4 @@ RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
 # Rewrite everything else to index.html to allow html5 state links
-RewriteRule ^(.*)$ index.php?module=$1 [QSA,L]
+RewriteRule ^([^/]+)/([^/]+)?$ index.php?module=$1&id=$2 [L,QSA]
