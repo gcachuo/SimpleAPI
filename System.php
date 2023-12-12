@@ -2070,8 +2070,10 @@ html;
         }
 
         $module = self::createElement('div', <<<html
+<section>
     $breadcrumbs
-    $contents
+    $contents  
+</section>  
 html
         );
 
