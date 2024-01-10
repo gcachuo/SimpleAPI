@@ -335,8 +335,9 @@ class System
         $options['method'] = mb_strtoupper($options['method'] ?? 'get');
 
         $options['url'] = str_replace(' ', '%20', $options['url']);
+        $url = $options["full_url"] ? $options["url"] : $settings['apiUrl'] . ($options['url'] ?? '');
         curl_setopt_array($curl, [
-            CURLOPT_URL => $settings['apiUrl'] . ($options['url'] ?? ''),
+            CURLOPT_URL => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -395,7 +396,7 @@ class System
             return $result['data'][$select];
         }
 
-        return $result['data'];
+        return $result['data'] ?? $result;
     }
 
     /**
