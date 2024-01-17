@@ -1593,7 +1593,7 @@ class System
             foreach (self::$dom->getElementsByTagName('img') as $link) {
                 $old_link = $link->getAttribute('src');
                 if ($old_link) {
-                    if (strpos($old_link, 'http') !== false) {
+                    if (strpos($old_link, 'http') !== false || strpos($old_link, 'data:image') !== false) {
                         continue;
                     }
                     $new_link = BASENAME . $dir . $old_link;
@@ -1601,7 +1601,7 @@ class System
                 }
                 $old_link = $link->getAttribute('data-src');
                 if ($old_link) {
-                    if (strpos($old_link, 'http') !== false) {
+                    if (strpos($old_link, 'http') !== false || strpos($old_link, 'data:image') !== false) {
                         continue;
                     }
                     $link->setAttribute('data-src', BASENAME . $dir . $old_link);
