@@ -11,4 +11,5 @@ error.log
 error_log
 *.dev.json
 *.css
+!/themes/**/*.css
 *.backup.json
