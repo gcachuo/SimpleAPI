@@ -16,7 +16,7 @@ body {
   &.show {
     opacity: 1;
 
-    .modal-dialog{
+    .modal-dialog {
       margin: 0;
       max-width: unset;
     }
@@ -39,16 +39,17 @@ body {
     }
 
     .modal-body {
-      padding: 0;
       height: calc(100vh - 63px);
       overflow: auto;
+      padding: 0;
     }
   }
 
-  &.fade{
+  &.fade {
     .modal-dialog {
       transform: unset;
     }
+
     &.hide {
       opacity: 0;
     }
@@ -117,23 +118,23 @@ body {
 }
 
 ol, ul, dl {
+  margin-bottom: 0;
+
   &.tab-pane {
     padding: 0;
   }
-
-  margin-bottom: 0;
 }
 
 .receipt {
   height: 100%;
 
   table.orders {
-    border-top: 1px solid gray;
     border-bottom: 1px solid gray;
-    height: calc(100vh - 115px);
-    width: 100%;
-    margin: 27px 0;
+    border-top: 1px solid gray;
     font-size: 13px;
+    height: calc(100vh - 115px);
+    margin: 27px 0;
+    width: 100%;
 
     tr {
       td, th {
@@ -165,19 +166,21 @@ ol, ul, dl {
 }
 
 .product {
+  margin-bottom: $spacer;
+
   div {
     &.banner {
-      height: (100vh / 4);
+      background-position: center;
       background-repeat: no-repeat;
       background-size: cover;
-      background-position: center;
+      height: calc(100vh / 4);
     }
   }
 
   img {
     &.banner {
-      width: 100%;
       max-height: 200px;
+      width: 100%;
     }
 
     &.thumbnail {
@@ -186,18 +189,16 @@ ol, ul, dl {
     }
   }
 
-  margin-bottom: $spacer;
-
   .product-description {
-    min-height: $product-img-size - 100px;
     font-size: 12px;
+    min-height: $product-img-size - 100px;
   }
 
   button {
     &.btn-block {
-      position: absolute;
       bottom: 15px;
       left: 15px;
+      position: absolute;
       right: 15px;
       width: calc(100% - 30px);
     }
@@ -212,10 +213,10 @@ ol, ul, dl {
 }
 
 .tab-content {
-  min-height: calc(((#{$product-img-size} + #{$spacer}) * 4) + #{$spacer} - 24px);
   max-height: calc(100vh - 130px);
-  overflow-y: auto;
+  min-height: calc(((#{$product-img-size} + #{$spacer}) * 4) + #{$spacer} - 24px);
   overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .nav-tabs {
@@ -230,9 +231,9 @@ ol, ul, dl {
   }
 }
 
-#view{
-  overflow: auto;
+#view {
   height: 100vh;
+  overflow: auto;
 }
 
 .app-footer:not(.hide) ~ .app-body {
