@@ -1685,7 +1685,7 @@ html
                 $env = WEBCONFIG['code'];
                 self::$dom->getElementById('tag-code')->setAttribute('content', $env);
             }
-            if (self::$dom->getElementById('favicon')) {
+            if (self::getElementsByClass(self::$dom, 'link', 'project-favicon')) {
                 $env = WEBCONFIG['code'];
 
                 $logo = 'favicon.ico';
@@ -1693,8 +1693,10 @@ html
                     $logo = 'settings/' . $env . '/img/' . $logo;
                 }
 
-                $favicon = self::$dom->getElementById('favicon');
-                $favicon->setAttribute('href', BASENAME . $logo);
+                $favicon = self::getElementsByClass(self::$dom, 'link', 'project-favicon');
+                foreach ($favicon as $element) {
+                    $element->setAttribute('href', BASENAME . $logo);
+                }
             }
 
             if (self::getElementsByClass(self::$dom, 'p', 'project-description')) {
