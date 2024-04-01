@@ -1533,10 +1533,13 @@ class System
             foreach (self::$dom->getElementsByTagName('a') as $link) {
                 $old_link = $link->getAttribute('href');
 
-                if (strpos($old_link, 'tel:') !== false) {
+                if (str_contains($old_link, 'tel:')) {
                     continue;
                 }
-                if (strpos($old_link, 'http') !== false) {
+                if (str_contains($old_link, 'mailto:')) {
+                    continue;
+                }
+                if (str_contains($old_link, 'http')) {
                     continue;
                 }
                 if (($old_link[0] ?? null) == '?' || ($old_link[0] ?? null) == '#') {
