@@ -1492,6 +1492,7 @@ class System
                 'author' => $author,
                 'image' => $image,
                 'copyright' => $copyright,
+                'canonical' => $canonical,
                 'address' => $address,
                 'phone' => $phone,
                 'email' => $email,
@@ -1670,6 +1671,9 @@ html
             }
             if (self::$dom->getElementById('tag-image')) {
                 self::$dom->getElementById('tag-image')->setAttribute('content', $image);
+            }
+            if (self::$dom->getElementById('tag-canonical')) {
+                self::$dom->getElementById('tag-canonical')->setAttribute('href', $canonical);
             }
             if (self::$dom->getElementById('project-title')) {
                 self::$dom->getElementById('project-title')->nodeValue = $project;
