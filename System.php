@@ -1158,7 +1158,7 @@ class System
             if (empty($response) && $response !== false) {
                 JsonResponse::sendResponse($message);
             } else if (is_scalar($response)) {
-                JsonResponse::sendResponse($message, [], +$response);
+                JsonResponse::sendResponse($message, +$response);
             } else if (is_array($response)) {
                 JsonResponse::sendResponse($message, $response);
             } else {

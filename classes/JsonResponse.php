@@ -12,7 +12,7 @@ class JsonResponse
      * @param array $data
      * @throws CoreException
      */
-    public static function sendResponse(string $message, array $data = [], int $code = 200)
+    public static function sendResponse(string $message, array|int $data = [], int $code = 200)
     {
         if ($code) {
             http_response_code($code);
