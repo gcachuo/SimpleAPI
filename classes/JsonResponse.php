@@ -12,7 +12,7 @@ class JsonResponse
      * @param array $data
      * @throws CoreException
      */
-    public static function sendResponse(string $message, array $data = [], $code = 200)
+    public static function sendResponse(string $message, array $data = [], int $code = 200)
     {
         if ($code) {
             http_response_code($code);
@@ -52,9 +52,7 @@ class JsonResponse
         foreach ($array as $key => $value) {
             if (is_array($value)) {
                 $array[$key] = self::encode_items2($value);
-            } elseif (is_object($value)) {
-
-            } else {
+            } elseif (!is_object($value)) {
                 if (!mb_detect_encoding($value, 'UTF-8', true)) {
                     $array[$key] = utf8_encode($value);
                 } elseif (gettype($value) == 'boolean') {
@@ -68,6 +66,9 @@ class JsonResponse
         return $array;
     }
 
+    /**
+     * @throws CoreException
+     */
     private function json_encode()
     {
         if (!defined('DEBUG_MODE'))
@@ -85,7 +86,7 @@ class JsonResponse
         if (!$json) {
             $message = 'Fatal error. JSON response malformed.';
             if (DEBUG_MODE) $error = json_last_error_msg();
-            JsonResponse::sendResponse(compact('message', 'error'), HTTPStatusCodes::InternalServerError);
+            JsonResponse::sendResponse($message, compact('message', 'error'), HTTPStatusCodes::InternalServerError);
         } else {
             self::$json = $json;
         }
@@ -96,9 +97,7 @@ class JsonResponse
         foreach ($array as $key => $value) {
             if (is_array($value)) {
                 $array[$key] = self::encode_items($value);
-            } elseif (is_object($value)) {
-
-            } else {
+            } elseif (!is_object($value)) {
                 if (!mb_detect_encoding($value, 'UTF-8', true)) {
                     $array[$key] = utf8_encode($value);
                 } elseif (gettype($value) == 'boolean') {
