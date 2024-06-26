@@ -22,6 +22,8 @@ cp ../web/.htaccess ../../;
 cp ../web/.gitignore ../../;
 cp ../web/settings.json ../../;
 cp ../web/manifest.json ../../;
+cp ../web/docker-compose.yml ../../;
+cp ../web/Dockerfile ../../;
 cp -avR ../web/modules/* ../../modules/;
 
 wget -O ../../logo.png https://picsum.photos/300/300;
