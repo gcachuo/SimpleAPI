@@ -98,9 +98,7 @@ class JsonResponse
             if (is_array($value)) {
                 $array[$key] = self::encode_items($value);
             } elseif (!is_object($value)) {
-                if (!mb_detect_encoding($value, 'UTF-8', true)) {
-                    $array[$key] = utf8_encode($value);
-                } elseif (gettype($value) == 'boolean') {
+                if (gettype($value) == 'boolean') {
                     $array[$key] = (boolean)$value;
                 } elseif (is_numeric($value)) {
                     $array[$key] = +$value;

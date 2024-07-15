@@ -898,11 +898,6 @@ class System
 
     public static function utf8($value)
     {
-        if (mb_detect_encoding(utf8_decode($value)) === 'UTF-8') {
-            // Double encoded, or bad encoding
-            $value = utf8_decode($value);
-        }
-
         include_once __DIR__ . '/vendor/neitanod/forceutf8/src/ForceUTF8/Encoding.php';
         return Encoding::toUTF8($value);
     }
