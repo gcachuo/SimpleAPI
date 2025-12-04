@@ -158,8 +158,12 @@ class System
     public static function readJsonFile(string $filename)
     {
         $file = fopen($filename, 'a+');
+        if ($file === false) {
+            throw new CoreException("No se pudo abrir el archivo: $filename", 500);
+        }
         fclose($file);
         return System::json_decode(file_get_contents($filename)) ?: [];
+
     }
 
     /**
