@@ -1344,6 +1344,11 @@ class System
             $list = $list[$item] ?? $list['modules'][$item] ?? [];
             $file = $list['file'] ?? $entry;
         }
+        
+        // Validate module exists in configuration
+        if (empty($list) && $module_file !== $default) {
+            throw new CoreException('Module not found in configuration', 404);
+        }
 
         return compact('file', 'module_file');
     }
