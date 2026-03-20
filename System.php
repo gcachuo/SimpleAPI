@@ -2011,8 +2011,12 @@ html;
             }
         }
         $module_path = WEBDIR . '/modules/';
+        // Temporary debug log
+        error_log("DEBUG load_module: file=$file, checking: " . $module_path . $file . '.php');
         if (!file_exists($module_path . $file . '.php')) {
+            error_log("DEBUG load_module: .php not found, checking: " . $module_path . $file . '/index.php');
             if (!file_exists($module_path . $file . '/index.php')) {
+                error_log("DEBUG load_module: index.php not found either");
                 $code = HTTPStatusCodes::NotFound;
                 $status = 'error';
                 $response = [
