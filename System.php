@@ -1614,7 +1614,7 @@ html
                 }
             }
 
-            if (self::getElementsByClass(self::$dom, 'a', 'social_media:twitter')) {
+            if (isset($social_media['twitter']) && self::getElementsByClass(self::$dom, 'a', 'social_media:twitter')) {
                 $e_media = (self::getElementsByClass(self::$dom, 'a', 'social_media:twitter'));
                 /** @var DOMElement $element */
                 foreach ($e_media as $element) {
