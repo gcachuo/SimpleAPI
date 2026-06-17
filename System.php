@@ -1835,8 +1835,12 @@ html
                 $config = WEBCONFIG;
                 foreach ($imgs as $img) {
                     $env = $config['code'];
-                    $logo = BASENAME . 'logo.png';
-                    if (file_exists(__DIR__ . '/../settings/' . $env . '/img/logo.png')) {
+                    $logo = BASENAME . 'logo_square_transparent.png';
+                    if (file_exists(__DIR__ . '/../settings/' . $env . '/img/logo_square_transparent.png')) {
+                        $logo = BASENAME . 'settings/' . $env . '/img/logo_square_transparent.png';
+                    } elseif (file_exists(__DIR__ . '/../settings/' . $env . '/img/logo_square.png')) {
+                        $logo = BASENAME . 'settings/' . $env . '/img/logo_square.png';
+                    } elseif (file_exists(__DIR__ . '/../settings/' . $env . '/img/logo.png')) {
                         $logo = BASENAME . 'settings/' . $env . '/img/logo.png';
                     }
                     $img->setAttribute('src', $logo);
