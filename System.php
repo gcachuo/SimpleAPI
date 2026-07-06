@@ -1505,6 +1505,7 @@ class System
                 'modules' => $module_list,
             ] = WEBCONFIG + [
                 'image' => '',
+                'canonical' => '',
                 'address' => '',
                 'phone' => '',
                 'email' => '',
