@@ -1548,6 +1548,9 @@ class System
                 if (str_contains($old_link, 'http')) {
                     continue;
                 }
+                if (($old_link[0] ?? null) == '/') {
+                    continue;
+                }
                 if (($old_link[0] ?? null) == '?' || ($old_link[0] ?? null) == '#') {
                     $old_link = $module_file . $old_link;
                 }
@@ -1557,6 +1560,9 @@ class System
             foreach (self::$dom->getElementsByTagName('link') as $link) {
                 $old_link = $link->getAttribute('href');
                 if (strpos($old_link, 'http') !== false) {
+                    continue;
+                }
+                if (($old_link[0] ?? null) == '/') {
                     continue;
                 }
 
@@ -1584,7 +1590,7 @@ class System
             foreach (self::$dom->getElementsByTagName('div') as $link) {
                 $old_link = $link->getAttribute('data-image');
                 if ($old_link) {
-                    if (strpos($old_link, 'http') !== false) {
+                    if (($old_link[0] ?? null) == '/' || strpos($old_link, 'http') !== false) {
                         continue;
                     }
                     $link->setAttribute('data-image', BASENAME . $dir . $old_link);
@@ -1593,7 +1599,7 @@ class System
             foreach (self::$dom->getElementsByTagName('section') as $link) {
                 $old_link = $link->getAttribute('data-image');
                 if ($old_link) {
-                    if (strpos($old_link, 'http') !== false) {
+                    if (($old_link[0] ?? null) == '/' || strpos($old_link, 'http') !== false) {
                         continue;
                     }
                     $link->setAttribute('data-image', BASENAME . $dir . $old_link);
@@ -1602,24 +1608,27 @@ class System
             foreach (self::$dom->getElementsByTagName('img') as $link) {
                 $old_link = $link->getAttribute('src');
                 if ($old_link) {
-                    if (strpos($old_link, 'http') !== false || strpos($old_link, 'data:image') !== false) {
-                        continue;
+                    if (strpos($old_link, 'http') !== false || strpos($old_link, 'data:image') !== false || ($old_link[0] ?? null) == '/') {
+                        // Leave absolute URLs and data URIs untouched.
+                    } else {
+                        $new_link = BASENAME . $dir . $old_link;
+                        $link->setAttribute('src', $new_link);
                     }
-                    $new_link = BASENAME . $dir . $old_link;
-                    $link->setAttribute('src', $new_link);
                 }
                 $old_link = $link->getAttribute('data-src');
                 if ($old_link) {
-                    if (strpos($old_link, 'http') !== false || strpos($old_link, 'data:image') !== false) {
-                        continue;
+                    if (strpos($old_link, 'http') !== false || strpos($old_link, 'data:image') !== false || ($old_link[0] ?? null) == '/') {
+                        // Leave absolute URLs and data URIs untouched.
+                    } else {
+                        $link->setAttribute('data-src', BASENAME . $dir . $old_link);
                     }
-                    $link->setAttribute('data-src', BASENAME . $dir . $old_link);
                 }
                 $old_links = $link->getAttribute('srcset');
                 if ($old_links) {
                     $new_links = [];
                     foreach (explode(', ', $old_links) as $old_link) {
-                        if (strpos($old_link, 'http') !== false) {
+                        $trimmed_link = ltrim($old_link);
+                        if (strpos($trimmed_link, 'http') !== false || ($trimmed_link[0] ?? null) == '/') {
                             $new_links[] = $old_link;
                             continue;
                         }
@@ -1630,12 +1639,15 @@ class System
             }
             foreach (self::$dom->getElementsByTagName('source') as $link) {
                 $old_link = $link->getAttribute('src');
+                if (!$old_link || ($old_link[0] ?? null) == '/') {
+                    continue;
+                }
                 $link->setAttribute('src', BASENAME . $dir . $old_link);
             }
             foreach (self::$dom->getElementsByTagName('script') as $link) {
                 $old_link = $link->getAttribute('src');
                 if ($old_link) {
-                    if (strpos($old_link, '//') !== false) {
+                    if (($old_link[0] ?? null) == '/' || strpos($old_link, '//') !== false) {
                         continue;
                     }
                     $link->setAttribute('src', BASENAME . $dir . $old_link);
