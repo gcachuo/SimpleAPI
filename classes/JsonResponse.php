@@ -60,7 +60,7 @@ class JsonResponse
                 } elseif (gettype($value) == 'boolean') {
                     $array[$key] = $value ? 'true' : 'false';
                 } else {
-                    $array[$key] = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+                    $array[$key] = $value;
                 }
             }
         }
@@ -106,7 +106,7 @@ class JsonResponse
                 } elseif (is_numeric($value)) {
                     $array[$key] = +$value;
                 } elseif (gettype($value) == 'string') {
-                    $array[$key] = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+                    $array[$key] = $value;
                 }
             }
         }
