@@ -280,10 +280,11 @@ class System
                     if (!$code) {
                         throw new CoreException('Response Code not defined', 500);
                     }
-                    if (is_array($result['message'])) {
-                        $result['message'] = implode(' ', $result['message']);
+                    $message = $result['message'] ?? ($result['error'] ?? 'Request error');
+                    if (is_array($message)) {
+                        $message = implode(' ', $message);
                     }
-                    throw new CoreException($result['message'], $code, $result['data']);
+                    throw new CoreException($message, $code, $result['data'] ?? []);
                 }
             }
         } else {
