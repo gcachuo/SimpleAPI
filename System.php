@@ -1460,6 +1460,8 @@ class System
                     continue;
                 }
 
+                $base = rtrim(BASENAME, '/');
+
                 if ($old_link === 'manifest.json') {
                     $env = 'settings/' . WEBCONFIG['code'] . '/';
                     $new_link = BASENAME . $env . $old_link;
@@ -1468,7 +1470,11 @@ class System
                     }
                     $link->setAttribute('href', $new_link);
                 } else {
-                    $link->setAttribute('href', BASENAME . $dir . $old_link);
+                    if (($old_link[0] ?? null) === '/') {
+                        $link->setAttribute('href', $base . $old_link);
+                    } else {
+                        $link->setAttribute('href', BASENAME . $dir . $old_link);
+                    }
                 }
             }
             foreach (self::$dom->getElementsByTagName('div') as $link) {
@@ -1484,7 +1490,9 @@ class System
                     if (strpos($old_link, 'http') !== false) {
                         continue;
                     }
-                    if ($old_link[0] === '/') {
+                    if (($old_link[0] ?? null) === '/') {
+                        $base = rtrim(BASENAME, '/');
+                        $link->setAttribute('src', $base . $old_link);
                         continue;
                     }
                     $link->setAttribute('src', BASENAME . $dir . $old_link);
@@ -1494,7 +1502,12 @@ class System
                     if (strpos($old_link, 'http') !== false) {
                         continue;
                     }
-                    $link->setAttribute('data-src', BASENAME . $dir . $old_link);
+                    if (($old_link[0] ?? null) === '/') {
+                        $base = rtrim(BASENAME, '/');
+                        $link->setAttribute('data-src', $base . $old_link);
+                    } else {
+                        $link->setAttribute('data-src', BASENAME . $dir . $old_link);
+                    }
                 }
                 $old_links = $link->getAttribute('srcset');
                 if ($old_links) {
@@ -1511,7 +1524,12 @@ class System
             }
             foreach (self::$dom->getElementsByTagName('source') as $link) {
                 $old_link = $link->getAttribute('src');
-                $link->setAttribute('src', BASENAME . $dir . $old_link);
+                if (($old_link[0] ?? null) === '/') {
+                    $base = rtrim(BASENAME, '/');
+                    $link->setAttribute('src', $base . $old_link);
+                } else {
+                    $link->setAttribute('src', BASENAME . $dir . $old_link);
+                }
             }
             foreach (self::$dom->getElementsByTagName('script') as $link) {
                 $old_link = $link->getAttribute('src');
@@ -1519,7 +1537,12 @@ class System
                     if (strpos($old_link, 'http') !== false) {
                         continue;
                     }
-                    $link->setAttribute('src', BASENAME . $dir . $old_link);
+                    if (($old_link[0] ?? null) === '/') {
+                        $base = rtrim(BASENAME, '/');
+                        $link->setAttribute('src', $base . $old_link);
+                    } else {
+                        $link->setAttribute('src', BASENAME . $dir . $old_link);
+                    }
                 }
             }
 
