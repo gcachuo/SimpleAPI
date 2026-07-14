@@ -1616,18 +1616,21 @@ html
                         $existing = $xpath->query('//head/meta[@name="' . $property . '"]')->item(0);
                     }
                     if (!$existing) {
-                        $fragment = self::$dom->createDocumentFragment();
-                        $fragment->appendXML('<meta property="' . $property . '" content="' . htmlspecialchars($content, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '">');
-                        $head->appendChild($fragment);
+                        $meta = self::$dom->createElement('meta');
+                        $meta->setAttribute('property', $property);
+                        $meta->setAttribute('content', $content);
+                        $head->appendChild($meta);
                     } else {
                         $existing->setAttribute('content', $content);
                     }
                 }
                 $canonical = self::$dom->getElementById('canonical');
                 if (!$canonical) {
-                    $fragment = self::$dom->createDocumentFragment();
-                    $fragment->appendXML('<link id="canonical" rel="canonical" href="' . htmlspecialchars($currentUrl, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '">');
-                    $head->appendChild($fragment);
+                    $canonical = self::$dom->createElement('link');
+                    $canonical->setAttribute('id', 'canonical');
+                    $canonical->setAttribute('rel', 'canonical');
+                    $canonical->setAttribute('href', $currentUrl);
+                    $head->appendChild($canonical);
                 } else {
                     $canonical->setAttribute('href', $currentUrl);
                 }
