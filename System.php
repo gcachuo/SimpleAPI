@@ -1366,7 +1366,7 @@ class System
         self::$error_code = $code;
 
         self::get_web_config();
-        self::$error_message = WEBCONFIG['error']['messages'][$code];
+        self::$error_message = WEBCONFIG['error']['messages'][$code] ?? 'Error del servidor';
         switch ($code) {
             case 404:
                 parse_str($_SERVER['QUERY_STRING'], $query_string);
@@ -1897,13 +1897,6 @@ html
                                 $permission = $module_list[$module]['modules'][$action] ?? false;
                                 if (!$found) {
                                     $found = $module_list[$module]['action']['href'] === $action;
-                                }
-                                if (!$found) {
-                                    $module_file_path = WEBDIR . '/modules/' . $module . '/' . $action . '.php';
-                                    if (file_exists($module_file_path)) {
-                                        $found = true;
-                                        $permission = $permission ?: ($module_list[$module] ?? true);
-                                    }
                                 }
                             }
 
