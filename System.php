@@ -1484,6 +1484,9 @@ class System
                     if (strpos($old_link, 'http') !== false) {
                         continue;
                     }
+                    if ($old_link[0] === '/') {
+                        continue;
+                    }
                     $link->setAttribute('src', BASENAME . $dir . $old_link);
                 }
                 $old_link = $link->getAttribute('data-src');
