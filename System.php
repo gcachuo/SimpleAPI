@@ -1887,26 +1887,24 @@ html
                                 return ($module['permissions'] ?? true) === false;
                             });
                         if ($module_file !== WEBCONFIG['default'] && !($module_list[$module_file] ?? null)) {
-                            $path = array_values(array_filter(explode('/', $module_file)));
-                            $find = function ($modules, $path) use (&$find) {
-                                $name = array_shift($path);
-                                if ($name === null) {
-                                    return false;
+                            @list($module, $action) = explode('/', $module_file);
+
+                            $found = MODULES[$module] ?? false;
+                            $permission = $module_list[$module] ?? false;
+
+                            if ($action) {
+                                $found = MODULES[$module]['modules'][$action] ?? false;
+                                $permission = $module_list[$module]['modules'][$action] ?? false;
+                                if (!$found) {
+                                    $found = $module_list[$module]['action']['href'] === $action;
                                 }
-                                $module = $modules[$name] ?? false;
-                                if (!$module) {
-                                    return false;
+                                if (!$found) {
+                                    $module_file_path = WEBDIR . '/modules/' . $module . '/' . $action . '.php';
+                                    if (file_exists($module_file_path)) {
+                                        $found = true;
+                                        $permission = $permission ?: ($module_list[$module] ?? true);
+                                    }
                                 }
-                                if (empty($path)) {
-                                    return $module;
-                                }
-                                return $find($module['modules'] ?? [], $path);
-                            };
-                            $found = $find(MODULES, $path);
-                            $permission = $find($module_list, $path);
-                            if (!$found) {
-                                @list($module, $action) = explode('/', $module_file, 2);
-                                $found = ($module_list[$module]['action']['href'] ?? null) === $action;
                             }
 
                             if (!$found) {
