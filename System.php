@@ -1596,7 +1596,8 @@ html
                 $base = rtrim(BASENAME, '/');
                 $logo = $base . '/logo.png';
                 $host = rtrim(self::getHost(), '/');
-                $currentUrl = $host . '/' . ltrim($module_file ?? '', '/');
+                $requestPath = trim(str_replace(BASENAME, '', $_SERVER['REQUEST_URI'] ?? '/'), '/');
+                $currentUrl = $host . ($requestPath ? '/' . $requestPath : '/');
                 $ogTags = [
                     'og:title' => $project,
                     'og:description' => $description,
