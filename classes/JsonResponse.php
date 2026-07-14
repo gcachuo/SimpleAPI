@@ -99,12 +99,14 @@ class JsonResponse
             } elseif (is_object($value)) {
 
             } else {
-                if (!mb_detect_encoding($value, 'UTF-8', true)) {
-                    $array[$key] = utf8_encode($value);
+                if ($value === null || $value === '') {
+                    $array[$key] = '';
                 } elseif (gettype($value) == 'boolean') {
                     $array[$key] = (boolean)$value;
                 } elseif (is_numeric($value)) {
                     $array[$key] = +$value;
+                } elseif (is_string($value) && !mb_detect_encoding($value, 'UTF-8', true)) {
+                    $array[$key] = utf8_encode($value);
                 } elseif (gettype($value) == 'string') {
                     $array[$key] = $value;
                 }
