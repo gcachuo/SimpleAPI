@@ -1633,6 +1633,14 @@ html
                 }
             }
 
+            if (isset(WEBCONFIG['getButton']['whatsapp']) && self::getElementsByClass(self::$dom, 'a', 'social_media:whatsapp')) {
+                $e_media = (self::getElementsByClass(self::$dom, 'a', 'social_media:whatsapp'));
+                /** @var DOMElement $element */
+                foreach ($e_media as $element) {
+                    $element->setAttribute('href', 'https://wa.me/' . WEBCONFIG['getButton']['whatsapp']);
+                }
+            }
+
             if (self::getElementsByClass(self::$dom, 'a', 'social_media:website')) {
                 $e_media = (self::getElementsByClass(self::$dom, 'a', 'social_media:website'));
                 /** @var DOMElement $element */
