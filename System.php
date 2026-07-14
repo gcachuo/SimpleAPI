@@ -903,9 +903,9 @@ class System
 
     public static function utf8($value)
     {
-        if (mb_detect_encoding(utf8_decode($value)) === 'UTF-8') {
+        if (mb_detect_encoding(mb_convert_encoding($value, 'ISO-8859-1', 'UTF-8')) === 'UTF-8') {
             // Double encoded, or bad encoding
-            $value = utf8_decode($value);
+            $value = mb_convert_encoding($value, 'ISO-8859-1', 'UTF-8');
         }
 
         include_once __DIR__ . '/vendor/neitanod/forceutf8/src/ForceUTF8/Encoding.php';
