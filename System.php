@@ -1595,7 +1595,7 @@ html
                 $head = self::$dom->getElementsByTagName('head')->item(0);
                 $base = rtrim(BASENAME, '/');
                 $logo = $base . '/logo.png';
-                $host = self::getHost();
+                $host = rtrim(self::getHost(), '/');
                 $currentUrl = $host . '/' . ltrim($module_file, '/');
                 $ogTags = [
                     'og:title' => $project,
