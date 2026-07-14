@@ -1591,6 +1591,49 @@ html
                 self::$dom->getElementById('project-error-button')->nodeValue = self::$error_button;
             }
 
+            if (self::$dom->getElementsByTagName('head')->item(0)) {
+                $head = self::$dom->getElementsByTagName('head')->item(0);
+                $base = rtrim(BASENAME, '/');
+                $logo = $base . '/logo.png';
+                $currentUrl = $base . '/' . ltrim($module_file, '/');
+                $seoTags = [
+                    'og:title' => $project,
+                    'og:description' => $description,
+                    'og:type' => 'website',
+                    'og:url' => $currentUrl,
+                    'og:image' => $logo,
+                    'og:site_name' => $project,
+                    'twitter:card' => 'summary_large_image',
+                    'twitter:title' => $project,
+                    'twitter:description' => $description,
+                    'twitter:image' => $logo,
+                    'robots' => 'index, follow',
+                ];
+                foreach ($seoTags as $property => $content) {
+                    $selector = 'meta[property="' . $property . '"], meta[name="' . $property . '"]';
+                    $xpath = new DOMXPath(self::$dom);
+                    $existing = $xpath->query($selector, $head)->item(0);
+                    if (!$existing) {
+                        $fragment = self::$dom->createDocumentFragment();
+                        $fragment->appendXML('<meta property="' . $property . '" content="' . htmlspecialchars($content, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '">');
+                        $head->appendChild($fragment);
+                    } else {
+                        $existing->setAttribute('content', $content);
+                    }
+                }
+                $canonical = self::$dom->getElementById('canonical');
+                if (!$canonical) {
+                    $fragment = self::$dom->createDocumentFragment();
+                    $fragment->appendXML('<link id="canonical" rel="canonical" href="' . htmlspecialchars($currentUrl, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '">');
+                    $head->appendChild($fragment);
+                } else {
+                    $canonical->setAttribute('href', $currentUrl);
+                }
+                if (self::$dom->getElementById('tag-image')) {
+                    self::$dom->getElementById('tag-image')->setAttribute('content', $logo);
+                }
+            }
+
             if (self::$dom->getElementById('tag-code')) {
                 $env = WEBCONFIG['code'];
                 self::$dom->getElementById('tag-code')->setAttribute('content', $env);
