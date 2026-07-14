@@ -1531,7 +1531,7 @@ class System
                 foreach ($assets as $asset_file) {
                     ['basename' => $bundle] = pathinfo($asset_file);
                     $fragment = self::$dom->createDocumentFragment();
-                    $basename = BASENAME;
+                    $basename = rtrim(BASENAME, '/');
                     $fragment->appendXML(<<<html
 <script src="$basename/assets/dist/$bundle"></script>
 html
