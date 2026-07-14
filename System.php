@@ -1595,31 +1595,50 @@ html
                 $head = self::$dom->getElementsByTagName('head')->item(0);
                 $base = rtrim(BASENAME, '/');
                 $logo = $base . '/logo.png';
-                $currentUrl = $base . '/' . ltrim($module_file, '/');
-                $seoTags = [
+                $host = self::getHost();
+                $currentUrl = $host . '/' . ltrim($module_file, '/');
+                $ogTags = [
                     'og:title' => $project,
                     'og:description' => $description,
                     'og:type' => 'website',
                     'og:url' => $currentUrl,
                     'og:image' => $logo,
                     'og:site_name' => $project,
+                ];
+                $nameTags = [
                     'twitter:card' => 'summary_large_image',
                     'twitter:title' => $project,
                     'twitter:description' => $description,
                     'twitter:image' => $logo,
                     'robots' => 'index, follow',
                 ];
-                foreach ($seoTags as $property => $content) {
-                    $xpath = new DOMXPath(self::$dom);
-                    $existing = $xpath->query('//head/meta[@property="' . $property . '"]')->item(0);
+                $xpath = new DOMXPath(self::$dom);
+                foreach ($ogTags as $property => $content) {
+                    $existing = $xpath->query('//head/meta[@property="' . $property . '" and @content]')->item(0);
                     if (!$existing) {
-                        $existing = $xpath->query('//head/meta[@name="' . $property . '"]')->item(0);
+                        $existing = $xpath->query('//head/meta[@property="' . $property . '" and not(@content)]')->item(0);
                     }
                     if (!$existing) {
                         $meta = self::$dom->createElement('meta');
                         $meta->setAttribute('property', $property);
                         $meta->setAttribute('content', $content);
                         $head->appendChild($meta);
+                        $head->appendChild(self::$dom->createTextNode("\n"));
+                    } else {
+                        $existing->setAttribute('content', $content);
+                    }
+                }
+                foreach ($nameTags as $name => $content) {
+                    $existing = $xpath->query('//head/meta[@name="' . $name . '" and @content]')->item(0);
+                    if (!$existing) {
+                        $existing = $xpath->query('//head/meta[@name="' . $name . '" and not(@content)]')->item(0);
+                    }
+                    if (!$existing) {
+                        $meta = self::$dom->createElement('meta');
+                        $meta->setAttribute('name', $name);
+                        $meta->setAttribute('content', $content);
+                        $head->appendChild($meta);
+                        $head->appendChild(self::$dom->createTextNode("\n"));
                     } else {
                         $existing->setAttribute('content', $content);
                     }
@@ -1631,6 +1650,7 @@ html
                     $canonical->setAttribute('rel', 'canonical');
                     $canonical->setAttribute('href', $currentUrl);
                     $head->appendChild($canonical);
+                    $head->appendChild(self::$dom->createTextNode("\n"));
                 } else {
                     $canonical->setAttribute('href', $currentUrl);
                 }
