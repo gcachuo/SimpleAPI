@@ -6,6 +6,12 @@ class CoreException extends Exception
 
     public function __construct($message, $code, array $data = null)
     {
+        if (is_array($message)) {
+            $message = implode(' ', $message);
+        }
+        $message = (string)($message ?? '');
+        $code = (int)$code;
+
         $status = 'exception';
         $error = $this->getTrace();
         $this->data = $data;
