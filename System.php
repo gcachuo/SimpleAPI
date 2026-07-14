@@ -1610,9 +1610,11 @@ html
                     'robots' => 'index, follow',
                 ];
                 foreach ($seoTags as $property => $content) {
-                    $selector = 'meta[property="' . $property . '"], meta[name="' . $property . '"]';
                     $xpath = new DOMXPath(self::$dom);
-                    $existing = $xpath->query($selector, $head)->item(0);
+                    $existing = $xpath->query('//head/meta[@property="' . $property . '"]')->item(0);
+                    if (!$existing) {
+                        $existing = $xpath->query('//head/meta[@name="' . $property . '"]')->item(0);
+                    }
                     if (!$existing) {
                         $fragment = self::$dom->createDocumentFragment();
                         $fragment->appendXML('<meta property="' . $property . '" content="' . htmlspecialchars($content, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '">');
