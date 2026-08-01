@@ -176,7 +176,7 @@ class System
 
     public static function redirect(string $path = '', bool $external = false)
     {
-        $request_uri = str_replace(BASENAME, '', $_SERVER['REQUEST_URI']);
+        $request_uri = str_replace(BASENAME, '', $_SERVER['REQUEST_URI'] ?? '');
         $pathinfo = pathinfo($request_uri);
         if ($pathinfo['dirname'] !== $path && $pathinfo['filename'] !== $path && !($pathinfo['extension'] ?? null)) {
             if (!$external) {
@@ -1880,7 +1880,7 @@ html
             if (self::$dom->getElementsByTagName('nav')) {
                 $fragment = self::$dom->createDocumentFragment();
 
-                if (defined('SESSIONCHECK') && SESSIONCHECK && pathinfo($module_file, PATHINFO_EXTENSION) !== 'js') {
+                if (defined('SESSIONCHECK') && SESSIONCHECK && pathinfo($module_file ?? '', PATHINFO_EXTENSION) !== 'js') {
                     $user = System::sessionCheck('user_token');
                     if (($user['permissions'] ?? null) !== null) {
                         $module_list = ($_SESSION['modules'] ?? []) + array_filter(MODULES, function ($module) {
@@ -2107,9 +2107,9 @@ html;
 
     public static function load_module($file)
     {
-        $pathinfo = pathinfo($file);
+        $pathinfo = pathinfo($file ?? '');
         if (!($pathinfo['extension'] ?? null)) {
-            if ($file[strlen($file) - 1] === '/') {
+            if ($file && $file[strlen($file) - 1] === '/') {
                 $file .= 'index';
             }
         }
