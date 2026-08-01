@@ -134,8 +134,9 @@ class System
      */
     public static function readJsonFile(string $filename)
     {
-        $file = fopen($filename, 'a+');
-        fclose($file);
+        if (!file_exists($filename)) {
+            @touch($filename);
+        }
         return System::json_decode(file_get_contents($filename)) ?: [];
     }
 
@@ -1239,8 +1240,6 @@ class System
 
     public static function writeJsonFile(string $filename, array $data)
     {
-        $file = fopen($filename, 'a+');
-        fclose($file);
         file_put_contents($filename, json_encode($data));
     }
 
