@@ -1,27 +1,38 @@
-# AGENTS.md — SimpleAPI (core)
+# AGENTS.md — SimpleAPI
 
-Guía para agentes de IA (Devin, Claude Code, Cursor, etc.) que trabajen dentro de este submódulo.
+Guía para agentes de IA (Devin, Claude Code, Cursor, etc.) que trabajen dentro de este
+submódulo.
 
 > **Alto nivel:** Este directorio es un **submódulo git** que apunta a
 > https://github.com/gcachuo/SimpleAPI.git. Es un **framework PHP reutilizable** consumido por
-> varios proyectos (p. ej. `Pagina/` del Colegio La Salle Peñitas). **No pertenece a un proyecto
-> concreto**: los cambios aquí afectan a todos los consumidores. Editar con cuidado y preferir
-> hacer los cambios en este repo antes que parchearlos desde los proyectos que lo consumen.
+> varios proyectos, tanto en **modo web** como en **modo API**. **No pertenece a ningún
+> proyecto concreto**: los cambios aquí afectan a todos los consumidores. Editar con cuidado
+> y preferir hacer los cambios en este repo antes que parchearlos desde los proyectos que lo
+> consumen.
+>
+> **Nombre del submódulo:** el directorio puede llamarse `core/`, `Lib/` u otro según el
+> consumidor (ver `.gitmodules` del proyecto padre). En este documento se usa `core/` como
+> referencia genérica.
 
 ## Descripción del Proyecto
 
-**SimpleAPI** es un framework / runtime PHP 8.0 que provee:
+**SimpleAPI** es un framework / runtime PHP 8.0 con **dos modos de operación**:
 
-- Un **sistema central** (`System.php`) con utilidades estáticas: sesiones, JWT, cURL, email,
-  PDF, logs, i18n, manejo de archivos, tokens, validaciones, etc.
-- Un **enrutador web** que renderiza módulos PHP sobre una plantilla HTML (tema) usando
-  `DOMDocument` para componer el documento final (`init_web()` + `formatDocument()`).
-- Un **enrutador API** basado en `Controller` + `REQUEST_METHOD` + `ENDPOINT`.
-- Clases auxiliares: `MySQL` (PDO/mysqli), `JsonResponse`, `CoreException`,
+- **Modo web** — enrutado por módulos + temas HTML, render con `DOMDocument`
+  (`System::init_web()` + `System::formatDocument()`).
+- **Modo API** — enrutado REST por `Controller` + `REQUEST_METHOD` + `ENDPOINT`
+  (`System::init()` + `Controller::call()`).
+
+Componentes:
+- **Sistema central** (`System.php`) con utilidades estáticas: sesiones (solo modo web), JWT,
+  cURL, email, PDF, logs, i18n, manejo de archivos, tokens, validaciones, etc.
+- **Clases auxiliares**: `MySQL` (PDO/mysqli), `JsonResponse`, `CoreException`,
   `HTTPStatusCodes`, `Webhook`, `WebSocket` (Ratchet), `TableColumn`, `ColumnTypes`,
   `Stopwatch`.
-- Un **bootstrap** (`web/`) con `index.php`, `config.json`, `settings.json`, `manifest.json`,
+- **Bootstrap web** (`web/`) con `index.php`, `config.json`, `settings.json`, `manifest.json`,
   `service-worker.js` y un módulo `dashboard` de ejemplo.
+- **Bootstrap API** (`files/index.php`) — entry point minimalista que llama a
+  `System::init(['DIR' => __DIR__])`; es el patrón que usan los proyectos API consumidor.
 - Herramientas CLI / scripts en `scripts/` (`init.php`, `socket.php`, `web.sh`,
   `wkhtmltopdf.sh`).
 - Tests PHPUnit en `files/Tests/`.
@@ -35,8 +46,9 @@ Guía para agentes de IA (Devin, Claude Code, Cursor, etc.) que trabajen dentro 
 
 ## Estructura del Repositorio
 
+### Del framework (este repo)
 ```
-core/
+core/                       # o Lib/, según el consumidor
 ├── System.php              # Clase principal del framework (~96 KB, ~2.4k líneas)
 ├── classes/                # Clases del núcleo
 │   ├── Controller.php      # Despachador de endpoints (REST por método HTTP)
@@ -49,8 +61,8 @@ core/
 │   ├── TableColumn.php     # Definición de columnas de tablas
 │   ├── ColumnTypes.php     # Tipos de columna
 │   └── Stopwatch.php       # Medición de tiempos
-├── web/                    # Bootstrap / plantilla web por defecto
-│   ├── index.php           # Entry point de ejemplo (incluye core/System.php)
+├── web/                    # Bootstrap / plantilla web por defecto (modo web)
+│   ├── index.php           # Entry point web: System::init_web()
 │   ├── config.json         # Configuración del sitio (módulos, rutas, tema)
 │   ├── settings.json       # Configuración de ambiente (apiUrl)
 │   ├── manifest.json       # PWA manifest
@@ -58,7 +70,7 @@ core/
 │   ├── modules/            # Módulo dashboard de ejemplo
 │   └── assets/src/         # Assets fuente (Webpack, package.json aquí)
 ├── files/
-│   ├── index.php           # Entry point minimalista (define VERSION, init System)
+│   ├── index.php           # Entry point API minimalista: System::init()
 │   ├── composer.json       # Vacío ({}) — placeholder
 │   └── Tests/Config/       # PHPUnit (autoload.php, phpunit.xml)
 ├── scripts/
@@ -71,6 +83,42 @@ core/
 ├── docker-compose.yml      # db (mysql:8.0.21) + web (php:8.0-apache)
 ├── Dockerfile              # php:8.0-apache + mysqli/pdo + mod_rewrite + xdebug
 └── .gitignore              # ignora /vendor/ y /.idea/
+```
+
+### Estructura típica de un consumidor WEB
+```
+mi-sitio/
+├── core/                   # este submódulo
+├── modules/                # módulos PHP del sitio (dashboard.php, quienes-somos.php, ...)
+├── themes/
+│   └── mi-tema/            # tema HTML (index.html, error.html)
+├── assets/
+│   ├── src/                # JS/TS/SCSS fuente (Webpack)
+│   └── dist/               # salida del build (no editar)
+├── config.json             # módulos, rutas, contacto, redes
+├── settings.json           # apiUrl de producción
+├── settings.dev.json       # apiUrl de desarrollo
+└── index.php               # System::init_web(['WEBDIR' => __DIR__])
+```
+
+### Estructura típica de un consumidor API
+```
+mi-api/
+├── Lib/                    # este submódulo (mismo repo, distinto nombre)
+├── Controller/             # extienden Controller (REST por método HTTP)
+│   ├── Users.php
+│   ├── Dashboard.php
+│   └── ...
+├── Model/                  # usan MySQL + TableColumn + ColumnTypes
+│   ├── Users.php
+│   └── ...
+├── Config/                 # configuración por proyecto (database, email)
+│   └── mi-proyecto.json
+├── Logs/                   # salida de System::log / log_error
+├── composer.json           # (vacío en proyectos reales; las deps viven en Lib/)
+├── docker-compose.yml
+├── Dockerfile
+└── index.php               # System::init(['DIR' => __DIR__])
 ```
 
 ## Configuración del Entorno
@@ -90,7 +138,7 @@ composer install                 # dentro del contenedor, en /var/www/html/
 ```
 
 > El `docker-compose.yml` de este submódulo expone **80:80** y **3306:3306**. Si se levanta
-> junto al proyecto padre (`Pagina/`), habrá conflicto de puertos — usar solo uno a la vez.
+> junto a un proyecto consumidor, habrá conflicto de puertos — usar solo uno a la vez.
 
 ### Composer
 Las dependencias viven en `composer.json` (raíz del submódulo):
@@ -174,6 +222,47 @@ index.php (del proyecto consumidor)
               └─ CoreException en caso de error (log + datos)
 ```
 
+Ejemplo de controlador (`Controller/Users.php`):
+```php
+namespace Controller;
+
+class Users extends \Controller
+{
+    public function __construct()
+    {
+        parent::__construct([
+            'GET'    => ['list' => 'list', 'get' => 'get'],
+            'POST'   => ['create' => 'create'],
+            'DELETE' => ['delete' => 'delete'],
+        ]);
+    }
+    public function list() { /* ... */ }
+    public function get($id) { /* ... */ }
+}
+```
+Llamada: `GET /index.php?endpoint=users/list` → `Controller\Users::list()`.
+
+Ejemplo de modelo (`Model/Users.php`):
+```php
+namespace Model;
+
+class Users
+{
+    public function __construct()
+    {
+        (new MySQL())->create_table('users', [
+            new TableColumn('id', ColumnTypes::BIGINT, 20, true, null, true, true),
+            new TableColumn('email', ColumnTypes::VARCHAR, 100, true),
+        ]);
+    }
+    public function selectUser(string $email): array
+    {
+        $sql = 'SELECT * FROM users WHERE email=:email;';
+        return (new MySQL())->prepare2($sql, [':email' => $email])->fetch() ?: [];
+    }
+}
+```
+
 ### `System.php` — puntos de entrada clave
 - `System::init($config)` — arranque genérico (CLI / API).
 - `System::init_web(array $constants)` — arranque para sitios web (define constantes web,
@@ -191,7 +280,7 @@ index.php (del proyecto consumidor)
 ## Reglas y Convenciones
 
 ### Submódulo
-- Este directorio es un **submódulo git**. El repo padre (`Pagina/`) lo referencia; los
+- Este directorio es un **submódulo git**. El repo padre lo referencia; los
   cambios se commitean aquí y luego el padre actualiza la referencia del submódulo.
 - **No editar archivos de este submódulo desde el repo padre** sin actualizar la referencia.
   Si un proyecto consumidor necesita un comportamiento distinto, preferir:
@@ -213,11 +302,14 @@ index.php (del proyecto consumidor)
   contexto web (`ENVIRONMENT === 'www'`).
 
 ### Configuración
-- `web/config.json` es la **plantilla por defecto** que `scripts/web.sh` copia a los
-  proyectos. Mantenerlo genérico; la configuración específica de cada proyecto vive en el
-  proyecto consumidor, no aquí.
-- `web/settings.json` tiene `apiUrl` vacío por defecto — cada proyecto lo sobreescribe.
-- No commitear `settings.dev.json` ni secretos reales en este submódulo.
+- **Modo web**: `web/config.json` es la **plantilla por defecto** que `scripts/web.sh` copia
+  a los proyectos. Mantenerlo genérico; la configuración específica de cada proyecto vive en
+  el proyecto consumidor, no aquí. `web/settings.json` tiene `apiUrl` vacío por defecto —
+  cada proyecto lo sobreescribe. No commitear `settings.dev.json` ni secretos reales en este
+  submódulo.
+- **Modo API**: los proyectos consumidor cargan `Config/<proyecto>.json` con `database`
+  (host, user, pass, dbname) y `email` (SMTP). El `code` del proyecto debe coincidir con el
+  del `config.json` del framework. Esa configuración vive en el proyecto consumidor, no aquí.
 
 ### Assets
 - Editar solo archivos en `web/assets/src/`. **Nunca** editar `web/assets/dist/` (salida
@@ -236,6 +328,8 @@ Antes de considerar completa una tarea en este submódulo:
 
 - [ ] Si se tocó PHP: `docker compose restart web` y verificar que el bootstrap
       (`web/index.php`) carga sin errores PHP.
+- [ ] Si se tocó el modo API: verificar un endpoint desde el proyecto consumidor API, p. ej.
+      `curl 'http://localhost:8080/index.php?endpoint=users/list'` responde JSON válido.
 - [ ] Si se tocaron assets: `cd web/assets/src && yarn webpack:build:dev` sin errores.
 - [ ] Si se añadió una clase: `composer dump-autoload` y verificar que se carga.
 - [ ] Si se tocó `System.php` o `classes/*`: ejecutar los tests existentes y añadir
