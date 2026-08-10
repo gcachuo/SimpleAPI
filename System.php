@@ -1556,7 +1556,7 @@ class System
                 $fragment = self::$dom->createDocumentFragment();
                 $basename = rtrim(BASENAME, '/');
                 $fragment->appendXML(<<<html
-<script defer src="$basename/assets/dist/$bundle"></script>
+<script defer="defer" src="$basename/assets/dist/$bundle"></script>
 html
                 );
                 $head = self::$dom->getElementsByTagName('head')->item(0);
