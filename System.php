@@ -224,7 +224,6 @@ class System
         $curl = curl_init();
 
         $headers = [
-            'Cookie: XDEBUG_SESSION=PHPSTORM',
             'X-Client: ' . WEBCONFIG['code']
         ];
         if (($_SESSION['user_token'] ?? null) && ($options['session'] ?? true) !== false) {
@@ -837,7 +836,6 @@ class System
     private static function load_php_functions($config = [])
     {
         ob_start();
-        setcookie('XDEBUG_SESSION', 'PHPSTORM');
         if (ENVIRONMENT == 'web') {
             header('Content-Type: application/json');
             header('Access-Control-Allow-Origin: *');
@@ -1551,17 +1549,18 @@ class System
                 if (empty($assets)) {
                     throw new CoreException('Assets not generated', 500, ['dir' => WEBDIR . '/assets/dist/']);
                 }
-                foreach ($assets as $asset_file) {
-                    ['basename' => $bundle] = pathinfo($asset_file);
-                    $fragment = self::$dom->createDocumentFragment();
-                    $basename = rtrim(BASENAME, '/');
-                    $fragment->appendXML(<<<html
-<script src="$basename/assets/dist/$bundle"></script>
+                usort($assets, static function ($left, $right) {
+                    return filemtime($right) <=> filemtime($left);
+                });
+                ['basename' => $bundle] = pathinfo($assets[0]);
+                $fragment = self::$dom->createDocumentFragment();
+                $basename = rtrim(BASENAME, '/');
+                $fragment->appendXML(<<<html
+<script defer src="$basename/assets/dist/$bundle"></script>
 html
-                    );
-                    $head = self::$dom->getElementsByTagName('head')->item(0);
-                    $head->insertBefore($fragment, $head->firstChild);
-                }
+                );
+                $head = self::$dom->getElementsByTagName('head')->item(0);
+                $head->insertBefore($fragment, $head->firstChild);
             }
             if (self::$dom->getElementsByTagName('title')->item(0)) {
                 self::$dom->getElementsByTagName('title')->item(0)->nodeValue = $project;
