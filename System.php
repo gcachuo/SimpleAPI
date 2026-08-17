@@ -1623,7 +1623,7 @@ class System
                 $fragment = self::$dom->createDocumentFragment();
                 $basename = rtrim(BASENAME, '/');
                 $fragment->appendXML(<<<html
-<script defer="defer" src="$basename/$assetsDir/$bundle"></script>
+<script src="$basename/$assetsDir/$bundle"></script>
 html
                 );
                 $head = self::$dom->getElementsByTagName('head')->item(0);
