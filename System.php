@@ -813,7 +813,9 @@ class System
             $value = mb_convert_encoding($value, 'ISO-8859-1', 'UTF-8');
         }
 
-        include_once __DIR__ . '/vendor/neitanod/forceutf8/src/ForceUTF8/Encoding.php';
+        if (!class_exists(Encoding::class)) {
+            require_once __DIR__ . '/vendor/autoload.php';
+        }
         return Encoding::toUTF8($value);
     }
 
