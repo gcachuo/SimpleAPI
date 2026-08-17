@@ -300,12 +300,40 @@ class System
 
     public static function getSettings()
     {
-        $path = __DIR__ . '/../settings.dev.json';
-        if (!file_exists($path)) {
-            $path = __DIR__ . '/../settings.json';
-        }
+        return self::json_decode(file_get_contents(self::settingsPath()), true);
+    }
 
-        return self::json_decode(file_get_contents($path), true);
+    /**
+     * Resolve the environment settings file by existence cascade:
+     * settings.dev.json (local) -> settings.stg.json (staging) -> settings.json (production).
+     *
+     * @return string
+     */
+    private static function settingsPath(): string
+    {
+        foreach (['dev', 'stg'] as $env) {
+            $path = __DIR__ . "/../settings.$env.json";
+            if (file_exists($path)) {
+                return $path;
+            }
+        }
+        return __DIR__ . '/../settings.json';
+    }
+
+    /**
+     * Resolve the asset environment (dev|stg|prod) using the same cascade as
+     * settingsPath(), so the served bundle directory matches the loaded settings.
+     *
+     * @return string
+     */
+    private static function getAssetEnv(): string
+    {
+        foreach (['dev', 'stg'] as $env) {
+            if (file_exists(__DIR__ . "/../settings.$env.json")) {
+                return $env;
+            }
+        }
+        return 'prod';
     }
 
     private static function isJson($string)
@@ -1589,9 +1617,10 @@ class System
             }
 
             if (self::$dom->getElementsByTagName('head')->item(0)) {
-                $assets = glob(__DIR__ . '/../assets/dist/*.js');
+                $assetsDir = 'assets/dist/' . self::getAssetEnv();
+                $assets = glob(__DIR__ . '/../' . $assetsDir . '/*.js');
                 if (empty($assets)) {
-                    throw new CoreException('Assets not generated', 500, ['dir' => WEBDIR . '/assets/dist/']);
+                    throw new CoreException('Assets not generated', 500, ['dir' => WEBDIR . '/' . $assetsDir]);
                 }
                 usort($assets, static function ($left, $right) {
                     return filemtime($right) <=> filemtime($left);
@@ -1600,7 +1629,7 @@ class System
                 $fragment = self::$dom->createDocumentFragment();
                 $basename = rtrim(BASENAME, '/');
                 $fragment->appendXML(<<<html
-<script defer="defer" src="$basename/assets/dist/$bundle"></script>
+<script defer="defer" src="$basename/$assetsDir/$bundle"></script>
 html
                 );
                 $head = self::$dom->getElementsByTagName('head')->item(0);
