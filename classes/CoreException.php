@@ -12,12 +12,12 @@ class CoreException extends Exception
         $message = (string)($message ?? '');
         $code = (int)$code;
 
+        parent::__construct($message, $code);
         $status = 'exception';
-        $error = $this->getTrace();
         $this->data = $data;
         $response = compact('message', 'data');
+        $error = System::exceptionContext($this);
         System::log_error(compact('status', 'code', 'response', 'error'));
-        parent::__construct($message, $code);
     }
 
     function getData($value = null)

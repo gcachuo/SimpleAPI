@@ -571,13 +571,17 @@ class System
                     'exception' => get_class($exception)
                 ];
             }
-            $error = null;
+            $error = self::exceptionContext($exception);
+            $response = compact('message');
+            self::log_error(compact('status', 'code', 'response', 'error'));
             if ($code >= 500) {
-                $error = $exception->getTrace();
+                $message = 'Internal server error.';
+                $data = [];
             }
             if (ENVIRONMENT === 'web' || ENVIRONMENT === 'www') {
                 if (ob_get_contents()) ob_end_clean();
                 $response = compact('message');
+                $error = null;
                 header('Content-Type: application/json');
                 die(json_encode(compact('code', 'message', 'data', 'error', 'response'), JSON_UNESCAPED_SLASHES));
             } else {
@@ -920,7 +924,17 @@ class System
         $data .= '[' . implode('/', $uri) . '] ';
         $data .= '[' . $_SERVER['REQUEST_METHOD'] . '] ';
 
-        $data .= '[' . preg_replace('/\s/', '', file_get_contents('php://input')) . ']';
+        $body = file_get_contents('php://input');
+        $fields = [];
+        if ($body) {
+            if (self::isJson($body)) {
+                $fields = array_keys(json_decode($body, true) ?: []);
+            } else {
+                parse_str($body, $input);
+                $fields = array_keys($input);
+            }
+        }
+        $data .= '[' . json_encode(['content_length' => strlen($body), 'fields' => $fields]) . ']';
 
         if ($_FILES) {
             foreach ($_FILES as $files) {
@@ -969,9 +983,38 @@ class System
         }
     }
 
+    public static function exceptionContext(\Throwable $exception): array
+    {
+        $trace = [];
+        foreach (array_slice($exception->getTrace(), 0, 10) as $frame) {
+            $trace[] = array_intersect_key($frame, array_flip(['file', 'line', 'class', 'type', 'function']));
+        }
+        return [
+            'class' => get_class($exception),
+            'message' => $exception->getMessage(),
+            'trace' => $trace
+        ];
+    }
+
+    private static function redactLogData($data)
+    {
+        if (is_array($data)) {
+            foreach ($data as $key => $value) {
+                if (preg_match('/token|authorization|password|cookie|secret|key/i', (string)$key)) {
+                    $data[$key] = '[REDACTED]';
+                } else {
+                    $data[$key] = self::redactLogData($value);
+                }
+            }
+        }
+        return $data;
+    }
+
     public static function log_error(array $response)
     {
         global $_PUT, $_PATCH;
+
+        $response = self::redactLogData($response);
 
         if (!defined('REQUEST_METHOD'))
             define('REQUEST_METHOD', $_SERVER['REQUEST_METHOD']);
@@ -983,17 +1026,18 @@ class System
         } elseif (ENVIRONMENT == 'cli') {
             $data .= '[' . System::isset_get($_SERVER['argv'][5]) . '] ';
         }
-        $data .= '[' . $response['code'] . '] ';
-        $data .= '[' . json_encode($response['response']) . '] ';
-        $data .= '[' . json_encode([
-                'GET' => $_GET,
-                'POST' => $_POST,
-                'PUT' => $_PUT,
-                'PATCH' => $_PATCH,
-            ][REQUEST_METHOD] ?? ENVIRONMENT) . '] ';
-        /* if ($response['error'] ?? null) {
-             $data .= '[' . json_encode($response['error']) . '] ';
-         }*/
+        $data .= '[' . ($response['code'] ?? 500) . '] ';
+        $data .= '[' . json_encode($response['response'] ?? []) . '] ';
+        $request = [
+            'GET' => $_GET,
+            'POST' => $_POST,
+            'PUT' => $_PUT,
+            'PATCH' => $_PATCH,
+        ][REQUEST_METHOD] ?? ENVIRONMENT;
+        $data .= '[' . json_encode(self::redactLogData($request)) . '] ';
+        if (($response['code'] ?? 500) >= 500 && ($response['error'] ?? null)) {
+            $data .= '[' . json_encode($response['error']) . '] ';
+        }
 
         if (!is_dir(__DIR__ . '/../Logs/')) {
             mkdir(__DIR__ . '/../Logs/', 0777, true);
