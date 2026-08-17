@@ -4,8 +4,48 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "884ee1ea20ff56ae7538ba354bb6c464",
+    "content-hash": "3c531abb48b010d696fc480b6afb8bb8",
     "packages": [
+        {
+            "name": "adnanmula/forceutf8",
+            "version": "v2.0.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/adnanmula/forceutf8.git",
+                "reference": "e6f9f4725652c66206037a8a96d68e39e4b31ff0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/adnanmula/forceutf8/zipball/e6f9f4725652c66206037a8a96d68e39e4b31ff0",
+                "reference": "e6f9f4725652c66206037a8a96d68e39e4b31ff0",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-0": {
+                    "ForceUTF8\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Sebastián Grignoli",
+                    "email": "grignoli@gmail.com"
+                }
+            ],
+            "description": "PHP Class Encoding featuring popular Encoding::toUTF8() function --formerly known as forceUTF8()-- that fixes mixed encoded strings.",
+            "homepage": "https://github.com/neitanod/forceutf8",
+            "support": {
+                "source": "https://github.com/adnanmula/forceutf8/tree/v2.0.3"
+            },
+            "time": "2023-01-09T08:22:46+00:00"
+        },
         {
             "name": "camcima/php-mysql-diff",
             "version": "1.2.1",
@@ -435,47 +475,6 @@
                 "source": "https://github.com/mikehaertl/phpwkhtmltopdf/tree/master"
             },
             "time": "2020-01-07T07:47:15+00:00"
-        },
-        {
-            "name": "neitanod/forceutf8",
-            "version": "v2.0.4",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/neitanod/forceutf8.git",
-                "reference": "c1fbe70bfb5ad41b8ec5785056b0e308b40d4831"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/neitanod/forceutf8/zipball/c1fbe70bfb5ad41b8ec5785056b0e308b40d4831",
-                "reference": "c1fbe70bfb5ad41b8ec5785056b0e308b40d4831",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "ForceUTF8\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Sebastián Grignoli",
-                    "email": "grignoli@gmail.com"
-                }
-            ],
-            "description": "PHP Class Encoding featuring popular Encoding::toUTF8() function --formerly known as forceUTF8()-- that fixes mixed encoded strings.",
-            "homepage": "https://github.com/neitanod/forceutf8",
-            "support": {
-                "issues": "https://github.com/neitanod/forceutf8/issues",
-                "source": "https://github.com/neitanod/forceutf8/tree/master"
-            },
-            "time": "2019-12-10T14:09:14+00:00"
         },
         {
             "name": "phpmailer/phpmailer",
@@ -3568,7 +3567,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {},
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
@@ -3579,8 +3578,9 @@
         "ext-dom": "*",
         "ext-libxml": "*",
         "ext-openssl": "*",
-        "ext-curl": "*"
+        "ext-curl": "*",
+        "ext-fileinfo": "*"
     },
-    "platform-dev": [],
-    "plugin-api-version": "2.0.0"
+    "platform-dev": {},
+    "plugin-api-version": "2.9.0"
 }
