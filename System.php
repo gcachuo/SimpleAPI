@@ -827,7 +827,7 @@ class System
         self::load_composer();
         try {
             if (empty($jwt)) {
-                throw new CoreException('The token sent is empty.', 500);
+                throw new CoreException('Token no válido.', 401);
             }
 
             $jwt_key = self::get_jwt_key();
@@ -835,17 +835,11 @@ class System
             $time = time();
             $decoded = JWT::decode($jwt, $jwt_key, ['HS256']);
             if (!empty($decoded->exp) && $decoded->exp <= $time) {
-                throw new CoreException('The token has expired.', 500);
+                throw new CoreException('Token no válido.', 401);
             }
             return json_decode(json_encode($decoded), true)['data'];
-        } catch (Firebase\JWT\ExpiredException $ex) {
-            throw new CoreException($ex->getMessage(), 500);
-        } catch (Firebase\JWT\SignatureInvalidException $ex) {
-            throw new CoreException($ex->getMessage(), 500);
-        } catch (UnexpectedValueException $ex) {
-            throw new CoreException('Invalid token.', 500);
-        } catch (DomainException $ex) {
-            throw new CoreException('Invalid token.', 500);
+        } catch (Firebase\JWT\ExpiredException|Firebase\JWT\SignatureInvalidException|UnexpectedValueException|DomainException $ex) {
+            throw new CoreException('Token no válido.', 401);
         }
     }
 
