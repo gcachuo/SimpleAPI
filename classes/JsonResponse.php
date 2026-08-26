@@ -8,12 +8,20 @@ class JsonResponse
 
     /**
      * @param string $message
-     * @param int $code
-     * @param array $data
+     * @param array|int $data
+     * @param int|array $code
      * @throws CoreException
      */
-    public static function sendResponse(string $message, array $data = [], $code = 200)
+    public static function sendResponse(string $message, $data = [], $code = 200)
     {
+        if (is_numeric($data)) {
+            $tempCode = (int)$data;
+            $data = is_array($code) ? $code : [];
+            $code = $tempCode;
+        } elseif (!is_array($data)) {
+            $data = [];
+        }
+
         if ($code) {
             http_response_code($code);
         } else {

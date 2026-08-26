@@ -526,23 +526,24 @@ class System
     public static function upload_file(array $file, string $destination): bool
     {
         if (empty($file['tmp_name'])) {
-            JsonResponse::sendResponse('Filename cannot be empty.');
+            JsonResponse::sendResponse('Filename cannot be empty.', [], HTTPStatusCodes::BadRequest);
         }
 
-        if (!file_exists(dirname($destination))) {
-            if (!mkdir(dirname($destination), 0777, true)) {
-                JsonResponse::sendResponse('Directory could not be created.', HTTPStatusCodes::InternalServerError);
+        $dir = dirname($destination);
+        if (!file_exists($dir)) {
+            if (!mkdir($dir, 0777, true) && !is_dir($dir)) {
+                JsonResponse::sendResponse('Directory could not be created.', [], HTTPStatusCodes::InternalServerError);
             }
-            if (!chmod(dirname($destination), 0777)) {
-                JsonResponse::sendResponse('Directory could not be changed permissions.', HTTPStatusCodes::InternalServerError);
-            }
+            @chmod($dir, 0777);
         }
 
         if (!move_uploaded_file($file['tmp_name'], $destination)) {
-            JsonResponse::sendResponse('File could not be moved.', HTTPStatusCodes::InternalServerError);
+            JsonResponse::sendResponse('File could not be moved.', [], HTTPStatusCodes::InternalServerError);
         }
 
-        define('FILE', $destination);
+        if (!defined('FILE')) {
+            define('FILE', $destination);
+        }
 
         return true;
     }
@@ -2409,10 +2410,27 @@ html
      */
     public static function filePond(string $FILE, string $path): string
     {
-        $FILE = System::json_decode($FILE);
-        $data = base64_decode($FILE['data']);
+        if (empty(trim($FILE))) {
+            return '';
+        }
 
-        $path = $path . '/' . urlencode(str_replace(['(', ')'], '', $FILE['name']));
+        $decoded = @json_decode($FILE, true);
+
+        if (!is_array($decoded) || !isset($decoded['data']) || !isset($decoded['name'])) {
+            return $FILE;
+        }
+
+        $data = base64_decode($decoded['data']);
+        if ($data === false) {
+             return $FILE;
+        }
+        
+        $filename = str_replace(['(', ')', ' '], ['', '', '_'], $decoded['name']);
+        $filename = preg_replace('/_+/', '_', $filename);
+        
+        $path = rtrim($path, '/');
+        $path = $path . '/' . rawurlencode($filename);
+
         is_dir(dirname($path)) || mkdir(dirname($path), 0777, true);
         if (!is_dir(dirname($path))) {
             throw new CoreException('Error. Failed to create dir. ' . dirname($path), 500, compact('FILE', 'path'));
@@ -2504,3 +2522,4 @@ html
         JsonResponse::sendResponse('');
     }
 }
+
